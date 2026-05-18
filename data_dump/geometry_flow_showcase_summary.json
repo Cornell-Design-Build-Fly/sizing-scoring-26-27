@@ -1,0 +1,17 @@
+{
+  "velocity_mps": 18.0,
+  "alpha_deg": 8.0,
+  "spanwise_resolution": 8,
+  "chordwise_resolution": 6,
+  "wing_area_m2": 0.36277727444400004,
+  "reference_span_m": 1.181354,
+  "reference_chord_m": 0.307086,
+  "CL": 0.7155940813431911,
+  "CD": 0.03859895360291945,
+  "Cm": -0.16104698972498926,
+  "L_N": 51.5178366189248,
+  "D_N": 2.778858346122881,
+  "solve_runtime_s": 0.16842309999628924,
+  "panel_count": 240,
+  "streamline_seed_count": 200
+}
