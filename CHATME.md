@@ -30,7 +30,7 @@ Open notes:
 
 Repo basics:
 - Python project rooted at `src/`.
-- Main design geometry source of truth is [src/design_vector.py](src/design_vector.py).
+- Main design geometry source of truth is [src/vectors.py](src/vectors.py).
 - Testing/demo scripts live in [src/testing](src/testing).
 - Saved analysis artifacts should go into [data_dump](data_dump).
 - Virtual environment is expected at `venv`; most scripts were run with `.\venv\Scripts\python`.
@@ -54,9 +54,39 @@ Aero solver expectations:
 
 ## Session Log
 
+### 2026-05-27 - Codex
+Changed:
+- Renamed the design-vector module to [src/vectors.py](src/vectors.py) and updated repo imports to point at `src.vectors`.
+- Added optimizer-facing helpers in [src/vectors.py](src/vectors.py):
+  - `OPT_VARS`
+  - `DesignVector.to_array()`
+  - `DesignVector.from_array()`
+  - `DesignVector.bounds()`
+- Expanded [src/vectors.py](src/vectors.py) with mission/prop fields used by scoring and optimization:
+  - `ducks_num`
+  - `pucks_num`
+  - `banner_length`
+  - `batt_capacity`
+  - derived `batt_energy`
+- Implemented mission scoring in [src/opt/score.py](src/opt/score.py) with `gm_score`, `m1_score`, `m2_score`, `m3_score`, and `total_score()`.
+- Updated [src/opt/main_opt.py](src/opt/main_opt.py) to build `DesignVector` instances from optimizer arrays and wrapped the DE run in `run_optimization()` so imports do not start optimization as a side effect.
+
+Learned:
+- Current optimization/scoring pipeline is `DesignVector.from_array(x) -> total_score(dv, ...) -> -score` for SciPy DE.
+- The optimizer currently treats `ducks_num` and `pucks_num` as continuous variables and they are truncated to ints inside `DesignVector.__post_init__`.
+- `total_score()` in [src/opt/score.py](src/opt/score.py) still expects externally supplied lap times; aero/performance coupling into the optimizer is not wired yet.
+
+Artifacts:
+- No new `data_dump` artifacts were written in this session.
+
+Open notes:
+- `DesignVector.from_array()` currently zips `x` with `OPT_VARS` without a length check, so mismatches could fail silently.
+- Score breakdown printing in [src/opt/score.py](src/opt/score.py) will likely spam output during large optimization runs.
+- Check whether `pucks_num` default / intended feasible range is correct: the current default and optimizer bounds do not appear to match.
+
 ### 2026-05-17 - Codex
 Changed:
-- Added ASB-ready geometry helpers in [src/design_vector.py](src/design_vector.py):
+- Added ASB-ready geometry helpers in [src/vectors.py](src/vectors.py):
   - `ASBDesignVector`
   - `make_airplane()`
   - fuselage generation from design vector

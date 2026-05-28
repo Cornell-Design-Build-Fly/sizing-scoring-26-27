@@ -5,7 +5,7 @@ from time import perf_counter
 import aerosandbox as asb
 
 from src.aero.vlm import AirplaneAnalysisResult, require_scalar
-from src.design_vector import ASBDesignVector, DesignVector
+from src.vectors import ASBDesignVector, DesignVector
 
 
 def run_lifting_line_on_design_vector(

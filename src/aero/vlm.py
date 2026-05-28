@@ -6,7 +6,7 @@ from time import perf_counter
 import aerosandbox as asb
 import numpy as np
 
-from src.design_vector import ASBDesignVector, DesignVector
+from src.vectors import ASBDesignVector, DesignVector
 
 
 @dataclass(frozen=True)

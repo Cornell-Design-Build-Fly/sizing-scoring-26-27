@@ -16,7 +16,7 @@ from src.aero import (
     run_nonlinear_lifting_line_on_design_vector,
     run_vlm_on_design_vector,
 )
-from src.design_vector import ASBDesignVector
+from src.vectors import ASBDesignVector
 
 
 DATA_DUMP_DIR = PROJECT_ROOT / "data_dump"
@@ -40,7 +40,7 @@ dv = ASBDesignVector(
     tail_arm=0.845058,
     nose_length=0.20,
 )
-airplane, s_ref, c_ref, b_ref = dv.make_airplane()
+airplane = dv.make_airplane()
 
 print(f"Wing span: {dv.wing_span:.3f} m")
 print(f"Wing chord: {dv.wing_chord:.3f} m")
@@ -49,7 +49,7 @@ print(f"Nose length: {dv.nose_length:.3f} m")
 print(f"H-stab span: {dv.hstab_span:.3f} m")
 print(f"V-stab span: {dv.vstab_span:.3f} m")
 print(f"Fuselage section: {dv.fuselage_width:.2f} m x {dv.fuselage_height:.2f} m")
-print(f"ASB refs: S={s_ref:.3f} m^2, c={c_ref:.3f} m, b={b_ref:.3f} m")
+# print(f"ASB refs: S={s_ref:.3f} m^2, c={c_ref:.3f} m, b={b_ref:.3f} m")
 print(f"Built ASB airplane: {airplane.name}")
 
 alphas = np.arange(-10.0, 20.0 + 0.25, 0.5)

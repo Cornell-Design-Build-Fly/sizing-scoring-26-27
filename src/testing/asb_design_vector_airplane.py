@@ -21,7 +21,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.design_vector import ASBDesignVector
+from src.vectors import ASBDesignVector
 
 
 DESIGN_VECTOR_METERS: Final[dict[str, float]] = {
@@ -112,7 +112,7 @@ def plot_downwash_slice(
 
 def main() -> None:
     design_vector = make_design_vector()
-    airplane, s_ref, c_ref, b_ref = design_vector.make_airplane(
+    airplane = design_vector.make_airplane(
         name="Design Vector Plane"
     )
     vlm = make_vlm_analysis(airplane)
@@ -128,9 +128,9 @@ def main() -> None:
         f"Fuselage section: {design_vector.fuselage_width:.2f} m x "
         f"{design_vector.fuselage_height:.2f} m"
     )
-    print(f"Reference wing area: {s_ref:.3f} m^2")
-    print(f"Reference span: {b_ref:.3f} m")
-    print(f"Reference chord: {c_ref:.3f} m")
+    # print(f"Reference wing area: {s_ref:.3f} m^2")
+    # print(f"Reference span: {b_ref:.3f} m")
+    # print(f"Reference chord: {c_ref:.3f} m")
 
     airplane.draw_wireframe(
         color="navy",
