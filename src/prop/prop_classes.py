@@ -1,23 +1,58 @@
+from __future import annotations
+from dataclasses import dataclass
+from typing import Callable
+import numpy as np
+
+@dataclass(frozen=True, slots=True)
 class propeller:
-    def __init__(self, diameter, pitch, mass, idnum):
-        self.diameter = diameter #in
-        self.pitch = pitch #in
-        self.mass = mass #kg
-        self.idnum = idnum
+    diameter: float  # in
+    pitch: float  # in
+    mass: float | None = None # kg
+
+@dataclass(frozen=True, slots=True)
 class motor:
-    def __init__(self, kv, Rm, max_power, I0, max_current, mass):
-        self.kv = kv
-        self.Rm = Rm
-        self.max_power = max_power
-        self.I0 = I0
-        self.max_current = max_current
-        self.mass = mass
+    kv: float  # RPM/V
+    Rm: float  # Ohms
+    max_power: float  # W
+    I0: float  # A
+    max_current: float  # A
+    mass: float | None = None # kg
+
+@dataclass(frozen=True, slots=True)
 class battery:
-    def __init__(self, vnom, cells, Rb, Crat, capacity, mass):
-        self.vnom = vnom
-        self.cells = cells
-        self.Rb = Rb
-        self.Crat = Crat
-        self.capacity = capacity
-        self.mass = mass
+    vnom: float  # V
+    cells: int
+    Rb: float  # Ohms
+    Crat: float  # C
+    capacity: float  # Ah
+    mass: float | None = None # kg
+
+@dataclass(frozen=True, slots=True)
+class MotorCheckResult:
+    passed: bool
+    throttle: float
+    flight_time_s: float
+    power_w: float
+    current_a: float
+    voltage_sag_v: float
+    voltage_required_v: float
+@dataclass(frozen=True, slots=True)
+class PropulsionCurveFit:
+    throttled_thrust: np.ndarray
+    max_thrust: np.ndarray
+    throttled_time: np.ndarray
+    max_time: np.ndarray
+
+    sample_velocities_mps: np.ndarray
+    throttled_thrust_samples: np.ndarray
+    max_thrust_samples: np.ndarray
+    throttled_time_samples: np.ndarray
+    max_time_samples: np.ndarray
+
+
+@dataclass(frozen=True, slots=True)
+class PropInterpolants:
+    thrust: Callable[[float, float, float, float], float]
+    torque: Callable[[float, float, float, float], float]
+
 rho = 1.225 # kg/m^3
