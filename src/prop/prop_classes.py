@@ -12,6 +12,7 @@ class propeller:
 @dataclass(frozen=True, slots=True)
 class motor:
     kv: float  # RPM/V
+    kt = 1/kv: float  # Nm/A
     Rm: float  # Ohms
     max_power: float  # W
     I0: float  # A
