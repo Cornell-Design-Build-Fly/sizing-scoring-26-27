@@ -54,6 +54,39 @@ Aero solver expectations:
 
 ## Session Log
 
+### 2026-07-03 - OpenAI
+Changed:
+- Implemented the complete mechanical mass-properties module in [src/mech](src/mech):
+  - component mass ledger and configuration dataclasses;
+  - wing/tail neutral-point estimate for static margin;
+  - M1 electronics placement and fixed landing-gear placement;
+  - constrained M2 duck/puck 3-D packing with non-overlap and static-margin targeting;
+  - configurable M3 three-mass banner-system placement;
+  - mission CG, weight, and full 3x3 inertia tensors using intrinsic inertia plus the parallel-axis theorem.
+- Added the aero-compatible `mech_main()` entry point and richer `evaluate_mechanical_module()` result.
+- Added [src/mech/README.md](src/mech/README.md) and regression coverage in [src/testing/mech_test.py](src/testing/mech_test.py).
+- Made the AeroSandbox import in [src/vectors.py](src/vectors.py) lazy so the mechanical module can use `DesignVector` without importing AeroSandbox.
+- Updated the mechanical defaults with the supplied current-year data:
+  - 53 mm cubic duck bounding boxes;
+  - `49 g / 0.259 m` linear structural density for each stabilizer;
+  - one 21 g servo on each stabilizer;
+  - two 100 g M3 mechanisms;
+  - banner areal density of `0.233 kg / 2.9 m^2`, with area computed from banner length and height.
+
+Learned:
+- `DesignVector.tail_arm` is quarter-chord to quarter-chord in the current geometry, not leading-edge to leading-edge.
+- With the updated tail mass and servo data, the baseline M1 result is approximately 3.264 kg with 6.93% estimated static margin. The unconstrained combined-electronics location required for the 15% target is approximately `x=-0.2945 m`, which lies about 40 mm ahead of the modeled nose tip; the module clips it to the physical bound and correctly flags M1 as outside the 10-20% range.
+- Exact horizontal- and vertical-tail servo installation coordinates have not been supplied, so both servos currently sit at their stabilizer geometric centers.
+- Banner density is interpreted as `0.233 kg / 2.9 m^2` rather than `0.233 g / 2.9 m^2`.
+
+Artifacts:
+- No new `data_dump` artifacts. Run `python -m src.testing.mech_test` for the baseline report.
+
+Open notes:
+- The optimizer should catch `PayloadPlacementError` and penalize packing-infeasible designs.
+- Duck/puck counts remain continuous optimizer variables and are rounded by the mechanical module; they should eventually be implemented as integer/discrete optimizer variables.
+
+
 ### 2026-05-27 - Codex
 Changed:
 - Renamed the design-vector module to [src/vectors.py](src/vectors.py) and updated repo imports to point at `src.vectors`.
