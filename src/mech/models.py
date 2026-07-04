@@ -254,9 +254,11 @@ class AirframeMassConfig:
     electronics_dimensions_m: tuple[float, float, float] = (0.0, 0.0, 0.0)
     electronics_y_m: float = 0.0
     electronics_z_m: float | None = None
-    # Bounds are optional. If omitted, the movable electronics point is limited
-    # to the modeled fuselage from 20 mm aft of the nose tip to 25% of the tail
-    # arm aft of the wing trailing edge.
+    # Optional user-imposed packaging bounds. ``None`` means unbounded: the
+    # module uses the exact equivalent electronics-group CG required to hit the
+    # target M1 static margin, even when that location lies ahead of the current
+    # modeled nose. Supplying a tuple deliberately re-enables clipping for a
+    # fixed packaging-envelope study.
     electronics_x_bounds_m: tuple[float, float] | None = None
 
     def __post_init__(self) -> None:
@@ -392,7 +394,10 @@ class Mission2Config:
     """Mission-2 payload packing configuration.
 
     The duck bounding box is the supplied 53 mm cube. The puck dimensions use
-    a standard 3-inch-diameter by 1-inch-thick puck envelope.
+    a standard 3-inch-diameter by 1-inch-thick puck envelope. By default, the
+    payload compartment is also clipped longitudinally so every payload stays
+    at least 0.127 m aft of the electronics CG and fully forward of the
+    forward-most tail leading edge.
     """
 
     duck: PayloadTypeConfig = field(
@@ -413,6 +418,8 @@ class Mission2Config:
         default_factory=RelativePayloadRules
     )
     compartment_x_bounds_m: tuple[float, float] | None = None
+    electronics_aft_clearance_m: float = 0.127
+    tail_leading_edge_clearance_m: float = 0.0
     maximum_width_m: float = 0.15
     maximum_height_m: float = 0.15
     compartment_center_y_m: float = 0.0
@@ -440,6 +447,8 @@ class Mission2Config:
                     self.compartment_center_y_m,
                     self.compartment_center_z_m,
                     self.relative_reference_z_m,
+                    self.electronics_aft_clearance_m,
+                    self.tail_leading_edge_clearance_m,
                     self.clearance_m,
                     self.compactness_weight,
                     self.milp_time_limit_s,
@@ -449,6 +458,8 @@ class Mission2Config:
             raise ValueError("Mission-2 scalar configuration values must be finite.")
         if self.maximum_width_m <= 0 or self.maximum_height_m <= 0:
             raise ValueError("Mission-2 maximum width and height must be positive.")
+        if self.electronics_aft_clearance_m < 0 or self.tail_leading_edge_clearance_m < 0:
+            raise ValueError("Mission-2 longitudinal keep-out distances cannot be negative.")
         if self.clearance_m < 0:
             raise ValueError("Mission-2 clearance cannot be negative.")
         if self.compactness_weight < 0:

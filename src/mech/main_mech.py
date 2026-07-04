@@ -18,7 +18,7 @@ from src.mech.models import (
     MechanicalResult,
     MissionMassProperties,
 )
-from src.mech.payload_placement import place_mission2_payload
+from src.mech.payload_placement import PayloadPlacementError, place_mission2_payload
 from src.vectors import DesignVector, ParameterVector
 
 
@@ -285,17 +285,19 @@ def _base_airframe_items(
         target_cg_x * (fixed_mass + electronics_mass) - fixed_x_moment
     ) / electronics_mass
 
+    # By default, use the exact equivalent electronics-group CG required to
+    # achieve the target Mission-1 static margin. This is intentionally not
+    # restricted to the currently modeled fuselage or nose geometry: the
+    # returned x location is a packaging/design requirement for the combined
+    # motor/prop, battery, ESC, and other electronics group. Callers may still
+    # provide explicit bounds when they deliberately want to test a fixed
+    # packaging envelope.
     if airframe.electronics_x_bounds_m is None:
-        electronics_bounds = (
-            stations.nose_tip_x_m + 0.020,
-            stations.wing_te_x_m + 0.25 * design_vector.tail_arm,
-        )
+        electronics_bounds = None
+        electronics_x = float(required_electronics_x)
     else:
         electronics_bounds = airframe.electronics_x_bounds_m
-    if not electronics_bounds[0] < electronics_bounds[1]:
-        raise ValueError("electronics_x_bounds_m must be increasing.")
-
-    electronics_x = float(np.clip(required_electronics_x, *electronics_bounds))
+        electronics_x = float(np.clip(required_electronics_x, *electronics_bounds))
     electronics_z = (
         -0.5 * design_vector.fuselage_height
         if airframe.electronics_z_m is None
@@ -304,10 +306,12 @@ def _base_airframe_items(
     electronics_position = np.array(
         [electronics_x, airframe.electronics_y_m, electronics_z], dtype=float
     )
-    if not np.isclose(electronics_x, required_electronics_x):
+    if electronics_bounds is not None and not np.isclose(
+        electronics_x, required_electronics_x
+    ):
         warnings.append(
             "The exact electronics location required for the target static margin was "
-            f"x={required_electronics_x:.4f} m, outside the allowed range "
+            f"x={required_electronics_x:.4f} m, outside the explicitly configured range "
             f"[{electronics_bounds[0]:.4f}, {electronics_bounds[1]:.4f}] m. "
             f"It was clipped to x={electronics_x:.4f} m."
         )
@@ -335,6 +339,7 @@ def _base_airframe_items(
 def _mission2_items(
     design_vector: DesignVector,
     base_items: tuple[MassItem, ...],
+    electronics_position: np.ndarray,
     neutral_point_x_m: float,
     config: MechanicalModuleConfig,
     warnings: list[str],
@@ -344,13 +349,26 @@ def _mission2_items(
     puck_count = _integer_payload_count(design_vector.pucks_num, "pucks_num", warnings)
 
     m2 = config.mission2
+    payload_min_x = float(electronics_position[0] + m2.electronics_aft_clearance_m)
+    tail_leading_edge_x = min(
+        stations.horizontal_tail_le_x_m, stations.vertical_tail_le_x_m
+    )
+    payload_max_x = float(tail_leading_edge_x - m2.tail_leading_edge_clearance_m)
+
     if m2.compartment_x_bounds_m is None:
-        x_bounds = (
-            stations.nose_tip_x_m + 0.020,
-            stations.wing_te_x_m + 0.25 * design_vector.tail_arm,
-        )
+        x_bounds = (payload_min_x, payload_max_x)
     else:
-        x_bounds = m2.compartment_x_bounds_m
+        x_bounds = (
+            max(m2.compartment_x_bounds_m[0], payload_min_x),
+            min(m2.compartment_x_bounds_m[1], payload_max_x),
+        )
+    if not x_bounds[0] < x_bounds[1]:
+        raise PayloadPlacementError(
+            "Mission-2 longitudinal payload region is empty after applying the "
+            "electronics and tail keep-out constraints. "
+            f"Electronics-aft limit: x >= {payload_min_x:.4f} m; "
+            f"tail-forward limit: x <= {payload_max_x:.4f} m."
+        )
 
     target_cg_x = neutral_point_x_m - config.static_margin.target * design_vector.wing_chord
     reference_x = (
@@ -487,7 +505,7 @@ def evaluate_mechanical_module(
         )
 
     m2_payload = _mission2_items(
-        design_vector, base_items, neutral_point_x, config, warnings
+        design_vector, base_items, electronics_position, neutral_point_x, config, warnings
     )
     m2_items = base_items + m2_payload
     m2 = _mission_properties(

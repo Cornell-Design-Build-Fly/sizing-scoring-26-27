@@ -64,9 +64,14 @@ The default configuration includes:
 - combined motor/prop, ESC, battery, and other electronics mass.
 
 The combined electronics point is placed once for Mission 1 and then remains
-fixed for Missions 2 and 3. The solver targets 15% static margin and reports a
-warning if physical position bounds prevent it. A design remains acceptable by
-default between 10% and 20%.
+fixed for Missions 2 and 3. The solver targets 15% static margin. By default,
+the electronics-group position is not bounded by the currently modeled nose or
+fuselage; the returned longitudinal coordinate is the equivalent CG location
+required for the combined motor/prop, battery, ESC, and other electronics group.
+Treat that coordinate as a packaging/design requirement. Optional
+`electronics_x_bounds_m` may still be supplied when a specific physical
+packaging envelope is intentionally being evaluated. A design remains
+acceptable by default between 10% and 20%.
 
 The battery model is linear in capacity and passes through 4.5 Ah / 0.690 kg.
 Replace the slope with a fit to measured candidate batteries when that data is
@@ -103,7 +108,7 @@ config = replace(
                 allow_aft=True,
                 allow_above=True,
                 allow_below=False,
-                allow_stacking=True,
+                allow_stacking=False,
             ),
         ),
         puck=replace(
@@ -114,7 +119,7 @@ config = replace(
                 allow_aft=False,
                 allow_above=False,
                 allow_below=True,
-                allow_stacking=False,
+                allow_stacking=True,
             ),
         ),
         # Optional rules between the two payload types. These may be combined.
@@ -131,6 +136,16 @@ result = evaluate_mechanical_module(DesignVector(), config)
 `PlacementRules` are relative to the configured compartment reference point.
 `RelativePayloadRules` additionally enforce relationships between all pucks and
 all ducks, such as pucks ahead of and below the ducks.
+
+Mission 2 now also applies mandatory longitudinal keep-outs before packing:
+
+- each payload must stay fully aft of `electronics_position_x + 0.127 m` by default;
+- each payload must stay fully forward of the forward-most tail leading edge;
+- `compartment_x_bounds_m`, when supplied, is intersected with those keep-outs rather
+  than replacing them.
+
+Use `Mission2Config.electronics_aft_clearance_m` and
+`Mission2Config.tail_leading_edge_clearance_m` to adjust those margins.
 
 The default deterministic multi-start packer is intended for repeated optimizer
 calls. `Mission2Config.solver` may instead be set to `"beam"` for a wider

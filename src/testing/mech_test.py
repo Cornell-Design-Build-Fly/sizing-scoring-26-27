@@ -18,6 +18,7 @@ from src.mech import (
     RelativePayloadRules,
     evaluate_mechanical_module,
 )
+from src.mech.mass_properties import geometry_stations
 from src.vectors import DesignVector
 
 
@@ -101,6 +102,23 @@ def main() -> None:
         design.pucks_num
     )
     _assert_no_payload_overlap(result.for_mission("M2").items, config.mission2.clearance_m)
+    stations = geometry_stations(design)
+    tail_leading_edge_x = min(stations.horizontal_tail_le_x_m, stations.vertical_tail_le_x_m)
+    electronics_aft_limit_x = (
+        result.electronics_position_m[0] + config.mission2.electronics_aft_clearance_m
+    )
+    default_payloads = [
+        item
+        for item in result.for_mission("M2").items
+        if item.category == "mission_2_payload"
+    ]
+    for payload in default_payloads:
+        assert payload.position_m[0] - 0.5 * payload.dimensions_m[0] >= (
+            electronics_aft_limit_x - 1e-12
+        )
+        assert payload.position_m[0] + 0.5 * payload.dimensions_m[0] <= (
+            tail_leading_edge_x + 1e-12
+        )
 
     # Verify that the full current optimizer count bounds can be packed in the
     # default 0.15 m by 0.15 m payload envelope.
@@ -134,12 +152,13 @@ def main() -> None:
                 allow_stacking=False,
             ),
         ),
+        relative_reference_x_m=0.5 * (electronics_aft_limit_x + tail_leading_edge_x),
     )
     directional_config = replace(config, mission2=directional_m2)
     directional_result = evaluate_mechanical_module(
         DesignVector(ducks_num=1, pucks_num=1), directional_config
     )
-    reference_x = directional_result.target_cg_x_m
+    reference_x = directional_config.mission2.relative_reference_x_m
     directional_payloads = [
         item
         for item in directional_result.for_mission("M2").items
