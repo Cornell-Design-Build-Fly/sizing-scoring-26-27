@@ -2,6 +2,7 @@ from __future import annotations
 from dataclasses import dataclass
 from typing import Callable
 import numpy as np
+import math
 
 @dataclass(frozen=True, slots=True)
 class propeller:
@@ -12,7 +13,7 @@ class propeller:
 @dataclass(frozen=True, slots=True)
 class motor:
     kv: float  # RPM/V
-    kt = 1/kv: float  # Nm/A
+    kt = 60/(2*math.pi*kv): float  # Nm/A
     Rm: float  # Ohms
     max_power: float  # W
     I0: float  # A

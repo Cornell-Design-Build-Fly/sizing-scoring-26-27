@@ -41,4 +41,25 @@ def motor_properties(kv: float, max_power_w: float) -> tuple[float, float]:
 
 '''MATLAB TESTING FOLDER'''
 def motor_check(torque_nm: float, rpm: float, motor: Motor, battery: Battery)
-    
+    current = (torque / Kt) + I0 #(A) Current needed to sustain torque
+
+    V_sag = battery.vnom - current_A*(battery.Rb*battery.vnom/3.7) #(V) Voltage drop in battery under load
+    V_req = rpm/motor.kv+current+motor.Rm #Voltage required due to EMF
+    power = current*V_sag #(W) Power consumed by motor
+
+    #Battery flight time calculation
+
+    if I <= 1e-6  #Avoid division by zero or very small power; use a small threshold
+        t_flight = np.inf; #Effectively infinite time if no significant power drawn
+    else
+        #E_battery is in Wh. P is in W. (Wh / W) = hours.
+        #Convert hours to seconds by multiplying by 3600.
+        t_flight = battery.capacity/current*3600.0 
+    end
+
+    % Throttle Required
+    if V_sag <= 1e-6 % Avoid division by zero or negative V_sag
+        throttle = inf; % Effectively infinite throttle required if V_sag is non-positive
+    else
+        throttle = V_req / V_sag;
+    end
