@@ -4,10 +4,11 @@ from aerosandbox import optimization as opti
 from src.aero import aero_analysis
 from src.aero.custom_classes import CruiseCondition
 from src.vectors import DesignVector
+import numpy as np
 
 def cruise_analysis(
         design_vector: DesignVector,
-        thrust_velocity: ____,
+        thrust_velocity: np.array, # array containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
         cg: tuple[float, float, float],
         weight: float,
 ) -> CruiseCondition:

@@ -24,6 +24,17 @@ def aero_analysis (
         cruise_condition: The cruise condition containing the operating point and throttle setting.
     """
     
+    # Aero Buildup Method
+    aero_buildup_result = vlm.run_aero_buildup_on_design_vector(
+        design_vector=design_vector,
+        velocity=cruise_condition.operating_point.velocity,
+        alpha=cruise_condition.operating_point.alpha,
+        beta=0.0,  
+        p=0.0,  
+        q=0.0,  
+        r=0.0,
+    )
+
     # VLM Method
     vlm_result = vlm.run_vlm_on_design_vector(
         design_vector=design_vector,
