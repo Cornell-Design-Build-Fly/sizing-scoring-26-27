@@ -35,7 +35,7 @@ def aero_main(
     cruise_condition = cruise_analysis(design_vector, thrust_velocity, cg, mass)
 
     # Final call to aero_analysis to get final aerodynamic results for design vector at trim. 
-    aero_result = aero_analysis(design_vector, cruise_condition)
+    aero_result = aero_analysis(design_vector, cruise_condition, cg)
 
     # Final call to stability_analysis to get final stability results for design vector at trim.
     stability_result = stability_analysis(design_vector, cruise_condition, aero_result, inertia_matrix)

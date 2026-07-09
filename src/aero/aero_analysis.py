@@ -14,6 +14,7 @@ import nonlinear_lifting_line
 def aero_analysis (
         design_vector: DesignVector,
         cruise_condition: CruiseCondition,
+        cg: tuple[float, float, float],
 
 ) -> vlm.AirplaneAnalysisResult:
     """
@@ -27,6 +28,7 @@ def aero_analysis (
     # Aero Buildup Method
     aero_buildup_result = vlm.run_aero_buildup_on_design_vector(
         design_vector=design_vector,
+        xyz_ref=cg,
         velocity=cruise_condition.operating_point.velocity,
         alpha=cruise_condition.operating_point.alpha,
         beta=0.0,  
@@ -73,4 +75,4 @@ def aero_analysis (
     )
 
 
-    return vlm_result # could also return lifting_line_result and nonlinear_lifting_line_result if desired 
+    return aero_buildup_result 

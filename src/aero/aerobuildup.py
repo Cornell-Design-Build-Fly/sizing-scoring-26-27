@@ -10,7 +10,7 @@ from src.vectors import ASBDesignVector, DesignVector
 
 def run_aerobuildup_on_design_vector(
     design_vector: DesignVector,
-    *,
+    cg: list[float] | tuple[float, float, float],
     velocity: float = 18.0,
     alpha: float = 6.0,
     beta: float = 0.0,
@@ -37,6 +37,7 @@ def run_aerobuildup_on_design_vector(
     analysis = asb.AeroBuildup(
         airplane=airplane,
         op_point=op_point,
+        xyz_ref = cg,
         model_size=model_size,
         include_wave_drag=include_wave_drag,
     )
