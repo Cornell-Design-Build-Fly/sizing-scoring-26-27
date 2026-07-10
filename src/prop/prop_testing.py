@@ -1,10 +1,9 @@
-from SIZING-SCORTING-26-27.src.prop.main_prop import (
-    Battery,
-    Motor,
-    battery_cell_resistance,
-    battery_pack_resistance,
+from src.prop.main_prop import (
+    battery,
+    motor,
+    battery_resistance,
     motor_properties,
-    motor_check,
+    motor_check
 )
 
 
@@ -14,8 +13,8 @@ def main():
     num_cells = 6
     nominal_voltage_v = 22.2
 
-    cell_resistance = battery_cell_resistance(capacity_ah)
-    pack_resistance = battery_pack_resistance(capacity_ah, num_cells)
+
+    pack_resistance = battery_resistance(capacity_ah, num_cells)
 
     battery = Battery(
         nominal_voltage_v=nominal_voltage_v,
@@ -34,7 +33,7 @@ def main():
         max_power_w=max_power_w,
     )
 
-    motor = Motor(
+    motor = motor(
         kv=kv,
         resistance_ohm=motor_resistance,
         no_load_current_a=no_load_current,
@@ -58,7 +57,7 @@ def main():
     print(f"Capacity: {capacity_ah:.2f} Ah")
     print(f"Cells: {num_cells}S")
     print(f"Nominal voltage: {nominal_voltage_v:.2f} V")
-    print(f"Cell resistance: {cell_resistance:.6f} ohm")
+    #print(f"Cell resistance: {cell_resistance:.6f} ohm")
     print(f"Pack resistance: {pack_resistance:.6f} ohm")
 
     print("\n=== Motor ===")

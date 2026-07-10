@@ -1,8 +1,23 @@
-from __future import annotations
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 import numpy as np
 import math
+
+MPS_TO_MPH = 2.2369
+
+DEFAULT_VELOCITIES_MPS = np.linspace(0.001, 25.0, 8)
+
+#DEFAULT_PROP_DATA_PATH = Path(__file__).resolve().parent / "data" / "prop_data.json"
+
+DEFAULT_PROP_DIAMETER_IN = 14.0
+DEFAULT_PROP_PITCH_IN = 10.0
+DEFAULT_MOTOR_KV = 335.0
+DEFAULT_MOTOR_MAX_POWER_W = 2200.0
+DEFAULT_CRUISE_THROTTLE = 0.90
+DEFAULT_MISSION3_CRUISE_THROTTLE = 0.85
+DEFAULT_MAX_CURRENT_A = 100.0
+DEFAULT_USABLE_BATTERY_FRACTION = 0.85
 
 @dataclass(frozen=True, slots=True)
 class propeller:
@@ -13,12 +28,13 @@ class propeller:
 @dataclass(frozen=True, slots=True)
 class motor:
     kv: float  # RPM/V
-    kt = 60/(2*math.pi*kv): float  # Nm/A
     Rm: float  # Ohms
     max_power: float  # W
     I0: float  # A
     max_current: float  # A
     mass: float | None = None # kg
+    def get_kt(self) -> float:
+        return 60/(2*math.pi*self.kv)  # Nm/A
 
 @dataclass(frozen=True, slots=True)
 class battery:
@@ -28,6 +44,7 @@ class battery:
     Crat: float  # C
     capacity: float  # Ah
     mass: float | None = None # kg
+    useable_fraction: float = DEFAULT_USABLE_BATTERY_FRACTION
 
 @dataclass(frozen=True, slots=True)
 class MotorCheckResult:
