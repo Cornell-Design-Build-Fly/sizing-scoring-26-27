@@ -10,7 +10,7 @@ from src.vectors import ASBDesignVector, DesignVector
 
 def run_lifting_line_on_design_vector(
     design_vector: DesignVector,
-    *,
+    cg: list[float] | tuple[float, float, float],
     velocity: float = 18.0,
     alpha: float = 6.0,
     beta: float = 0.0,
@@ -39,6 +39,7 @@ def run_lifting_line_on_design_vector(
     analysis = asb.LiftingLine(
         airplane=airplane,
         op_point=op_point,
+        xyz_ref = cg,
         spanwise_resolution=spanwise_resolution,
         align_trailing_vortices_with_wind=align_trailing_vortices_with_wind,
         model_size=model_size,

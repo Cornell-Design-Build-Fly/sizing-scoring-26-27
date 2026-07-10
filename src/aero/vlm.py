@@ -7,30 +7,33 @@ import aerosandbox as asb
 import numpy as np
 
 from src.vectors import ASBDesignVector, DesignVector
+from src.aero.custom_classes import AirplaneAnalysisResult
 
 
-@dataclass(frozen=True)
-class AirplaneAnalysisResult:
-    """Compact output for a whole-airplane aerodynamic analysis run."""
+# Defined instead in custom_classes.py to make it easier to find.
 
-    CL: float
-    CD: float
-    CY: float
-    Cl: float
-    Cm: float
-    Cn: float
-    L: float
-    D: float
-    Y: float
-    l_b: float
-    m_b: float
-    n_b: float
-    runtime_seconds: float
-    converged: bool = True
-    CDi: float | None = None
-    CDp: float | None = None
-    D_induced: float | None = None
-    D_profile: float | None = None
+# @dataclass(frozen=True)
+# class AirplaneAnalysisResult:
+#     """Compact output for a whole-airplane aerodynamic analysis run."""
+
+#     CL: float
+#     CD: float
+#     CY: float
+#     Cl: float
+#     Cm: float
+#     Cn: float
+#     L: float
+#     D: float
+#     Y: float
+#     l_b: float
+#     m_b: float
+#     n_b: float
+#     runtime_seconds: float
+#     converged: bool = True
+#     CDi: float | None = None
+#     CDp: float | None = None
+#     D_induced: float | None = None
+#     D_profile: float | None = None
 
 
 VLMAnalysisResult = AirplaneAnalysisResult
