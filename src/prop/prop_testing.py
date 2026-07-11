@@ -71,13 +71,13 @@ def main():
     print("\n=== Motor Check ===")
     print(f"Input torque: {torque_nm:.3f} N*m")
     print(f"Input RPM: {rpm:.1f}")
-    print(f"Passed: {result[0]}")
-    print(f"Current: {result[1]:.3f} A")
-    print(f"Voltage post sag: {result[2]:.3f} V")
-    print(f"Required voltage: {result[3]:.3f} V")
-    print(f"Throttle: {result[4]:.3f}")
-    print(f"Power: {result[5]:.3f} W")
-    print(f"Estimated flight time: {result[6]:.1f} s")
+    print(f"Passed: {result.passed}")
+    print(f"Current: {result.current_a:.3f} A")
+    print(f"Voltage post sag: {result.voltage_sag_v:.3f} V")
+    print(f"Required voltage: {result.voltage_required_v:.3f} V")
+    print(f"Throttle: {result.throttle:.3f}")
+    print(f"Power: {result.power_w:.3f} W")
+    print(f"Estimated flight time: {result.flight_time_s:.1f} s")
 
 
 if __name__ == "__main__":

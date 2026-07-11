@@ -95,7 +95,15 @@ def motor_check(torque: float, rpm: float, motor: Motor, battery: Battery):
         # fprintf('MOTOR CHECK FAIL: Battery voltage sagged too low. RPM: %.0f, V_sag: %.2f V, I: %.2f A\n', RPM, V_sag, I);
         passed = False
     
-    return passed, current, V_sag, V_req, throttle, power, t_flight
+    return MotorCheckResult(
+        passed=passed,
+        current_a=current,
+        voltage_sag_v=V_sag,
+        voltage_required_v=V_req,
+        throttle=throttle,
+        power_w=power,
+        flight_time_s=t_flight
+    )
 
 
 
@@ -382,3 +390,135 @@ def load_default_prop_database() -> ContinuousPropDatabase:
     """
 
     return load_continuous_prop_database(DEFAULT_PROP_DATA_PATH)
+
+
+
+
+'''Cruise Values'''
+
+def cruise_values(
+    diameter_in: float,
+    pitch_in: float,
+    velocity_mph: float,
+    motor: Motor,
+    battery: Battery,
+    max_current_a: float,
+    cruise_throttle: float,
+    prop_database: ContinuousPropDatabase,
+    min_rpm: int = 3000,
+    max_rpm: int = 16000,
+    rpm_step: int = 100,
+) -> tuple[float, float]:
+    """
+    Finds the highest valid thrust at a given airspeed and throttle limit.
+
+    Inputs:
+        diameter_in:
+            Propeller diameter [in]
+
+        pitch_in:
+            Propeller pitch [in]
+
+        velocity_mph:
+            Aircraft forward speed [mph]
+
+        motor:
+            Motor object
+
+        battery:
+            Battery object
+
+        max_current_a:
+            Current limit [A]
+
+        cruise_throttle:
+            Maximum allowed throttle for this condition.
+            Use 1.0 for max-throttle thrust.
+            Use something like 0.7 or 0.9 for cruise-throttle thrust.
+
+        prop_database:
+            ContinuousPropDatabase object with thrust/torque interpolation.
+
+    Returns:
+        best_thrust_n:
+            Highest valid thrust found [N]
+
+        best_flight_time_s:
+            Estimated flight time at that operating point [s]
+    """
+
+    if diameter_in <= 0:
+        raise ValueError("Propeller diameter must be positive.")
+
+    if pitch_in <= 0:
+        raise ValueError("Propeller pitch must be positive.")
+
+    if velocity_mph < 0:
+        raise ValueError("Velocity cannot be negative.")
+
+    if max_current_a <= 0:
+        raise ValueError("Max current must be positive.")
+
+    if cruise_throttle <= 0:
+        return 0.0, 0.0
+
+    # Do not allow throttle limit above 1.
+    cruise_throttle = min(float(cruise_throttle), 1.0)
+
+    best_thrust_n = -math.inf
+    best_flight_time_s = math.inf
+
+    rpm_low = int(min_rpm)
+    rpm_high = int(max_rpm)
+
+    while (rpm_high - rpm_low) >= rpm_step:
+        rpm_mid = int(round((rpm_low + rpm_high) / 2))
+
+        thrust_n = prop_database.thrust(
+            diameter_in=diameter_in,
+            pitch_in=pitch_in,
+            velocity_mph=velocity_mph,
+            rpm=rpm_mid,
+        )
+
+        torque_nm = prop_database.torque(
+            diameter_in=diameter_in,
+            pitch_in=pitch_in,
+            velocity_mph=velocity_mph,
+            rpm=rpm_mid,
+        )
+
+        if not math.isfinite(thrust_n) or not math.isfinite(torque_nm):
+            rpm_low = rpm_mid + 1
+            continue
+
+        check = motor_check(
+            torque=torque_nm,
+            rpm=rpm_mid,
+            motor=motor,
+            battery=battery,
+        )
+
+        within_limits = (
+            check.passed
+            and check.throttle <= cruise_throttle
+            and check.power_w <= motor.max_power_w
+            and check.current_a <= max_current_a
+        )
+
+        if within_limits:
+            if thrust_n > best_thrust_n:
+                best_thrust_n = thrust_n
+                best_flight_time_s = check.flight_time_s
+
+            # This RPM works, so try a higher RPM.
+            rpm_low = rpm_mid + 1
+
+        else:
+            # This RPM does not work, so try a lower RPM.
+            rpm_high = rpm_mid - 1
+
+    if best_thrust_n == -math.inf:
+        return 0.0, 0.0
+
+    return float(best_thrust_n), float(best_flight_time_s)
