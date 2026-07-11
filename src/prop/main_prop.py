@@ -12,8 +12,8 @@ from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 
 from src.vectors import DesignVector, ParameterVector
 from src.prop.prop_classes import (
-    battery,
-    motor,
+    Battery,
+    Motor,
     MotorCheckResult,
     PropInterpolants,
     PropulsionCurveFit,
@@ -35,7 +35,7 @@ def motor_properties(kv: float, max_power_w: float) -> tuple[float, float]:
         raise ValueError("Motor KV must be positive.")
     if max_power_w <= 0:
         raise ValueError("Motor maximum power must be positive.")
-    c_r = np.array([0.3517732388, -0.0005385476, -0.0001855504, 0.0000002999, 0.0000000776, 0.0000000380,])
+    c_R = np.array([0.3517732388, -0.0005385476, -0.0001855504, 0.0000002999, 0.0000000776, 0.0000000380,])
     c_I = np.array([-0.5621009279, 0.0005335965, 0.0016292435, 0.0000005495, 0.0000006015, -0.0000004552])
 
     Rm = c_R[0] + c_R[1]*kv + c_R[2]*max_power_w + c_R[3]*kv**2 + c_R[4]*kv*max_power_w + c_R[5]*max_power_w**2;
@@ -46,11 +46,11 @@ def motor_properties(kv: float, max_power_w: float) -> tuple[float, float]:
 
 
 '''MOTOR CHECK FUNCTION'''
-def motor_check(torque_nm: float, rpm: float, motor: Motor, battery: Battery):
+def motor_check(torque: float, rpm: float, motor: Motor, battery: Battery):
     if rpm <= 0:
         raise ValueError("RPM must be positive.")
     passed = True
-    current = (torque / battery.get_kt()) + battery.I0 #(A) Current needed to sustain torque
+    current = (torque / motor.get_kt()) + motor.I0 #(A) Current needed to sustain torque
 
     V_sag = battery.vnom - current*(battery.Rb) #(V) Voltage drop in battery under load
     V_req = rpm/motor.kv+current+motor.Rm #Voltage required due to EMF
@@ -67,7 +67,7 @@ def motor_check(torque_nm: float, rpm: float, motor: Motor, battery: Battery):
 
     #Throttle Required
     if V_sag <= 1e-6:  # Avoid division by zero or negative V_sag
-        throttle = np.inf;  # Effectively infinite throttle required if V_sag is non-positive
+        throttle = np.inf  # Effectively infinite throttle required if V_sag is non-positive
     else:
         throttle = V_req / V_sag
 
@@ -95,7 +95,7 @@ def motor_check(torque_nm: float, rpm: float, motor: Motor, battery: Battery):
         # fprintf('MOTOR CHECK FAIL: Battery voltage sagged too low. RPM: %.0f, V_sag: %.2f V, I: %.2f A\n', RPM, V_sag, I);
         passed = False
     
-    return passed
+    return passed, current, V_sag, V_req, throttle, power, t_flight
 
 
 
@@ -233,3 +233,152 @@ def load_prop_data_points(json_path: str | Path):
         "thrust_n": np.array(thrust_list),
         "torque_nm": np.array(torque_list),
     }
+
+'''INTERPOLATION FOR DIAMETER, PITCH, ASPD, RPM'''
+
+def deduplicate_prop_points(points: np.ndarray, thrust_n: np.ndarray, torque_nm: np.ndarray):
+    """
+    Removes duplicate interpolation points by averaging their thrust/torque values.
+    This helps scipy avoid errors from repeated points.
+    """
+
+    unique_points, inverse = np.unique(points, axis=0, return_inverse=True)
+    counts = np.bincount(inverse)
+
+    thrust_sum = np.bincount(inverse, weights=thrust_n)
+    torque_sum = np.bincount(inverse, weights=torque_nm)
+
+    thrust_avg = thrust_sum / counts
+    torque_avg = torque_sum / counts
+
+    return unique_points, thrust_avg, torque_avg
+
+
+class ContinuousPropDatabase:
+    """
+    Continuous propeller database.
+
+    This lets us ask:
+
+        thrust = f(diameter, pitch, velocity, rpm)
+        torque = f(diameter, pitch, velocity, rpm)
+
+    where:
+        diameter is in inches
+        pitch is in inches
+        velocity is in mph
+        rpm is in RPM
+    """
+
+    def __init__(self, data: dict):
+        points = np.column_stack(
+            [
+                data["diameter_in"],
+                data["pitch_in"],
+                data["velocity_mph"],
+                data["rpm"],
+            ]
+        )
+
+        thrust_n = np.asarray(data["thrust_n"], dtype=float)
+        torque_nm = np.asarray(data["torque_nm"], dtype=float)
+
+        valid = (
+            np.all(np.isfinite(points), axis=1)
+            & np.isfinite(thrust_n)
+            & np.isfinite(torque_nm)
+        )
+
+        points = points[valid]
+        thrust_n = thrust_n[valid]
+        torque_nm = torque_nm[valid]
+
+        if len(points) == 0:
+            raise ValueError("No valid prop data points found.")
+
+        points, thrust_n, torque_nm = deduplicate_prop_points(
+            points=points,
+            thrust_n=thrust_n,
+            torque_nm=torque_nm,
+        )
+
+        self.points = points
+        self.thrust_n = thrust_n
+        self.torque_nm = torque_nm
+
+        self.diameter_bounds_in = (float(points[:, 0].min()), float(points[:, 0].max()))
+        self.pitch_bounds_in = (float(points[:, 1].min()), float(points[:, 1].max()))
+        self.velocity_bounds_mph = (float(points[:, 2].min()), float(points[:, 2].max()))
+        self.rpm_bounds = (float(points[:, 3].min()), float(points[:, 3].max()))
+
+        print("Building thrust interpolator...")
+        self.thrust_linear = LinearNDInterpolator(
+            points,
+            thrust_n,
+            fill_value=np.nan,
+            rescale=True,
+        )
+
+        print("Building torque interpolator...")
+        self.torque_linear = LinearNDInterpolator(
+            points,
+            torque_nm,
+            fill_value=np.nan,
+            rescale=True,
+        )
+
+        print("Building nearest-neighbor fallback...")
+        self.thrust_nearest = NearestNDInterpolator(
+            points,
+            thrust_n,
+            rescale=True,
+        )
+
+        self.torque_nearest = NearestNDInterpolator(
+            points,
+            torque_nm,
+            rescale=True,
+        )
+
+        print("Prop interpolators built.")
+
+    def thrust(self, diameter_in: float, pitch_in: float, velocity_mph: float, rpm: float) -> float:
+        query = np.array([[diameter_in, pitch_in, velocity_mph, rpm]], dtype=float)
+
+        value = self.thrust_linear(query)[0]
+
+        if np.isnan(value):
+            value = self.thrust_nearest(query)[0]
+
+        return float(value)
+
+    def torque(self, diameter_in: float, pitch_in: float, velocity_mph: float, rpm: float) -> float:
+        query = np.array([[diameter_in, pitch_in, velocity_mph, rpm]], dtype=float)
+
+        value = self.torque_linear(query)[0]
+
+        if np.isnan(value):
+            value = self.torque_nearest(query)[0]
+
+        return float(value)
+
+
+def load_continuous_prop_database(json_path=DEFAULT_PROP_DATA_PATH) -> ContinuousPropDatabase:
+    """
+    Loads prop_data.json and builds the continuous interpolation database.
+    """
+
+    data = load_prop_data_points(json_path)
+    return ContinuousPropDatabase(data)
+
+
+@lru_cache(maxsize=1)
+def load_default_prop_database() -> ContinuousPropDatabase:
+    """
+    Cached default prop database.
+
+    Important for efficiency: the interpolators are expensive to build,
+    so we only want to build them once.
+    """
+
+    return load_continuous_prop_database(DEFAULT_PROP_DATA_PATH)

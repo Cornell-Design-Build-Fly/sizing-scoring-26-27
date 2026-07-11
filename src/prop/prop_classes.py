@@ -20,13 +20,13 @@ DEFAULT_MAX_CURRENT_A = 100.0
 DEFAULT_USABLE_BATTERY_FRACTION = 0.85
 
 @dataclass(frozen=True, slots=True)
-class propeller:
+class Propeller:
     diameter: float  # in
     pitch: float  # in
     mass: float | None = None # kg
 
 @dataclass(frozen=True, slots=True)
-class motor:
+class Motor:
     kv: float  # RPM/V
     Rm: float  # Ohms
     max_power: float  # W
@@ -37,7 +37,7 @@ class motor:
         return 60/(2*math.pi*self.kv)  # Nm/A
 
 @dataclass(frozen=True, slots=True)
-class battery:
+class Battery:
     vnom: float  # V
     cells: int
     Rb: float  # Ohms
