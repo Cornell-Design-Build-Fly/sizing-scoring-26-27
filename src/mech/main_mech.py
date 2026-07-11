@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 
+from src.mech.electronics import ElectronicsLayout, resolve_electronics_layout
 from src.mech.mass_properties import (
     center_of_gravity,
     estimate_neutral_point_x,
@@ -48,6 +51,7 @@ def _mission_properties(
     mass = float(sum(item.mass_kg for item in items))
     margin = static_margin(neutral_point_x_m, cg[0], design_vector.wing_chord)
     sm_cfg = config.static_margin
+    tolerance = 1e-12
     return MissionMassProperties(
         mission=mission,
         items=items,
@@ -56,7 +60,9 @@ def _mission_properties(
         cg_m=cg,
         inertia_tensor_kg_m2=inertia,
         static_margin=margin,
-        static_margin_feasible=sm_cfg.minimum <= margin <= sm_cfg.maximum,
+        static_margin_feasible=(
+            sm_cfg.minimum - tolerance <= margin <= sm_cfg.maximum + tolerance
+        ),
         placement_feasible=placement_feasible,
         warnings=warnings,
     )
@@ -97,7 +103,7 @@ def _base_airframe_items(
     design_vector: DesignVector,
     config: MechanicalModuleConfig,
     neutral_point_x_m: float,
-) -> tuple[tuple[MassItem, ...], np.ndarray, tuple[str, ...]]:
+) -> tuple[tuple[MassItem, ...], ElectronicsLayout, tuple[str, ...]]:
     airframe = config.airframe
     stations = geometry_stations(design_vector)
     warnings: list[str] = []
@@ -230,10 +236,10 @@ def _base_airframe_items(
 
     tail_spar_length = stations.tail_te_x_m - stations.wing_te_x_m
     if tail_spar_length <= 0:
-        raise ValueError("Computed tail-spar length is not positive.")
+        raise ValueError("Computed boom-spar length is not positive.")
     items.append(
         MassItem(
-            name="Tail spar",
+            name="Boom spar",
             mass_kg=airframe.spar_linear_density_kg_m * tail_spar_length,
             position_m=(
                 0.5 * (stations.wing_te_x_m + stations.tail_te_x_m),
@@ -280,67 +286,73 @@ def _base_airframe_items(
     fixed_x_moment = sum(item.mass_kg * item.position_m[0] for item in fixed_items)
 
     electronics_mass = airframe.electronics_mass_kg(design_vector.batt_capacity)
+    if electronics_mass <= 0:
+        raise ValueError(
+            "Permanent electronics mass must be positive to solve its Mission-1 "
+            "static-margin location."
+        )
     target_cg_x = neutral_point_x_m - config.static_margin.target * design_vector.wing_chord
     required_electronics_x = (
         target_cg_x * (fixed_mass + electronics_mass) - fixed_x_moment
     ) / electronics_mass
 
-    # By default, use the exact equivalent electronics-group CG required to
-    # achieve the target Mission-1 static margin. This is intentionally not
-    # restricted to the currently modeled fuselage or nose geometry: the
-    # returned x location is a packaging/design requirement for the combined
-    # motor/prop, battery, ESC, and other electronics group. Callers may still
-    # provide explicit bounds when they deliberately want to test a fixed
-    # packaging envelope.
-    if airframe.electronics_x_bounds_m is None:
-        electronics_bounds = None
-        electronics_x = float(required_electronics_x)
-    else:
-        electronics_bounds = airframe.electronics_x_bounds_m
-        electronics_x = float(np.clip(required_electronics_x, *electronics_bounds))
-    electronics_z = (
-        -0.5 * design_vector.fuselage_height
-        if airframe.electronics_z_m is None
-        else airframe.electronics_z_m
-    )
-    electronics_position = np.array(
-        [electronics_x, airframe.electronics_y_m, electronics_z], dtype=float
-    )
-    if electronics_bounds is not None and not np.isclose(
-        electronics_x, required_electronics_x
+    # The electronics equivalent CM is the algebraic packaging requirement for
+    # exact M1 static margin.  Optional user bounds are feasibility checks; the
+    # result is never clipped away from the requested 20% target.
+    electronics_x = float(required_electronics_x)
+    electronics_bounds = airframe.electronics_x_bounds_m
+    if electronics_bounds is not None and not (
+        electronics_bounds[0] <= electronics_x <= electronics_bounds[1]
     ):
-        warnings.append(
-            "The exact electronics location required for the target static margin was "
-            f"x={required_electronics_x:.4f} m, outside the explicitly configured range "
-            f"[{electronics_bounds[0]:.4f}, {electronics_bounds[1]:.4f}] m. "
-            f"It was clipped to x={electronics_x:.4f} m."
+        raise ValueError(
+            "The exact electronics CM required for the Mission-1 static-margin "
+            f"target is x={electronics_x:.4f} m, outside the configured range "
+            f"[{electronics_bounds[0]:.4f}, {electronics_bounds[1]:.4f}] m."
         )
 
-    items.append(
-        MassItem(
-            name="Combined electronics",
-            mass_kg=electronics_mass,
-            position_m=electronics_position,
-            dimensions_m=airframe.electronics_dimensions_m,
-            missions=ALL_MISSIONS,
-            category="propulsion_and_electronics",
-            notes=(
-                "Combined motor/prop, ESC, battery, and other electronics point mass. "
-                "Its M1 position is fixed for M2 and M3."
-            ),
-        )
+    electronics_layout = resolve_electronics_layout(
+        cg_x_m=electronics_x,
+        fuselage_width_m=design_vector.fuselage_width,
+        fuselage_height_m=design_vector.fuselage_height,
+        config=airframe.electronics_packaging,
+        cg_y_m=airframe.electronics_y_m,
     )
+    if electronics_layout.front_edge_x_m < stations.nose_tip_x_m:
+        warnings.append(
+            "The electronics area required for exact Mission-1 static margin "
+            f"starts at x={electronics_layout.front_edge_x_m:.4f} m, ahead of "
+            f"the modeled nose tip at x={stations.nose_tip_x_m:.4f} m. Treat "
+            "this as a packaging infeasibility or increase the nose envelope."
+        )
+    electronics_position = electronics_layout.position_m
+    dimensions = (electronics_layout.length_m, 0.0, 0.0)
+    for component_name, component_mass in airframe.electronics_component_masses_kg(
+        design_vector.batt_capacity
+    ):
+        items.append(
+            MassItem(
+                name=component_name,
+                mass_kg=component_mass,
+                position_m=electronics_position,
+                dimensions_m=dimensions,
+                missions=ALL_MISSIONS,
+                category="propulsion_and_electronics",
+                notes=(
+                    f"Equivalent {electronics_layout.profile} electronics-area CM; "
+                    "fixed after Mission 1 for Missions 2 and 3."
+                ),
+            )
+        )
 
     gear = _place_landing_gear_relative_to_base_cg(tuple(items), config)
     items.append(gear)
-    return tuple(items), electronics_position, tuple(warnings)
+    return tuple(items), electronics_layout, tuple(warnings)
 
 
 def _mission2_items(
     design_vector: DesignVector,
     base_items: tuple[MassItem, ...],
-    electronics_position: np.ndarray,
-    neutral_point_x_m: float,
+    electronics_layout: ElectronicsLayout,
     config: MechanicalModuleConfig,
     warnings: list[str],
 ) -> tuple[MassItem, ...]:
@@ -349,7 +361,9 @@ def _mission2_items(
     puck_count = _integer_payload_count(design_vector.pucks_num, "pucks_num", warnings)
 
     m2 = config.mission2
-    payload_min_x = float(electronics_position[0] + m2.electronics_aft_clearance_m)
+    payload_min_x = float(
+        electronics_layout.back_edge_x_m + m2.electronics_aft_clearance_m
+    )
     tail_leading_edge_x = min(
         stations.horizontal_tail_le_x_m, stations.vertical_tail_le_x_m
     )
@@ -370,25 +384,42 @@ def _mission2_items(
             f"tail-forward limit: x <= {payload_max_x:.4f} m."
         )
 
-    target_cg_x = neutral_point_x_m - config.static_margin.target * design_vector.wing_chord
-    reference_x = (
-        target_cg_x if m2.relative_reference_x_m is None else m2.relative_reference_x_m
+    fuselage_y_bounds = (
+        -0.5 * design_vector.fuselage_width,
+        0.5 * design_vector.fuselage_width,
     )
+    if m2.maximum_width_m is None:
+        y_bounds = fuselage_y_bounds
+    else:
+        requested_y_bounds = (
+            m2.compartment_center_y_m - 0.5 * m2.maximum_width_m,
+            m2.compartment_center_y_m + 0.5 * m2.maximum_width_m,
+        )
+        y_bounds = (
+            max(fuselage_y_bounds[0], requested_y_bounds[0]),
+            min(fuselage_y_bounds[1], requested_y_bounds[1]),
+        )
+    if not y_bounds[0] < y_bounds[1]:
+        raise PayloadPlacementError(
+            "Mission-2 lateral payload region is empty after applying the "
+            "fuselage sidewalls."
+        )
 
     return place_mission2_payload(
         duck_count=duck_count,
         puck_count=puck_count,
         base_items=base_items,
-        target_cg_x_m=target_cg_x,
         config=m2,
         x_bounds_m=x_bounds,
-        reference_x_m=reference_x,
+        y_bounds_m=y_bounds,
+        z_bounds_m=(-design_vector.fuselage_height, 0.0),
     )
 
 
 def _mission3_items(
     design_vector: DesignVector,
     base_items: tuple[MassItem, ...],
+    electronics_layout: ElectronicsLayout,
     neutral_point_x_m: float,
     config: MechanicalModuleConfig,
     warnings: list[str],
@@ -408,8 +439,9 @@ def _mission3_items(
         )
         return ()
 
-    half_height = 0.5 * m3.banner_height_m
-    offset_moment = -front_mass * half_height + aft_mass * half_height
+    forward_distance = m3.forward_mechanism_distance_m
+    aft_distance = m3.aft_mechanism_distance_m
+    offset_moment = -front_mass * forward_distance + aft_mass * aft_distance
 
     if m3.banner_center_x_m is None:
         base_mass = sum(item.mass_kg for item in base_items)
@@ -425,14 +457,41 @@ def _mission3_items(
     else:
         center_x = m3.banner_center_x_m
 
-    if m3.banner_center_x_bounds_m is None:
-        center_bounds = (
-            stations.nose_tip_x_m + half_height + 0.020,
-            stations.wing_te_x_m + 0.25 * design_vector.tail_arm - half_height,
-        )
-    else:
-        center_bounds = m3.banner_center_x_bounds_m
+    payload_min_x = electronics_layout.back_edge_x_m
+    payload_max_x = min(
+        stations.horizontal_tail_le_x_m, stations.vertical_tail_le_x_m
+    )
+    forward_half_length = 0.5 * m3.forward_mechanism_dimensions_m[0]
+    banner_half_length = 0.5 * m3.banner_packed_dimensions_m[0]
+    aft_half_length = 0.5 * m3.aft_mechanism_dimensions_m[0]
 
+    # Convert each fixed item's face constraints to bounds on the shared banner
+    # center.  Translating the group can never alter its configured spacings.
+    physical_center_bounds = (
+        max(
+            payload_min_x + forward_distance + forward_half_length,
+            payload_min_x + banner_half_length,
+            payload_min_x - aft_distance + aft_half_length,
+        ),
+        min(
+            payload_max_x + forward_distance - forward_half_length,
+            payload_max_x - banner_half_length,
+            payload_max_x - aft_distance - aft_half_length,
+        ),
+    )
+    if m3.banner_center_x_bounds_m is None:
+        center_bounds = physical_center_bounds
+    else:
+        center_bounds = (
+            max(physical_center_bounds[0], m3.banner_center_x_bounds_m[0]),
+            min(physical_center_bounds[1], m3.banner_center_x_bounds_m[1]),
+        )
+
+    if center_bounds[0] > center_bounds[1]:
+        raise ValueError(
+            "Mission-3 fixed mechanism distances leave no valid banner-center "
+            "range between the electronics and tail."
+        )
     clipped_center_x = float(np.clip(center_x, *center_bounds))
     if not np.isclose(clipped_center_x, center_x):
         warnings.append(
@@ -447,7 +506,7 @@ def _mission3_items(
         MassItem(
             name="M3 forward mechanism",
             mass_kg=front_mass,
-            position_m=(center_x - half_height, center_y, center_z),
+            position_m=(center_x - forward_distance, center_y, center_z),
             dimensions_m=m3.forward_mechanism_dimensions_m,
             missions=frozenset({"M3"}),
             category="mission_3_payload",
@@ -463,7 +522,7 @@ def _mission3_items(
         MassItem(
             name="M3 aft mechanism",
             mass_kg=aft_mass,
-            position_m=(center_x + half_height, center_y, center_z),
+            position_m=(center_x + aft_distance, center_y, center_z),
             dimensions_m=m3.aft_mechanism_dimensions_m,
             missions=frozenset({"M3"}),
             category="mission_3_payload",
@@ -484,7 +543,7 @@ def evaluate_mechanical_module(
         design_vector, config.neutral_point, stations
     )
 
-    base_items, electronics_position, base_warnings = _base_airframe_items(
+    base_items, electronics_layout, base_warnings = _base_airframe_items(
         design_vector, config, neutral_point_x
     )
     warnings.extend(base_warnings)
@@ -497,15 +556,30 @@ def evaluate_mechanical_module(
         config=config,
         warnings=base_warnings,
     )
+    m1_warnings = list(base_warnings)
     if not m1.static_margin_feasible:
-        warnings.append(
+        warning = (
             f"M1 static margin is {100*m1.static_margin:.2f}%, outside the configured "
             f"{100*config.static_margin.minimum:.1f}% to "
             f"{100*config.static_margin.maximum:.1f}% range."
         )
+        warnings.append(warning)
+        m1_warnings.append(warning)
+    if not np.isclose(
+        m1.static_margin,
+        config.static_margin.target,
+        rtol=0.0,
+        atol=1e-12,
+    ):
+        raise RuntimeError(
+            "Mission-1 electronics placement did not achieve the configured "
+            "static-margin target."
+        )
+    m1 = replace(m1, warnings=tuple(dict.fromkeys(m1_warnings)))
 
+    m2_warning_start = len(warnings)
     m2_payload = _mission2_items(
-        design_vector, base_items, electronics_position, neutral_point_x, config, warnings
+        design_vector, base_items, electronics_layout, config, warnings
     )
     m2_items = base_items + m2_payload
     m2 = _mission_properties(
@@ -515,13 +589,23 @@ def evaluate_mechanical_module(
         neutral_point_x_m=neutral_point_x,
         config=config,
     )
+    m2_warnings = list(base_warnings) + warnings[m2_warning_start:]
     if not m2.static_margin_feasible:
-        warnings.append(
+        warning = (
             f"M2 static margin is {100*m2.static_margin:.2f}%, outside the configured range."
         )
+        warnings.append(warning)
+        m2_warnings.append(warning)
+    m2 = replace(m2, warnings=tuple(dict.fromkeys(m2_warnings)))
 
+    m3_warning_start = len(warnings)
     m3_payload = _mission3_items(
-        design_vector, base_items, neutral_point_x, config, warnings
+        design_vector,
+        base_items,
+        electronics_layout,
+        neutral_point_x,
+        config,
+        warnings,
     )
     m3_items = base_items + m3_payload
     m3 = _mission_properties(
@@ -531,10 +615,14 @@ def evaluate_mechanical_module(
         neutral_point_x_m=neutral_point_x,
         config=config,
     )
+    m3_warnings = list(base_warnings) + warnings[m3_warning_start:]
     if not m3.static_margin_feasible:
-        warnings.append(
+        warning = (
             f"M3 static margin is {100*m3.static_margin:.2f}%, outside the configured range."
         )
+        warnings.append(warning)
+        m3_warnings.append(warning)
+    m3 = replace(m3, warnings=tuple(dict.fromkeys(m3_warnings)))
 
     target_cg_x = neutral_point_x - config.static_margin.target * design_vector.wing_chord
     # Larger static margin means a farther-forward CG, so the numerical bounds
@@ -551,7 +639,8 @@ def evaluate_mechanical_module(
         horizontal_tail_aerodynamic_center_x_m=stations.horizontal_tail_ac_x_m,
         target_cg_x_m=target_cg_x,
         acceptable_cg_x_range_m=acceptable_cg_range,
-        electronics_position_m=electronics_position,
+        electronics_position_m=electronics_layout.position_m,
+        electronics_layout=electronics_layout,
         all_items=all_items,
         missions={"M1": m1, "M2": m2, "M3": m3},
         warnings=tuple(dict.fromkeys(warnings)),

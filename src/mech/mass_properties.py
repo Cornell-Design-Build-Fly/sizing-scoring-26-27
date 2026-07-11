@@ -31,11 +31,11 @@ class GeometryStations:
 
 
 def geometry_stations(design_vector: DesignVector) -> GeometryStations:
-    """Build longitudinal stations consistent with ``ASBDesignVector``.
+    """Build longitudinal stations using an LE-to-LE ``tail_arm``.
 
-    Important: the existing design vector defines ``tail_arm`` as the distance
-    from wing quarter-chord to tail quarter-chord. Treating it as a leading-edge
-    distance here would make the mechanical and aerodynamic geometries disagree.
+    ``DesignVector.tail_arm`` is the distance from the main-wing leading edge
+    to the common horizontal/vertical-tail leading-edge station.  Aerodynamic
+    centers are derived from those physical leading edges and each chord.
     """
 
     wing_le = 0.0
@@ -43,12 +43,13 @@ def geometry_stations(design_vector: DesignVector) -> GeometryStations:
     wing_center = wing_le + 0.50 * design_vector.wing_chord
     wing_te = wing_le + design_vector.wing_chord
 
-    tail_ac = wing_ac + design_vector.tail_arm
-    htail_le = tail_ac - 0.25 * design_vector.hstab_chord
+    htail_le = wing_le + design_vector.tail_arm
+    htail_ac = htail_le + 0.25 * design_vector.hstab_chord
     htail_center = htail_le + 0.50 * design_vector.hstab_chord
     htail_te = htail_le + design_vector.hstab_chord
 
-    vtail_le = tail_ac - 0.25 * design_vector.vstab_chord
+    vtail_le = wing_le + design_vector.tail_arm
+    vtail_ac = vtail_le + 0.25 * design_vector.vstab_chord
     vtail_center = vtail_le + 0.50 * design_vector.vstab_chord
     vtail_te = vtail_le + design_vector.vstab_chord
 
@@ -61,11 +62,11 @@ def geometry_stations(design_vector: DesignVector) -> GeometryStations:
         wing_center_x_m=wing_center,
         wing_te_x_m=wing_te,
         horizontal_tail_le_x_m=htail_le,
-        horizontal_tail_ac_x_m=tail_ac,
+        horizontal_tail_ac_x_m=htail_ac,
         horizontal_tail_center_x_m=htail_center,
         horizontal_tail_te_x_m=htail_te,
         vertical_tail_le_x_m=vtail_le,
-        vertical_tail_ac_x_m=tail_ac,
+        vertical_tail_ac_x_m=vtail_ac,
         vertical_tail_center_x_m=vtail_center,
         vertical_tail_te_x_m=vtail_te,
         tail_te_x_m=tail_te,

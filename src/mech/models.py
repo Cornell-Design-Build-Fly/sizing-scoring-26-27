@@ -21,6 +21,12 @@ from typing import Iterable
 
 import numpy as np
 
+from src.mech.electronics import (
+    ElectronicsLayout,
+    ElectronicsPackagingConfig,
+    LinearMassModel,
+)
+
 ALL_MISSIONS = frozenset({"M1", "M2", "M3"})
 
 
@@ -110,10 +116,10 @@ class MassItem:
 
 @dataclass(frozen=True)
 class StaticMarginConfig:
-    """Acceptable and target static margins, expressed as fractions of MAC."""
+    """Static-margin limits, with the M1 target fixed at 20% MAC."""
 
     minimum: float = 0.10
-    target: float = 0.15
+    target: float = 0.20
     maximum: float = 0.20
 
     def __post_init__(self) -> None:
@@ -123,6 +129,8 @@ class StaticMarginConfig:
             raise ValueError(
                 "Static margins must satisfy 0 <= minimum <= target <= maximum."
             )
+        if not np.isclose(self.target, 0.20, rtol=0.0, atol=1e-12):
+            raise ValueError("Mission-1 target static margin is fixed at exactly 0.20.")
 
 
 @dataclass(frozen=True)
@@ -248,17 +256,32 @@ class AirframeMassConfig:
     landing_gear_dimensions_m: tuple[float, float, float] = (0.080, 0.180, 0.080)
 
     motor_prop_mass_kg: float = 0.390
+    # The supplied baseline combines motor and propeller mass.  Leave these
+    # models as ``None`` to use that exact 0.390 kg combined item.  Once two
+    # catalogue fits and their sizing inputs are available, supply both models
+    # to list the motor and propeller separately without double-counting the
+    # combined baseline.
+    motor_mass_model: LinearMassModel | None = None
+    propeller_mass_model: LinearMassModel | None = None
+    motor_sizing_value: float | None = None
+    propeller_sizing_value: float | None = None
     esc_mass_kg: float = 0.118
     other_electronics_mass_kg: float = 0.050
     battery_model: BatteryMassModel = field(default_factory=BatteryMassModel)
+    electronics_packaging: ElectronicsPackagingConfig = field(
+        default_factory=ElectronicsPackagingConfig
+    )
+    # Deprecated compatibility inputs. The electronics envelope and its
+    # three-inch vertical station are now authoritative, so non-default
+    # overrides are rejected instead of producing contradictory geometry.
     electronics_dimensions_m: tuple[float, float, float] = (0.0, 0.0, 0.0)
     electronics_y_m: float = 0.0
     electronics_z_m: float | None = None
     # Optional user-imposed packaging bounds. ``None`` means unbounded: the
     # module uses the exact equivalent electronics-group CG required to hit the
     # target M1 static margin, even when that location lies ahead of the current
-    # modeled nose. Supplying a tuple deliberately re-enables clipping for a
-    # fixed packaging-envelope study.
+    # modeled nose. Supplying a tuple adds a hard feasibility check; it never
+    # clips the solved CM away from the exact static-margin target.
     electronics_x_bounds_m: tuple[float, float] | None = None
 
     def __post_init__(self) -> None:
@@ -297,6 +320,11 @@ class AirframeMassConfig:
             array = np.asarray(dimensions, dtype=float)
             if array.shape != (3,) or not np.all(np.isfinite(array)) or np.any(array < 0):
                 raise ValueError(f"{name} must contain three finite nonnegative values.")
+        if not np.allclose(self.electronics_dimensions_m, 0.0):
+            raise ValueError(
+                "electronics_dimensions_m can no longer override the skinny/fat "
+                "electronics envelope."
+            )
         spar_section = np.asarray(self.spar_cross_section_m, dtype=float)
         if (
             spar_section.shape != (2,)
@@ -306,25 +334,91 @@ class AirframeMassConfig:
             raise ValueError("spar_cross_section_m must contain two finite nonnegative values.")
         if not np.isfinite(self.electronics_y_m):
             raise ValueError("electronics_y_m must be finite.")
-        if self.electronics_z_m is not None and not np.isfinite(self.electronics_z_m):
-            raise ValueError("electronics_z_m must be finite when supplied.")
+        if self.electronics_z_m is not None:
+            raise ValueError(
+                "electronics_z_m can no longer override the required three-inch "
+                "station; configure ElectronicsPackagingConfig instead."
+            )
         if self.electronics_x_bounds_m is not None:
             lower, upper = self.electronics_x_bounds_m
             if not (np.isfinite(lower) and np.isfinite(upper) and lower < upper):
                 raise ValueError("electronics_x_bounds_m must be finite and increasing.")
 
+        interpolation_fields = (
+            self.motor_mass_model,
+            self.propeller_mass_model,
+            self.motor_sizing_value,
+            self.propeller_sizing_value,
+        )
+        if any(value is not None for value in interpolation_fields):
+            if any(value is None for value in interpolation_fields):
+                raise ValueError(
+                    "Motor and propeller interpolation requires both mass models "
+                    "and both sizing values."
+                )
+            if not np.all(
+                np.isfinite((self.motor_sizing_value, self.propeller_sizing_value))
+            ):
+                raise ValueError("Motor and propeller sizing values must be finite.")
+
+    def electronics_component_masses_kg(
+        self, battery_capacity_ah: float
+    ) -> tuple[tuple[str, float], ...]:
+        """Resolve the permanent electronics ledger without double-counting."""
+
+        components: list[tuple[str, float]] = [
+            ("Battery", self.battery_model.mass_kg(battery_capacity_ah))
+        ]
+        if self.motor_mass_model is None:
+            components.append(("Motor and propeller", self.motor_prop_mass_kg))
+        else:
+            # Validation guarantees that the paired values are present.
+            motor_model = self.motor_mass_model
+            propeller_model = self.propeller_mass_model
+            motor_input = self.motor_sizing_value
+            propeller_input = self.propeller_sizing_value
+            assert propeller_model is not None
+            assert motor_input is not None
+            assert propeller_input is not None
+            components.extend(
+                [
+                    (
+                        "Motor",
+                        motor_model.mass_kg(motor_input),
+                    ),
+                    (
+                        "Propeller",
+                        propeller_model.mass_kg(propeller_input),
+                    ),
+                ]
+            )
+        components.extend(
+            [
+                ("ESC", self.esc_mass_kg),
+                ("Other electronics", self.other_electronics_mass_kg),
+            ]
+        )
+        return tuple(components)
+
     def electronics_mass_kg(self, battery_capacity_ah: float) -> float:
-        return (
-            self.motor_prop_mass_kg
-            + self.esc_mass_kg
-            + self.other_electronics_mass_kg
-            + self.battery_model.mass_kg(battery_capacity_ah)
+        return float(
+            sum(
+                mass
+                for _, mass in self.electronics_component_masses_kg(
+                    battery_capacity_ah
+                )
+            )
         )
 
 
 @dataclass(frozen=True)
 class PlacementRules:
-    """Allowed regions for a payload type relative to a reference point."""
+    """Per-type direction controls retained around the center-out anchor.
+
+    The current fixed-layer process uses ``allow_forward`` and ``allow_aft``.
+    The older vertical/stacking flags remain in the public configuration for
+    compatibility; vertical ordering is now set by ``RelativePayloadRules``.
+    """
 
     allow_forward: bool = True
     allow_aft: bool = True
@@ -341,11 +435,12 @@ class PlacementRules:
 
 @dataclass(frozen=True)
 class RelativePayloadRules:
-    """Optional relative placement constraints between pucks and ducks.
+    """Relative duck/puck ordering for the fixed-layer M2 process.
 
-    These are independent of :class:`PlacementRules`, which constrain each
-    type relative to the compartment reference point. Multiple relative rules
-    may be combined, for example pucks forward of *and* below all ducks.
+    The default Mission-2 configuration selects ``pucks_below_ducks``.
+    Longitudinal fields are retained for configuration compatibility, but the
+    center-out process rejects them because both first items must share the
+    starting-CG plane.
     """
 
     pucks_forward_of_ducks: bool = False
@@ -391,13 +486,11 @@ class PayloadTypeConfig:
 
 @dataclass(frozen=True)
 class Mission2Config:
-    """Mission-2 payload packing configuration.
+    """Mission-2 deterministic center-out payload configuration.
 
-    The duck bounding box is the supplied 53 mm cube. The puck dimensions use
-    a standard 3-inch-diameter by 1-inch-thick puck envelope. By default, the
-    payload compartment is also clipped longitudinally so every payload stays
-    at least 0.127 m aft of the electronics CG and fully forward of the
-    forward-most tail leading edge.
+    The first duck and puck share the M1-CG x/y location.  Each type then grows
+    outward on its own bounding-box lattice.  The default vertical relationship
+    puts ducks three inches below the wing and pucks immediately below them.
     """
 
     duck: PayloadTypeConfig = field(
@@ -415,73 +508,48 @@ class Mission2Config:
         )
     )
     relative_payload_rules: RelativePayloadRules = field(
-        default_factory=RelativePayloadRules
+        default_factory=lambda: RelativePayloadRules(pucks_below_ducks=True)
     )
     compartment_x_bounds_m: tuple[float, float] | None = None
-    electronics_aft_clearance_m: float = 0.127
+    electronics_aft_clearance_m: float = 0.0
     tail_leading_edge_clearance_m: float = 0.0
-    maximum_width_m: float = 0.15
-    maximum_height_m: float = 0.15
+    # ``None`` uses the full fuselage width.  A value may make the payload bay
+    # narrower, but main_mech always clips it to the actual fuselage sidewalls.
+    maximum_width_m: float | None = None
     compartment_center_y_m: float = 0.0
-    compartment_center_z_m: float = 0.0
+    duck_center_z_m: float = -3.0 * 0.0254
     relative_reference_x_m: float | None = None
-    relative_reference_z_m: float = 0.0
-    clearance_m: float = 0.002
-    compactness_weight: float = 1e-4
-    max_candidates_per_type: int = 350
-    # ``greedy`` uses deterministic multi-start packing and is intended for repeated
-    # design-vector evaluations. ``beam`` searches more combinations. ``milp``
-    # solves the discretized problem exactly but can be much slower. ``auto``
-    # tries greedy, then beam, then MILP.
-    solver: str = "greedy"
-    beam_width: int = 120
-    branch_limit_per_state: int = 20
-    milp_time_limit_s: float = 5.0
+    clearance_m: float = 0.0
+    vertical_clearance_m: float = 0.0
 
     def __post_init__(self) -> None:
-        if not np.all(
-            np.isfinite(
-                [
-                    self.maximum_width_m,
-                    self.maximum_height_m,
-                    self.compartment_center_y_m,
-                    self.compartment_center_z_m,
-                    self.relative_reference_z_m,
-                    self.electronics_aft_clearance_m,
-                    self.tail_leading_edge_clearance_m,
-                    self.clearance_m,
-                    self.compactness_weight,
-                    self.milp_time_limit_s,
-                ]
-            )
-        ):
+        scalar_values = [
+            self.compartment_center_y_m,
+            self.duck_center_z_m,
+            self.electronics_aft_clearance_m,
+            self.tail_leading_edge_clearance_m,
+            self.clearance_m,
+            self.vertical_clearance_m,
+        ]
+        if not np.all(np.isfinite(scalar_values)):
             raise ValueError("Mission-2 scalar configuration values must be finite.")
-        if self.maximum_width_m <= 0 or self.maximum_height_m <= 0:
-            raise ValueError("Mission-2 maximum width and height must be positive.")
+        if self.maximum_width_m is not None and (
+            not np.isfinite(self.maximum_width_m) or self.maximum_width_m <= 0
+        ):
+            raise ValueError("Mission-2 maximum width must be positive when supplied.")
         if self.electronics_aft_clearance_m < 0 or self.tail_leading_edge_clearance_m < 0:
             raise ValueError("Mission-2 longitudinal keep-out distances cannot be negative.")
-        if self.clearance_m < 0:
-            raise ValueError("Mission-2 clearance cannot be negative.")
-        if self.compactness_weight < 0:
-            raise ValueError("Mission-2 compactness_weight cannot be negative.")
+        if self.clearance_m < 0 or self.vertical_clearance_m < 0:
+            raise ValueError("Mission-2 clearances cannot be negative.")
         if self.compartment_x_bounds_m is not None:
             lower, upper = self.compartment_x_bounds_m
             if not (np.isfinite(lower) and np.isfinite(upper) and lower < upper):
                 raise ValueError("compartment_x_bounds_m must be finite and increasing.")
-        if self.relative_reference_x_m is not None and not np.isfinite(
-            self.relative_reference_x_m
-        ):
-            raise ValueError("relative_reference_x_m must be finite when supplied.")
-        if self.max_candidates_per_type < 1:
-            raise ValueError("max_candidates_per_type must be at least one.")
-        if self.solver not in {"greedy", "beam", "milp", "auto"}:
+        if self.relative_reference_x_m is not None:
             raise ValueError(
-                "Mission2Config.solver must be 'greedy', 'beam', 'milp', or 'auto'."
+                "relative_reference_x_m is no longer configurable; Mission 2 "
+                "must start at the actual Mission-1 CG plane."
             )
-        if self.beam_width < 1 or self.branch_limit_per_state < 1:
-            raise ValueError("Beam-search width and branch limit must be positive.")
-        if self.milp_time_limit_s <= 0:
-            raise ValueError("milp_time_limit_s must be positive.")
 
 
 @dataclass(frozen=True)
@@ -496,7 +564,9 @@ class Mission3Config:
 
     A value of ``None`` for ``banner_center_x_m`` lets the module solve for the
     best longitudinal location; otherwise the supplied position is used
-    exactly (subject to optional bounds).
+    exactly (subject to optional bounds).  The two mechanisms use explicit,
+    fixed longitudinal distances from the banner instead of deriving those
+    distances from banner height.
     """
 
     forward_mechanism_mass_kg: float = 0.100
@@ -509,6 +579,8 @@ class Mission3Config:
     banner_center_y_m: float = 0.0
     banner_center_z_m: float = 0.0
     banner_center_x_bounds_m: tuple[float, float] | None = None
+    forward_mechanism_distance_m: float = 0.075
+    aft_mechanism_distance_m: float = 0.075
     forward_mechanism_dimensions_m: tuple[float, float, float] = (0.050, 0.050, 0.050)
     aft_mechanism_dimensions_m: tuple[float, float, float] = (0.050, 0.050, 0.050)
     banner_packed_dimensions_m: tuple[float, float, float] = (0.100, 0.060, 0.060)
@@ -525,8 +597,13 @@ class Mission3Config:
             masses.append(self.banner_linear_density_kg_m)
         if not np.all(np.isfinite(masses)) or np.any(np.asarray(masses) < 0):
             raise ValueError("Mission-3 masses and mass density must be finite and nonnegative.")
-        if not np.isfinite(self.banner_height_m) or self.banner_height_m <= 0:
-            raise ValueError("banner_height_m must be finite and positive.")
+        distances = (
+            self.banner_height_m,
+            self.forward_mechanism_distance_m,
+            self.aft_mechanism_distance_m,
+        )
+        if not np.all(np.isfinite(distances)) or np.any(np.asarray(distances) <= 0):
+            raise ValueError("Mission-3 banner height and fixed distances must be positive.")
         for value_name, value in {
             "banner_center_x_m": self.banner_center_x_m,
             "banner_center_y_m": self.banner_center_y_m,
@@ -589,6 +666,7 @@ class MechanicalResult:
     target_cg_x_m: float
     acceptable_cg_x_range_m: tuple[float, float]
     electronics_position_m: np.ndarray
+    electronics_layout: ElectronicsLayout
     all_items: tuple[MassItem, ...]
     missions: dict[str, MissionMassProperties]
     warnings: tuple[str, ...] = ()
