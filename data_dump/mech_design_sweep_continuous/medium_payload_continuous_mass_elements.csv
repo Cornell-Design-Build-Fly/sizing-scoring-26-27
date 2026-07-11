@@ -1,0 +1,35 @@
+element_id,name,category,missions,mass_kg,x_m,y_m,z_m,length_x_m,width_y_m,height_z_m,notes
+1,Main wing structure,airframe,"M1,M2,M3",0.35598723592,0.1535,0,0,0.307,1.181,0.02,
+2,Wing servo (left),controls,"M1,M2,M3",0.021,0.1535,-0.29525,0,0.04,0.02,0.04,
+3,Wing servo (right),controls,"M1,M2,M3",0.021,0.1535,0.29525,0,0.04,0.02,0.04,
+4,Wing integration,integration,"M1,M2,M3",0.1,0.1535,0,0,0.08,0.08,0.06,
+5,Wing spar,airframe,"M1,M2,M3",0.202171186441,0.0921,0,0,0.01,1.181,0.01,
+6,Horizontal tail structure,airframe,"M1,M2,M3",0.0840963051892,0.919084840286,0,0,0.148169680571,0.444509041714,0.012,
+7,Vertical tail structure,airframe,"M1,M2,M3",0.0487906611158,0.918683855563,0,0.128946747235,0.147367711125,0.012,0.257893494469,
+8,Horizontal tail servo,controls,"M1,M2,M3",0.021,0.919084840286,0,0,0.04,0.02,0.04,Placed at the horizontal stabilizer geometric center until a measured installation location is supplied.
+9,Vertical tail servo,controls,"M1,M2,M3",0.021,0.918683855563,0,0.128946747235,0.04,0.02,0.04,Placed at the vertical stabilizer geometric center until a measured installation location is supplied.
+10,Boom spar,airframe,"M1,M2,M3",0.117462945318,0.650084840286,0,0,0.686169680571,0.01,0.01,
+11,Tail integration,integration,"M1,M2,M3",0.025,0.919084840286,0,0,0.06,0.06,0.05,
+12,Fuselage structure,airframe,"M1,M2,M3",0.748301808343,0.369584840286,0,-0.065,1.24716968057,0.13,0.13,Uniform linear-density approximation from nose tip to tail trailing edge.
+13,Battery,propulsion_and_electronics,"M1,M2,M3",0.69,-0.310554382063,0,-0.0762,0.228,0,0,Equivalent fat electronics-area CM; fixed after Mission 1 for Missions 2 and 3.
+14,Motor and propeller,propulsion_and_electronics,"M1,M2,M3",0.39,-0.310554382063,0,-0.0762,0.228,0,0,Equivalent fat electronics-area CM; fixed after Mission 1 for Missions 2 and 3.
+15,ESC,propulsion_and_electronics,"M1,M2,M3",0.118,-0.310554382063,0,-0.0762,0.228,0,0,Equivalent fat electronics-area CM; fixed after Mission 1 for Missions 2 and 3.
+16,Other electronics,propulsion_and_electronics,"M1,M2,M3",0.05,-0.310554382063,0,-0.0762,0.228,0,0,Equivalent fat electronics-area CM; fixed after Mission 1 for Missions 2 and 3.
+17,Landing gear,airframe,"M1,M2,M3",0.22,0.0809925332135,0,-0.153723369219,0.08,0.18,0.08,Fixed at the Mission-1 CG station and 4 inches below the final M1 CG.
+18,Duck 1,mission_2_payload,M2,0.018,0.0809925332135,0,-0.0762,0.053,0.053,0.053,"Fixed-layer, center-out placement; lattice index (0, 0)."
+19,Duck 2,mission_2_payload,M2,0.018,0.0279925332135,0,-0.0762,0.053,0.053,0.053,"Fixed-layer, center-out placement; lattice index (-1, 0)."
+20,Duck 3,mission_2_payload,M2,0.018,0.133992533214,0,-0.0762,0.053,0.053,0.053,"Fixed-layer, center-out placement; lattice index (1, 0)."
+21,Duck 4,mission_2_payload,M2,0.018,-0.0250074667865,0,-0.0762,0.053,0.053,0.053,"Fixed-layer, center-out placement; lattice index (-2, 0)."
+22,Duck 5,mission_2_payload,M2,0.018,0.186992533214,0,-0.0762,0.053,0.053,0.053,"Fixed-layer, center-out placement; lattice index (2, 0)."
+23,Duck 6,mission_2_payload,M2,0.018,-0.0780074667865,0,-0.0762,0.053,0.053,0.053,"Fixed-layer, center-out placement; lattice index (-3, 0)."
+24,Duck 7,mission_2_payload,M2,0.018,0.239992533214,0,-0.0762,0.053,0.053,0.053,"Fixed-layer, center-out placement; lattice index (3, 0)."
+25,Puck 1,mission_2_payload,M2,0.17,0.0809925332135,0,-0.1154,0.0762,0.0762,0.0254,"Fixed-layer, center-out placement; lattice index (0, 0)."
+26,Puck 2,mission_2_payload,M2,0.17,0.00479253321354,0,-0.1154,0.0762,0.0762,0.0254,"Fixed-layer, center-out placement; lattice index (-1, 0)."
+27,Puck 3,mission_2_payload,M2,0.17,0.157192533214,0,-0.1154,0.0762,0.0762,0.0254,"Fixed-layer, center-out placement; lattice index (1, 0)."
+28,Puck 4,mission_2_payload,M2,0.17,-0.0714074667865,0,-0.1154,0.0762,0.0762,0.0254,"Fixed-layer, center-out placement; lattice index (-2, 0)."
+29,Puck 5,mission_2_payload,M2,0.17,0.233392533214,0,-0.1154,0.0762,0.0762,0.0254,"Fixed-layer, center-out placement; lattice index (2, 0)."
+30,M3 forward mechanism,mission_3_payload,M3,0.1,0.00599253321354,0,0,0.05,0.05,0.05,
+31,M3 banner,mission_3_payload,M3,0.0220948275862,0.0809925332135,0,0,0.1,0.06,0.06,
+32,M3 aft mechanism,mission_3_payload,M3,0.1,0.155992533214,0,0,0.05,0.05,0.05,
+33,Fractional Duck equivalent (0.5),mission_2_fractional_payload,M2,0.009,0.0809925332135,0,-0.0656201279138,0,0,0,Unplaced 0.5 fraction of one Duck; modeled as a point mass at the floor-count Mission-2 CG.
+34,Fractional Puck equivalent (0.25),mission_2_fractional_payload,M2,0.0425,0.0809925332135,0,-0.0656201279138,0,0,0,Unplaced 0.25 fraction of one Puck; modeled as a point mass at the floor-count Mission-2 CG.
