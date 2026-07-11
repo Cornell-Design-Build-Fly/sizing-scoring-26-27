@@ -53,7 +53,7 @@ def motor_check(torque: float, rpm: float, motor: Motor, battery: Battery):
     current = (torque / motor.get_kt()) + motor.I0 #(A) Current needed to sustain torque
 
     V_sag = battery.vnom - current*(battery.Rb) #(V) Voltage drop in battery under load
-    V_req = rpm/motor.kv+current+motor.Rm #Voltage required due to EMF
+    V_req = rpm/motor.kv+current*motor.Rm #Voltage required due to EMF
     power = current*V_sag #(W) Power consumed by motor
 
     #Battery flight time calculation
@@ -502,7 +502,7 @@ def cruise_values(
         within_limits = (
             check.passed
             and check.throttle <= cruise_throttle
-            and check.power_w <= motor.max_power_w
+            and check.power_w <= motor.max_power
             and check.current_a <= max_current_a
         )
 
