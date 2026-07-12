@@ -55,7 +55,7 @@ def aero_main(
     aero_result = aero_analysis(design_vector, cruise_condition, cg)
 
     # Final call to stability_analysis to get final stability results for design vector at trim.
-    stability_result = stability_analysis(design_vector, airplane, cruise_condition, aero_result, mass_props)
+    stability_result = stability_analysis(airplane, cruise_condition, mass_props)
 
     # Return aero, cruise, and stability results in "AeroOutput" object.
     result = AeroOutput(

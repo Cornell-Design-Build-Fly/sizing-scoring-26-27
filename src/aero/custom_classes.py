@@ -39,18 +39,25 @@ class CruiseCondition:
     operating_point: OperatingPoint
     throttle: float
 
+@dataclass(frozen=True)
+class ModeResult:
+    """Compact output for a single stability mode."""
+
+    eigenvalue_real: float
+    eigenvalue_imag: float
+    damping_ratio: float
+    eigenvalue_image_approx: float | None = None # Only contained by phugoid mode
+    damping_ratio_approx: float | None = None # Only contained by phugoid mode
 
 @dataclass(frozen=True)
 class StabilityResult:
     """Compact output for a whole-airplane stability analysis run."""
 
-    phugoid: float
-    short_period: float
-    dutch_roll: float
-    spiral: float
-    roll_subsidence: float
-
-    # static and dynamic stability metrics to be added once I figure that part out
+    phugoid: ModeResult
+    short_period: ModeResult
+    dutch_roll: ModeResult
+    spiral: ModeResult
+    roll_subsidence: ModeResult
 
 @dataclass(frozen=True)
 class AeroOutput:
@@ -59,3 +66,14 @@ class AeroOutput:
     aero_result: asb.AirplaneAnalysisResult
     cruise_condition: CruiseCondition
     stability_result: StabilityResult
+
+
+def dict_to_mode_result(mode_dict: dict) -> ModeResult:
+    """Converts a dictionary of mode results to a ModeResult object."""
+    return ModeResult(
+        eigenvalue_real=mode_dict["eigenvalue_real"],
+        eigenvalue_imag=mode_dict["eigenvalue_imag"],
+        damping_ratio=mode_dict["damping_ratio"],
+        eigenvalue_image_approx=mode_dict.get("eigenvalue_image_approx"),
+        damping_ratio_approx=mode_dict.get("damping_ratio_approx"),
+    )
