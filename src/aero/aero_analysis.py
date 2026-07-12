@@ -40,6 +40,7 @@ def aero_analysis (
     # VLM Method
     vlm_result = vlm.run_vlm_on_design_vector(
         design_vector=design_vector,
+        xyz_ref=cg,
         velocity=cruise_condition.operating_point.velocity,
         alpha=cruise_condition.operating_point.alpha,
         beta=0.0,  
@@ -55,6 +56,7 @@ def aero_analysis (
     # Lifting Line Method
     lifting_line_result = lifting_line.run_lifting_line_on_design_vector(
         design_vector=design_vector,
+        cg=cg,
         velocity=cruise_condition.operating_point.velocity,
         alpha=cruise_condition.operating_point.alpha,
         beta=0.0,  
@@ -66,6 +68,7 @@ def aero_analysis (
     # Nonlinear Lifting Line Method
     nonlinear_lifting_line_result = nonlinear_lifting_line.run_nonlinear_lifting_line_on_design_vector(
         design_vector=design_vector,
+        cg=cg,
         velocity=cruise_condition.operating_point.velocity,
         alpha=cruise_condition.operating_point.alpha,   
         beta=0.0,  
