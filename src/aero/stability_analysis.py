@@ -7,53 +7,55 @@ from src.vectors import DesignVector
 from aerosandbox.dynamics.flight_dynamics.airplane import get_modes
 from aerosandbox.weights.mass_properties import MassProperties
 
+_REQUIRED_MODE_AERO_KEYS = {
+    "CL",
+    "CD",
+    "Cma",
+    "Cmq",
+    "CYb",
+    "CYr",
+    "Clb",
+    "Clp",
+    "Clr",
+    "Cnb",
+    "Cnr",
+}
+
 def stability_analysis(
         design_vector: DesignVector,
+        airplane: asb.Airplane,
         cruise_condition: CruiseCondition,
         aero_result: AirplaneAnalysisResult,
-        inertia_matrix: np.ndarray, 
-        cg: tuple[float, float, float],
-        mass: float,
+        mass_props: MassProperties,
 ) -> StabilityResult:
     """
     Perform stability analysis for a given design vector, cruise condition, and aerodynamic result.
 
     Args:
         design_vector: The design vector representing the airplane configuration.
+        airplane: The Aerosandbox Airplane object created from the design vector.
         cruise_condition: The cruise condition containing the operating point and throttle setting.
-        aero_result: The aerodynamic result from the aero_analysis function.
-        inertia_matrix: The inertia matrix of the airplane.
+        aero_result: The aerodynamic result obtained from aero_analysis.
+        mass_props: The mass properties of the airplane.
     """
-    
-    # Placeholders for stability analysis implementation...
-    
-    
-    # Static stability
-
-    # Dynamic stability
-
-    mass_props = MassProperties(
-        mass=mass,
-        x_cg=cg[0],
-        y_cg=cg[1],
-        z_cg=cg[2],
-        Ixx=inertia_matrix[0, 0],
-        Iyy=inertia_matrix[1, 1],
-        Izz=inertia_matrix[2, 2],
-        Ixy=inertia_matrix[0, 1],
-        Iyz=inertia_matrix[1, 2],
-        Ixz=inertia_matrix[0, 2],
-    )
-
-
-    stability_modes = get_modes(
-        airplane=design_vector.to_asb_airplane(),
+    # Run AeroBuildup to get stability derivatives
+    stability_dict = asb.AeroBuildup(
+        airplane=airplane,
         op_point=cruise_condition.operating_point,
-        mass_props = mass_props,
+    ).run_with_stability_derivatives()
+
+    # Handle missing keys
+    missing_keys = _REQUIRED_MODE_AERO_KEYS - stability_dict.keys()
+    if missing_keys:
+        raise ValueError(f"Missing required stability derivatives: {missing_keys}")
+
+    # Dynamic stability modes
+    stability_modes = get_modes(
+        airplane=airplane,
+        op_point=cruise_condition.operating_point,
+        mass_props=mass_props,
+        aero=stability_dict
     )
-
-    
-
 
     return StabilityResult(
         phugoid=stability_modes["phugoid"],
