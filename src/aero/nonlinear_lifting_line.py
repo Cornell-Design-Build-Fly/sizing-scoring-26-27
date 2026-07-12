@@ -10,7 +10,7 @@ from src.vectors import ASBDesignVector, DesignVector
 
 def run_nonlinear_lifting_line_on_design_vector(
     design_vector: DesignVector,
-    cg: list[float] | tuple[float, float, float],
+    xyz_ref: list[float] | tuple[float, float, float],
     velocity: float = 18.0,
     alpha: float = 6.0,
     beta: float = 0.0,

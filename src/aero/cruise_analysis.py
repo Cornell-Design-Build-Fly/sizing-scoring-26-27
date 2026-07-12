@@ -28,6 +28,7 @@ def cruise_analysis(
     alpha = opti.variable(init_guess=0.0, scale=0.05, lower_bound=-0.0, upper_bound=10.0) # deg
     throttle = opti.variable(init_guess=0.0, scale=0.05, lower_bound=0.0, upper_bound=1.0) # unitless
 
+    # TODO - see Ishan's doc - apparently this might not work :()
     # Define flight forces and moments as functions of velocity, alpha, and throttle
     lift = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), throttle)).L
     drag = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), throttle)).D
