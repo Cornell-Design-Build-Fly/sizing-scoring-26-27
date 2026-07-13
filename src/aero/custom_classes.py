@@ -37,7 +37,8 @@ class CruiseCondition:
     throttle setting."""
 
     operating_point: OperatingPoint
-    throttle: float
+    converged: bool | None = None # False to indicate if trim solved failed to converge
+    throttle: float | None = None # TODO - Figure out throttle situation 
 
 @dataclass(frozen=True)
 class ModeResult:
@@ -61,11 +62,13 @@ class StabilityResult:
 
 @dataclass(frozen=True)
 class AeroOutput:
-    """Total output for aero module to be sent to scoring."""
+    """Total output for aero module to be sent to scoring. If 
+    converged==False, then the first three args are None."""
 
-    aero_result: AirplaneAnalysisResult
-    cruise_condition: CruiseCondition
-    stability_result: StabilityResult
+    aero_result: AirplaneAnalysisResult | None = None 
+    cruise_condition: CruiseCondition | None = None
+    stability_result: StabilityResult | None = None
+    converged: bool
 
 
 def dict_to_mode_result(mode_dict: dict) -> ModeResult:

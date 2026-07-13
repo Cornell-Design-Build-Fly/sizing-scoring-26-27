@@ -30,41 +30,83 @@ def cruise_analysis(
     velocity = opti.variable(init_guess=18.0, scale=0.05, lower_bound=3.0, upper_bound=50.0) # m/s
     alpha = opti.variable(init_guess=4.0, scale=0.05, lower_bound=-4.0, upper_bound=15.0) # deg
 
-    # TODO - see Ishan's doc - apparently this might not work :(
-    # Define flight forces and moments as functions of velocity, alpha, and throttle
-    lift = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).L
-    drag = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).D
-    thrust = eval_thrust(velocity, thrust_velocity) # may or may not need to modify for throttle conditions
-    moment = [aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).l_b,
-                aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).m_b,
-                aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).n_b]
+    # Build the airplane
+    airplane = design_vector.to_asb_airplane()
+
+    # Operating point depends symbolically on velocity and alpha
+    op_point = asb.OperatingPoint(
+    velocity=velocity,
+    alpha=alpha,
+    beta=0.0,
+    p=0.0,
+    q=0.0,
+    r=0.0,
+    )
+
+    # Symbolic aero analysis on plane
+    aero = asb.AeroBuildup(
+        airplane=airplane,
+        op_point=op_point,
+        xyz_ref=cg,
+    ).run()
+
+    # # Define flight forces and moments as functions of velocity, alpha, and throttle
+    # # PROBLEM - aero_analysis specifically returns floats (not functions)
+    # lift = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).L
+    # drag = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).D
+    # thrust = eval_thrust(velocity, thrust_velocity) # may or may not need to modify for throttle conditions
+    # moment = [aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).l_b,
+    #             aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).m_b,
+    #             aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).n_b]
     
-    # Define weight
+    # Define lift, drag, and pitching moment from AeroBuildup
+    lift = aero["L"]
+    drag = aero["D"]
+    pitching_moment = aero["m_b"]
+    
+    # Define weight and thrust
+    thrust = eval_thrust(velocity, thrust_velocity)
     weight = mass * 9.81  # N
-   
+
     # Constraints
     opti.subject_to(lift == weight)
-    opti.subject_to(thrust == drag)
-    opti.subject_to(moment[0] == 0.0)
-    opti.subject_to(moment[1] == 0.0)
-    opti.subject_to(moment[2] == 0.0)
+    opti.subject_to(drag == thrust)
+    opti.subject_to(pitching_moment == 0)
 
     # Solve
-    opti.solve()
+    try:
+        solution = opti.solve()
 
-    cruise_conditions = CruiseCondition(
+        solved_velocity = float(solution.value(velocity))
+        solved_alpha = float(solution.value(alpha))
+
+    except:
+        # If failed to converge, return with converged=False
+        return CruiseCondition(
         operating_point=OperatingPoint(
-            velocity=opti.sol(velocity),
-            alpha=opti.sol(alpha),
+            velocity=-1,
+            alpha=-999,
             beta=0.0,  
             p=0.0,     
             q=0.0,     
             r=0.0     
         ),
-        throttle=opti.sol(throttle)
+        converged=False,
+        )
+
+    # If successfully converged, return conditions
+    return CruiseCondition(
+        operating_point=OperatingPoint(
+            velocity=solved_velocity,
+            alpha=solved_alpha,
+            beta=0.0,  
+            p=0.0,     
+            q=0.0,     
+            r=0.0     
+        ),
+        converged=True,
     )
 
-    return cruise_conditions
 
 
 def eval_thrust(
