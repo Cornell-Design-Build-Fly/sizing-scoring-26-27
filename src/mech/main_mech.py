@@ -263,24 +263,6 @@ def _base_airframe_items(
         )
     )
 
-    fuselage_center_x = 0.5 * (stations.nose_tip_x_m + stations.tail_te_x_m)
-    fuselage_center_z = -0.5 * design_vector.fuselage_height
-    items.append(
-        MassItem(
-            name="Fuselage structure",
-            mass_kg=airframe.fuselage_linear_density_kg_m * stations.fuselage_length_m,
-            position_m=(fuselage_center_x, 0.0, fuselage_center_z),
-            dimensions_m=(
-                stations.fuselage_length_m,
-                design_vector.fuselage_width,
-                design_vector.fuselage_height,
-            ),
-            missions=ALL_MISSIONS,
-            category="airframe",
-            notes="Uniform linear-density approximation from nose tip to tail trailing edge.",
-        )
-    )
-
     fixed_items = tuple(items)
     fixed_mass = sum(item.mass_kg for item in fixed_items)
     fixed_x_moment = sum(item.mass_kg * item.position_m[0] for item in fixed_items)
@@ -297,8 +279,8 @@ def _base_airframe_items(
     ) / electronics_mass
 
     # The electronics equivalent CM is the algebraic packaging requirement for
-    # exact M1 static margin.  Optional user bounds are feasibility checks; the
-    # result is never clipped away from the requested 20% target.
+    # exact pre-fuselage M1 static margin. Optional user bounds are feasibility
+    # checks; the result is never clipped away from the requested 20% target.
     electronics_x = float(required_electronics_x)
     electronics_bounds = airframe.electronics_x_bounds_m
     if electronics_bounds is not None and not (
@@ -317,13 +299,6 @@ def _base_airframe_items(
         config=airframe.electronics_packaging,
         cg_y_m=airframe.electronics_y_m,
     )
-    if electronics_layout.front_edge_x_m < stations.nose_tip_x_m:
-        warnings.append(
-            "The electronics area required for exact Mission-1 static margin "
-            f"starts at x={electronics_layout.front_edge_x_m:.4f} m, ahead of "
-            f"the modeled nose tip at x={stations.nose_tip_x_m:.4f} m. Treat "
-            "this as a packaging infeasibility or increase the nose envelope."
-        )
     electronics_position = electronics_layout.position_m
     dimensions = (electronics_layout.length_m, 0.0, 0.0)
     for component_name, component_mass in airframe.electronics_component_masses_kg(
@@ -347,6 +322,69 @@ def _base_airframe_items(
     gear = _place_landing_gear_relative_to_base_cg(tuple(items), config)
     items.append(gear)
     return tuple(items), electronics_layout, tuple(warnings)
+
+
+def _fuselage_item_from_m2_envelope(
+    design_vector: DesignVector,
+    electronics_layout: ElectronicsLayout,
+    mission2_payload: tuple[MassItem, ...],
+    config: MechanicalModuleConfig,
+) -> MassItem:
+    """Build the fuselage after M2 placement from the occupied x envelope."""
+
+    front_edge_x = electronics_layout.front_edge_x_m
+    payload_back_edges = tuple(
+        item.position_m[0] + 0.5 * item.dimensions_m[0]
+        for item in mission2_payload
+    )
+    back_edge_x = max(
+        (electronics_layout.back_edge_x_m, *payload_back_edges)
+    )
+    length = float(back_edge_x - front_edge_x)
+    if length <= 0:
+        raise RuntimeError("The payload-derived fuselage length must be positive.")
+
+    return MassItem(
+        name="Fuselage structure",
+        mass_kg=config.airframe.fuselage_linear_density_kg_m * length,
+        position_m=(
+            0.5 * (front_edge_x + back_edge_x),
+            0.0,
+            -0.5 * design_vector.fuselage_height,
+        ),
+        dimensions_m=(
+            length,
+            design_vector.fuselage_width,
+            design_vector.fuselage_height,
+        ),
+        missions=ALL_MISSIONS,
+        category="airframe",
+        notes=(
+            "Uniform linear-density approximation from the electronics front "
+            "edge to the aft-most Mission-2 payload edge. With no M2 payload, "
+            "the electronics back edge sets the aft end."
+        ),
+    )
+
+
+def _base_items_with_payload_derived_fuselage(
+    design_vector: DesignVector,
+    prefuselage_base_items: tuple[MassItem, ...],
+    electronics_layout: ElectronicsLayout,
+    mission2_payload: tuple[MassItem, ...],
+    config: MechanicalModuleConfig,
+) -> tuple[MassItem, ...]:
+    """Add the M2-derived fuselage and re-place landing gear for final M1."""
+
+    items_without_gear = tuple(
+        item for item in prefuselage_base_items if item.name != "Landing gear"
+    )
+    fuselage = _fuselage_item_from_m2_envelope(
+        design_vector, electronics_layout, mission2_payload, config
+    )
+    items_with_fuselage = items_without_gear + (fuselage,)
+    gear = _place_landing_gear_relative_to_base_cg(items_with_fuselage, config)
+    return items_with_fuselage + (gear,)
 
 
 def _mission2_items(
@@ -384,25 +422,25 @@ def _mission2_items(
             f"tail-forward limit: x <= {payload_max_x:.4f} m."
         )
 
-    fuselage_y_bounds = (
+    preferred_fuselage_y_bounds = (
         -0.5 * design_vector.fuselage_width,
         0.5 * design_vector.fuselage_width,
     )
     if m2.maximum_width_m is None:
-        y_bounds = fuselage_y_bounds
+        preferred_y_bounds = preferred_fuselage_y_bounds
     else:
         requested_y_bounds = (
             m2.compartment_center_y_m - 0.5 * m2.maximum_width_m,
             m2.compartment_center_y_m + 0.5 * m2.maximum_width_m,
         )
-        y_bounds = (
-            max(fuselage_y_bounds[0], requested_y_bounds[0]),
-            min(fuselage_y_bounds[1], requested_y_bounds[1]),
+        preferred_y_bounds = (
+            max(preferred_fuselage_y_bounds[0], requested_y_bounds[0]),
+            min(preferred_fuselage_y_bounds[1], requested_y_bounds[1]),
         )
-    if not y_bounds[0] < y_bounds[1]:
+    if not preferred_y_bounds[0] < preferred_y_bounds[1]:
         raise PayloadPlacementError(
             "Mission-2 lateral payload region is empty after applying the "
-            "fuselage sidewalls."
+            "configured preferred-width limits."
         )
 
     return place_mission2_payload(
@@ -411,7 +449,7 @@ def _mission2_items(
         base_items=base_items,
         config=m2,
         x_bounds_m=x_bounds,
-        y_bounds_m=y_bounds,
+        y_bounds_m=preferred_y_bounds,
         z_bounds_m=(-design_vector.fuselage_height, 0.0),
     )
 
@@ -543,10 +581,45 @@ def evaluate_mechanical_module(
         design_vector, config.neutral_point, stations
     )
 
-    base_items, electronics_layout, base_warnings = _base_airframe_items(
+    prefuselage_base_items, electronics_layout, base_warnings = _base_airframe_items(
         design_vector, config, neutral_point_x
     )
     warnings.extend(base_warnings)
+
+    prefuselage_m1 = _mission_properties(
+        mission="M1",
+        items=prefuselage_base_items,
+        design_vector=design_vector,
+        neutral_point_x_m=neutral_point_x,
+        config=config,
+    )
+    if not np.isclose(
+        prefuselage_m1.static_margin,
+        config.static_margin.target,
+        rtol=0.0,
+        atol=1e-12,
+    ):
+        raise RuntimeError(
+            "Mission-1 electronics placement did not achieve the configured "
+            "pre-fuselage static-margin target."
+        )
+
+    m2_warning_start = len(warnings)
+    m2_payload = _mission2_items(
+        design_vector,
+        prefuselage_base_items,
+        electronics_layout,
+        config,
+        warnings,
+    )
+    m2_placement_warnings = warnings[m2_warning_start:]
+    base_items = _base_items_with_payload_derived_fuselage(
+        design_vector,
+        prefuselage_base_items,
+        electronics_layout,
+        m2_payload,
+        config,
+    )
 
     m1 = _mission_properties(
         mission="M1",
@@ -565,22 +638,8 @@ def evaluate_mechanical_module(
         )
         warnings.append(warning)
         m1_warnings.append(warning)
-    if not np.isclose(
-        m1.static_margin,
-        config.static_margin.target,
-        rtol=0.0,
-        atol=1e-12,
-    ):
-        raise RuntimeError(
-            "Mission-1 electronics placement did not achieve the configured "
-            "static-margin target."
-        )
     m1 = replace(m1, warnings=tuple(dict.fromkeys(m1_warnings)))
 
-    m2_warning_start = len(warnings)
-    m2_payload = _mission2_items(
-        design_vector, base_items, electronics_layout, config, warnings
-    )
     m2_items = base_items + m2_payload
     m2 = _mission_properties(
         mission="M2",
@@ -589,7 +648,7 @@ def evaluate_mechanical_module(
         neutral_point_x_m=neutral_point_x,
         config=config,
     )
-    m2_warnings = list(base_warnings) + warnings[m2_warning_start:]
+    m2_warnings = list(base_warnings) + list(m2_placement_warnings)
     if not m2.static_margin_feasible:
         warning = (
             f"M2 static margin is {100*m2.static_margin:.2f}%, outside the configured range."

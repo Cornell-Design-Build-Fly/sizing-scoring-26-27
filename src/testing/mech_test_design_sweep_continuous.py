@@ -133,6 +133,21 @@ def _assert_continuous_case(
     assert np.isclose(modeled_payload_mass, expected_payload_mass, atol=1e-12)
 
     # A point mass placed at the floor-layout CG changes mass and weight only.
+    floor_fuselage = next(
+        item
+        for item in floor_result.for_mission("M1").items
+        if item.name == "Fuselage structure"
+    )
+    continuous_fuselage = next(
+        item
+        for item in continuous_result.for_mission("M1").items
+        if item.name == "Fuselage structure"
+    )
+    assert np.array_equal(continuous_fuselage.position_m, floor_fuselage.position_m)
+    assert np.array_equal(
+        continuous_fuselage.dimensions_m, floor_fuselage.dimensions_m
+    )
+    assert np.isclose(continuous_fuselage.mass_kg, floor_fuselage.mass_kg)
     assert np.allclose(continuous_m2.cg_m, floor_m2.cg_m, atol=1e-12)
     assert np.allclose(
         continuous_m2.inertia_tensor_kg_m2,

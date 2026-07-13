@@ -26,6 +26,7 @@ class _LatticeLocation:
     j: int
     x_m: float
     y_m: float
+    inside_preferred_width: bool
 
 
 def _integer_limits(
@@ -68,7 +69,7 @@ def _center_out_locations(
     y_bounds_m: tuple[float, float],
     clearance_m: float,
 ) -> tuple[_LatticeLocation, ...]:
-    """Return the first ``count`` valid positions on a center-anchored lattice."""
+    """Return center-out positions, overflowing laterally only when necessary."""
 
     if count == 0:
         return ()
@@ -82,9 +83,9 @@ def _center_out_locations(
         y_bounds_m[0] + 0.5 * width_y,
         y_bounds_m[1] - 0.5 * width_y,
     )
-    if x_center_bounds[0] > x_center_bounds[1] or y_center_bounds[0] > y_center_bounds[1]:
+    if x_center_bounds[0] > x_center_bounds[1]:
         raise PayloadPlacementError(
-            f"The {payload.label} bounding box is larger than the Mission-2 bay."
+            f"The {payload.label} bounding box is longer than the Mission-2 bay."
         )
 
     pitch_x = length_x + clearance_m
@@ -102,48 +103,84 @@ def _center_out_locations(
         pitch_m=pitch_y,
     )
 
-    if not (i_min <= 0 <= i_max and j_min <= 0 <= j_max):
+    if not i_min <= 0 <= i_max:
         raise PayloadPlacementError(
             f"The first {payload.label} cannot be centered at the starting CG "
-            "without crossing a payload-bay boundary."
+            "without crossing the electronics or tail boundary."
         )
 
-    candidates: list[_LatticeLocation] = []
     rules = payload.rules
-    for i in range(i_min, i_max + 1):
-        if i < 0 and not rules.allow_forward:
-            continue
-        if i > 0 and not rules.allow_aft:
-            continue
-        for j in range(j_min, j_max + 1):
-            candidates.append(
-                _LatticeLocation(
-                    i=i,
-                    j=j,
-                    x_m=float(anchor_x_m + i * pitch_x),
-                    y_m=float(anchor_y_m + j * pitch_y),
-                )
-            )
-
-    candidates.sort(
-        key=lambda candidate: (
-            round(
-                (candidate.i * pitch_x) ** 2 + (candidate.j * pitch_y) ** 2,
-                15,
-            ),
-            abs(candidate.i) + abs(candidate.j),
-            _direction_rank(candidate.i, candidate.j),
-            abs(candidate.i),
-            abs(candidate.j),
-        )
+    valid_i = tuple(
+        i
+        for i in range(i_min, i_max + 1)
+        if not (i < 0 and not rules.allow_forward)
+        and not (i > 0 and not rules.allow_aft)
     )
-    if len(candidates) < count:
+    if not valid_i:
         raise PayloadPlacementError(
-            f"Requested {count} {payload.label.lower()} items, but the fixed "
-            f"center-out lattice has capacity {len(candidates)} within the "
-            "electronics, tail, and fuselage-side bounds."
+            f"No longitudinal lattice locations are allowed for {payload.label}."
         )
-    return tuple(candidates[:count])
+
+    def make_locations(
+        lateral_indices: tuple[int, ...], *, inside_preferred_width: bool
+    ) -> list[_LatticeLocation]:
+        return [
+            _LatticeLocation(
+                i=i,
+                j=j,
+                x_m=float(anchor_x_m + i * pitch_x),
+                y_m=float(anchor_y_m + j * pitch_y),
+                inside_preferred_width=inside_preferred_width,
+            )
+            for i in valid_i
+            for j in lateral_indices
+        ]
+
+    def sort_center_out(candidates: list[_LatticeLocation]) -> None:
+        candidates.sort(
+            key=lambda candidate: (
+                round(
+                    (candidate.i * pitch_x) ** 2
+                    + (candidate.j * pitch_y) ** 2,
+                    15,
+                ),
+                abs(candidate.i) + abs(candidate.j),
+                _direction_rank(candidate.i, candidate.j),
+                abs(candidate.i),
+                abs(candidate.j),
+            )
+        )
+
+    preferred_j = tuple(range(j_min, j_max + 1)) if j_min <= j_max else ()
+    preferred_candidates = make_locations(
+        preferred_j, inside_preferred_width=True
+    )
+    sort_center_out(preferred_candidates)
+    if len(preferred_candidates) >= count:
+        return tuple(preferred_candidates[:count])
+
+    # Sidewalls define the preferred packing envelope. Once its complete
+    # lattice capacity is consumed, add rows beyond both sides as needed.
+    overflow_candidates: list[_LatticeLocation] = []
+    used_j = set(preferred_j)
+    lateral_step = 0
+    while len(preferred_candidates) + len(overflow_candidates) < count:
+        lateral_step += 1
+        if preferred_j:
+            new_j = (j_max + lateral_step, j_min - lateral_step)
+        elif lateral_step == 1:
+            new_j = (0,)
+        else:
+            offset = lateral_step - 1
+            new_j = (offset, -offset)
+        unique_new_j = tuple(j for j in new_j if j not in used_j)
+        used_j.update(unique_new_j)
+        overflow_candidates.extend(
+            make_locations(unique_new_j, inside_preferred_width=False)
+        )
+
+    sort_center_out(overflow_candidates)
+    return tuple((preferred_candidates + overflow_candidates)[:count])
 
 
 def _payload_items(
@@ -176,7 +213,12 @@ def _payload_items(
             category="mission_2_payload",
             notes=(
                 "Fixed-layer, center-out placement; lattice index "
-                f"({location.i}, {location.j})."
+                f"({location.i}, {location.j}); "
+                + (
+                    "inside the preferred fuselage width."
+                    if location.inside_preferred_width
+                    else "laterally outside the preferred fuselage width."
+                )
             ),
         )
         for index, location in enumerate(locations, start=1)

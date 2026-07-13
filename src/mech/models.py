@@ -244,7 +244,7 @@ class AirframeMassConfig:
 
     spar_linear_density_kg_m: float = 0.202 / 1.18
     wing_spar_chord_fraction: float = 0.30
-    spar_cross_section_m: tuple[float, float] = (0.010, 0.010)
+    spar_cross_section_m: tuple[float, float] = (0.020, 0.020)
 
     tail_integration_mass_kg: float = 0.025
     tail_integration_dimensions_m: tuple[float, float, float] = (0.060, 0.060, 0.050)
@@ -513,8 +513,9 @@ class Mission2Config:
     compartment_x_bounds_m: tuple[float, float] | None = None
     electronics_aft_clearance_m: float = 0.0
     tail_leading_edge_clearance_m: float = 0.0
-    # ``None`` uses the full fuselage width.  A value may make the payload bay
-    # narrower, but main_mech always clips it to the actual fuselage sidewalls.
+    # ``None`` uses the full fuselage width as the preferred packing region.
+    # A value may make that initial region narrower. Once all preferred cells
+    # are occupied, placement is allowed to expand laterally beyond it.
     maximum_width_m: float | None = None
     compartment_center_y_m: float = 0.0
     duck_center_z_m: float = -3.0 * 0.0254

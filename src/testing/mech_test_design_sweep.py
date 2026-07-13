@@ -88,9 +88,10 @@ def _validate_result(case: DesignCase, result: MechanicalResult) -> None:
     for mission in ("M1", "M2", "M3"):
         properties = result.for_mission(mission)
         assert properties.placement_feasible, f"{case.label} {mission} placement failed"
-        assert properties.static_margin_feasible, (
-            f"{case.label} {mission} static margin is outside its configured range"
-        )
+        # Electronics target the pre-fuselage M1 margin. The final fuselage is
+        # sized from M2 payload extent, so final mission margins are reported
+        # values rather than a feasibility gate for this design sweep.
+        assert np.isfinite(properties.static_margin)
         assert properties.total_mass_kg > 0.0
         assert np.isclose(
             properties.total_mass_kg,

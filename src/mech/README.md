@@ -60,14 +60,17 @@ The default ledger contains:
 - a boom spar from wing trailing edge to the aft-most tail trailing edge at
   `0.202 / 1.18 kg/m`;
 - 25 g tail integration mass;
-- fuselage structure at `0.300 / 0.5 kg/m`;
+- fuselage structure at `0.300 / 0.5 kg/m`, with its length derived after M2
+  placement from the electronics front edge to the aft-most payload edge;
 - 220 g landing gear at the M1 CG station and four inches below the final M1
   CG;
 - battery, motor/propeller, ESC, and other electronics.
 
-The electronics equivalent CM is solved analytically so Mission 1 has exactly
-20% static margin. It is then fixed for Missions 2 and 3. Electronics are three
-inches below the wing.
+The electronics equivalent CM is solved analytically so the pre-fuselage
+Mission 1 airplane has exactly 20% static margin. It is then fixed for Missions
+2 and 3. The payload-derived fuselage is added afterward, so the reported final
+Mission 1 static margin may shift away from 20%. Electronics are three inches
+below the wing.
 
 `electronics.py` converts that required CM into a physical longitudinal area:
 
@@ -123,8 +126,8 @@ prevents the combined 0.390 kg fallback from being double-counted.
 
 Mission 2 uses one deterministic process with no optimizer or fallback solver:
 
-1. Use the actual M1 CG as the starting x-plane and the fuselage centerline as
-   the starting y-location.
+1. Use the 20%-static-margin pre-fuselage M1 CG as the starting x-plane and the
+   aircraft centerline as the starting y-location.
 2. Put the first duck and first puck at that same x/y location.
 3. Put duck centers three inches below the wing and put pucks directly below
    the duck layer.
@@ -133,14 +136,24 @@ Mission 2 uses one deterministic process with no optimizer or fallback solver:
 5. Take valid lattice cells in increasing physical distance from the starting
    point. Symmetric forward/aft and left/right cells are considered in a fixed
    order.
-6. Reject cells whose full bounding box crosses the electronics back edge, the
-   forward-most tail leading edge, or either fuselage sidewall. Expansion
-   continues in directions that remain open.
+6. Reject cells whose full bounding box crosses the electronics back edge or
+   forward-most tail leading edge. Fill every lattice cell within the preferred
+   fuselage width first, then add rows beyond both sidewalls when more payload
+   remains.
 
-If the requested count does not fit this exact process,
-`PayloadPlacementError` is raised. No payload is silently dropped and no more
-expensive search is attempted. Mission 2 static margin is calculated after
-placement; payload positions are not moved to optimize it.
+The lateral direction has no hard capacity limit. `PayloadPlacementError` is
+still raised when the longitudinal interval or fixed vertical layers cannot fit
+the payload geometry. No payload is silently dropped and no more expensive
+search is attempted. Mission 2 static margin is calculated after placement;
+payload positions are not moved to optimize it.
+
+After all whole M2 payloads are placed, the fuselage is added from the resolved
+electronics front edge to the aft-most M2 payload back edge. If M2 has no whole
+payload, the electronics back edge supplies the aft endpoint. The design-vector
+fuselage width and height still define its cross-section, but design-vector nose
+and tail stations no longer define its length. The continuous evaluator uses
+the same whole-payload envelope; fractional remainders remain point-mass
+equivalents and do not extend the fuselage.
 
 The default zero vertical clearance lets the current 53 mm duck and 25.4 mm
 puck layers fit beneath a duck CM at `z=-0.0762 m` in the 130 mm fuselage. Use
@@ -177,7 +190,7 @@ physical walls.
 python -m src.testing.mech_test
 ```
 
-The regression covers the 20% M1 target, LE-to-LE tail arm, skinny/fat
+The regression covers the pre-fuselage 20% M1 target, LE-to-LE tail arm, skinny/fat
 electronics layouts, component mass fits, payload ordering and boundaries,
 maximum payload counts, deterministic placement, M3 fixed distances, and
 positive-semidefinite inertia tensors.
