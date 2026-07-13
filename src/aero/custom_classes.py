@@ -65,10 +65,10 @@ class AeroOutput:
     """Total output for aero module to be sent to scoring. If 
     converged==False, then the first three args are None."""
 
+    converged: bool
     aero_result: AirplaneAnalysisResult | None = None 
     cruise_condition: CruiseCondition | None = None
     stability_result: StabilityResult | None = None
-    converged: bool
 
 
 def dict_to_mode_result(mode_dict: dict) -> ModeResult:

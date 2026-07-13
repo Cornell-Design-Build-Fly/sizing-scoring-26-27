@@ -19,7 +19,7 @@ def aero_main(
         cg: tuple[float, float, float],
         inertia_matrix: list[float, float, float],
         mass: float,
-        sm: float,
+        sm: float, # TODO - where is this used?
 ) -> AeroOutput:
 
     """
@@ -50,16 +50,28 @@ def aero_main(
     # Main trim solver. Contains ASB optimization methods and calls to aero_analysis to perform force/moment balance.
     cruise_condition = cruise_analysis(design_vector, thrust_velocity, cg, mass)
 
+    if cruise_condition.converged == False:
+        return AeroOutput(
+            converged = False
+        )
+
     # Final call to aero_analysis to get final aerodynamic results for design vector at trim. 
     aero_result = aero_analysis(design_vector, cruise_condition, cg)
 
     # Final call to stability_analysis to get final stability results for design vector at trim.
     stability_result = stability_analysis(design_vector, cruise_condition, mass_props)
 
+    # Calculate and set stall speed
+    RHO = 1.225
+    S_REF = design_vector.wing_area
+    WEIGHT  = mass * 9.81
+    stall_speed = (2 * WEIGHT / (RHO * S_REF * aero_result.CL)) ** 0.5
+    cruise_condition.stall_speed = stall_speed
+
     # Return aero, cruise, and stability results in "AeroOutput" object.
-    result = AeroOutput(
+    return AeroOutput(
         aero_result=aero_result,
         cruise_condition=cruise_condition,
-        stability_result=stability_result
+        stability_result=stability_result,
+        converged = True
     )
-    return result

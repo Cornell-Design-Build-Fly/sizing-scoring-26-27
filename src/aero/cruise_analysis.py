@@ -4,7 +4,25 @@ from aerosandbox import optimization as opti
 from src.aero.aero_analysis import aero_analysis
 from src.aero.custom_classes import CruiseCondition
 from src.vectors import DesignVector
+from src.vectors import ASBDesignVector
 import numpy as np
+
+def eval_thrust(
+            velocity: float,
+            thrust_velocity: list[int, int, int], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
+    ) -> float:
+        """
+        Evaluate the thrust at a given velocity using the provided thrust-velocity curve.
+
+        Args:
+            velocity: The velocity at which to evaluate the thrust.
+            thrust_velocity: A list containing the coefficients [a, b, c] of the quadratic equation representing the thrust-velocity curve.
+
+        Returns:
+            The evaluated thrust at the given velocity.
+        """
+        a, b, c = thrust_velocity
+        return a * velocity**2 + b * velocity + c
 
 def cruise_analysis(
         design_vector: DesignVector,
@@ -31,7 +49,7 @@ def cruise_analysis(
     alpha = opti.variable(init_guess=4.0, scale=0.05, lower_bound=-4.0, upper_bound=15.0) # deg
 
     # Build the airplane
-    airplane = design_vector.to_asb_airplane()
+    airplane = ASBDesignVector.from_design_vector(design_vector).make_airplane()
 
     # Operating point depends symbolically on velocity and alpha
     op_point = asb.OperatingPoint(
@@ -49,15 +67,6 @@ def cruise_analysis(
         op_point=op_point,
         xyz_ref=cg,
     ).run()
-
-    # # Define flight forces and moments as functions of velocity, alpha, and throttle
-    # # PROBLEM - aero_analysis specifically returns floats (not functions)
-    # lift = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).L
-    # drag = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).D
-    # thrust = eval_thrust(velocity, thrust_velocity) # may or may not need to modify for throttle conditions
-    # moment = [aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).l_b,
-    #             aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).m_b,
-    #             aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).n_b]
     
     # Define lift, drag, and pitching moment from AeroBuildup
     lift = aero["L"]
@@ -68,33 +77,82 @@ def cruise_analysis(
     thrust = eval_thrust(velocity, thrust_velocity)
     weight = mass * 9.81  # N
 
-    # Constraints
-    opti.subject_to(lift == weight)
-    opti.subject_to(drag == thrust)
-    opti.subject_to(pitching_moment == 0)
+    # ------------------- Initial approach: 2 variables 3 equations ----------------
 
-    # Solve
+    # # Constraints
+    # opti.subject_to(lift == weight)
+    # opti.subject_to(drag == thrust)
+    # opti.subject_to(pitching_moment == 0)
+
+    # # Solve
+    # try:
+    #     solution = opti.solve()
+
+    #     solved_velocity = float(solution.value(velocity))
+    #     solved_alpha = float(solution.value(alpha))
+
+    # except:
+    #     # If failed to converge, return with converged=False
+    #     return CruiseCondition(
+    #     operating_point=OperatingPoint(
+    #         velocity=-1,
+    #         alpha=-999,
+    #         beta=0.0,  
+    #         p=0.0,     
+    #         q=0.0,     
+    #         r=0.0     
+    #     ),
+    #     converged=False,
+    #     )
+    
+    # --------------------------------------------------------------------------------
+
+    # ---------------------- New approach: residual solver ---------------------------
+    lift_residual = (lift - weight) / weight
+    drag_residual = (drag - thrust) / weight
+    moment_residual = pitching_moment / (
+        weight * airplane.c_ref
+    )
+
+    trim_error = (
+        lift_residual**2
+        + drag_residual**2
+        + moment_residual**2
+    )
+
+    opti.minimize(trim_error)
+
+   # Tolerances used to decide whether the resulting point is truly trimmed.
+    LIFT_RESIDUAL_TOL = 1e-3
+    DRAG_RESIDUAL_TOL = 1e-3
+    MOMENT_RESIDUAL_TOL = 1e-3
+
     try:
         solution = opti.solve()
 
         solved_velocity = float(solution.value(velocity))
         solved_alpha = float(solution.value(alpha))
 
-    except:
-        # If failed to converge, return with converged=False
-        return CruiseCondition(
-        operating_point=OperatingPoint(
-            velocity=-1,
-            alpha=-999,
-            beta=0.0,  
-            p=0.0,     
-            q=0.0,     
-            r=0.0     
-        ),
-        converged=False,
+        solved_lift_residual = abs(
+            float(solution.value(lift_residual))
+        )
+        solved_drag_residual = abs(
+            float(solution.value(drag_residual))
+        )
+        solved_moment_residual = abs(
+            float(solution.value(moment_residual))
         )
 
-    # If successfully converged, return conditions
+        converged = (
+            solved_lift_residual <= LIFT_RESIDUAL_TOL
+            and solved_drag_residual <= DRAG_RESIDUAL_TOL
+            and solved_moment_residual <= MOMENT_RESIDUAL_TOL
+        )
+
+    except RuntimeError:
+        converged = False
+
+    # Return solved values and whether converged within defined tolerances.
     return CruiseCondition(
         operating_point=OperatingPoint(
             velocity=solved_velocity,
@@ -104,24 +162,6 @@ def cruise_analysis(
             q=0.0,     
             r=0.0     
         ),
-        converged=True,
+        stall_speed=stall_speed,
+        converged=converged,
     )
-
-
-
-def eval_thrust(
-        velocity: float,
-        thrust_velocity: list[int, int, int], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
-) -> float:
-    """
-    Evaluate the thrust at a given velocity using the provided thrust-velocity curve.
-
-    Args:
-        velocity: The velocity at which to evaluate the thrust.
-        thrust_velocity: A list containing the coefficients [a, b, c] of the quadratic equation representing the thrust-velocity curve.
-
-    Returns:
-        The evaluated thrust at the given velocity.
-    """
-    a, b, c = thrust_velocity
-    return a * velocity**2 + b * velocity + c
