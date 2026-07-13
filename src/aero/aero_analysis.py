@@ -2,21 +2,23 @@ import aerosandbox as asb
 from aerosandbox import OperatingPoint
 from aerosandbox import optimization as opti 
 from src.aero.custom_classes import CruiseCondition
+from src.aero.custom_classes import AirplaneAnalysisResult
 from src.vectors import DesignVector
-import vlm
-import lifting_line
-import nonlinear_lifting_line
+from src.aero.aerobuildup import run_aerobuildup_on_design_vector
+from src.aero.vlm import run_vlm_on_design_vector
+from src.aero.lifting_line import run_lifting_line_on_design_vector
+from src.aero.nonlinear_lifting_line import (
+    run_nonlinear_lifting_line_on_design_vector,
+)
 
-# I know this is currently a lot of code for no reason because it is basically already present in the vlm, lifting_line,
-# and nonlinear_lifting_line files, but I just made this file for now for flexibility later on if we want to
-# add/modify aero analysis beyond the three methods. 
+# Just change return statement to choose which analysis method to use.
 
 def aero_analysis (
         design_vector: DesignVector,
         cruise_condition: CruiseCondition,
         cg: tuple[float, float, float],
 
-) -> vlm.AirplaneAnalysisResult:
+) -> AirplaneAnalysisResult:
     """
     Perform aerodynamic analysis for a given design vector and cruise condition.
 
@@ -26,9 +28,9 @@ def aero_analysis (
     """
     
     # Aero Buildup Method
-    aero_buildup_result = vlm.run_aero_buildup_on_design_vector(
+    aero_buildup_result = run_aerobuildup_on_design_vector(
         design_vector=design_vector,
-        xyz_ref=cg,
+        cg=cg,
         velocity=cruise_condition.operating_point.velocity,
         alpha=cruise_condition.operating_point.alpha,
         beta=0.0,  
@@ -38,9 +40,9 @@ def aero_analysis (
     )
 
     # VLM Method
-    vlm_result = vlm.run_vlm_on_design_vector(
+    vlm_result = run_vlm_on_design_vector(
         design_vector=design_vector,
-        xyz_ref=cg,
+        cg=cg,
         velocity=cruise_condition.operating_point.velocity,
         alpha=cruise_condition.operating_point.alpha,
         beta=0.0,  
@@ -54,7 +56,7 @@ def aero_analysis (
         )
     
     # Lifting Line Method
-    lifting_line_result = lifting_line.run_lifting_line_on_design_vector(
+    lifting_line_result = run_lifting_line_on_design_vector(
         design_vector=design_vector,
         cg=cg,
         velocity=cruise_condition.operating_point.velocity,
@@ -66,7 +68,7 @@ def aero_analysis (
     )
 
     # Nonlinear Lifting Line Method
-    nonlinear_lifting_line_result = nonlinear_lifting_line.run_nonlinear_lifting_line_on_design_vector(
+    nonlinear_lifting_line_result = run_nonlinear_lifting_line_on_design_vector(
         design_vector=design_vector,
         cg=cg,
         velocity=cruise_condition.operating_point.velocity,

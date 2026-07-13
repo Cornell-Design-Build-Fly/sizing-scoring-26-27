@@ -46,7 +46,7 @@ class ModeResult:
     eigenvalue_real: float
     eigenvalue_imag: float
     damping_ratio: float
-    eigenvalue_image_approx: float | None = None # Only contained by phugoid mode
+    eigenvalue_imag_approx: float | None = None # Only contained by phugoid mode
     damping_ratio_approx: float | None = None # Only contained by phugoid mode
 
 @dataclass(frozen=True)
@@ -63,7 +63,7 @@ class StabilityResult:
 class AeroOutput:
     """Total output for aero module to be sent to scoring."""
 
-    aero_result: asb.AirplaneAnalysisResult
+    aero_result: AirplaneAnalysisResult
     cruise_condition: CruiseCondition
     stability_result: StabilityResult
 
@@ -74,6 +74,6 @@ def dict_to_mode_result(mode_dict: dict) -> ModeResult:
         eigenvalue_real=mode_dict["eigenvalue_real"],
         eigenvalue_imag=mode_dict["eigenvalue_imag"],
         damping_ratio=mode_dict["damping_ratio"],
-        eigenvalue_image_approx=mode_dict.get("eigenvalue_image_approx"),
+        eigenvalue_imag_approx=mode_dict.get("eigenvalue_imag_approx"),
         damping_ratio_approx=mode_dict.get("damping_ratio_approx"),
     )

@@ -1,16 +1,16 @@
 import aerosandbox as asb
 from aerosandbox import OperatingPoint
 from aerosandbox import optimization as opti 
-from src.aero import aero_analysis
+from src.aero.aero_analysis import aero_analysis
 from src.aero.custom_classes import CruiseCondition
 from src.vectors import DesignVector
 import numpy as np
 
 def cruise_analysis(
         design_vector: DesignVector,
-        thrust_velocity: np.array, # array containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
+        thrust_velocity: list[int, int, int], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
         cg: tuple[float, float, float],
-        weight: float,
+        mass: float,
 ) -> CruiseCondition:
     """
     Perform cruise analysis for a given design vector. Includes ASB optimization methods and 
@@ -23,20 +23,25 @@ def cruise_analysis(
         weight: The weight of the airplane.
     """
 
-    # Three optimization variables 
-    velocity = opti.variable(init_guess=1.0, scale=0.05, lower_bound=0.0, upper_bound=50.0) # m/s
-    alpha = opti.variable(init_guess=0.0, scale=0.05, lower_bound=-0.0, upper_bound=10.0) # deg
-    throttle = opti.variable(init_guess=0.0, scale=0.05, lower_bound=0.0, upper_bound=1.0) # unitless
+    # Create an optimization problem
+    opti = asb.Opti()  
 
-    # TODO - see Ishan's doc - apparently this might not work :()
+    # Twp optimization variables 
+    velocity = opti.variable(init_guess=18.0, scale=0.05, lower_bound=3.0, upper_bound=50.0) # m/s
+    alpha = opti.variable(init_guess=4.0, scale=0.05, lower_bound=-4.0, upper_bound=15.0) # deg
+
+    # TODO - see Ishan's doc - apparently this might not work :(
     # Define flight forces and moments as functions of velocity, alpha, and throttle
-    lift = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), throttle)).L
-    drag = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), throttle)).D
-    thrust = thrust_velocity(velocity, throttle) # still not sure how this will work
-    moment = [aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), throttle)).l_b,
-                aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), throttle)).m_b,
-                aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), throttle)).n_b]
+    lift = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).L
+    drag = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).D
+    thrust = eval_thrust(velocity, thrust_velocity) # may or may not need to modify for throttle conditions
+    moment = [aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).l_b,
+                aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).m_b,
+                aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), cg,)).n_b]
     
+    # Define weight
+    weight = mass * 9.81  # N
+   
     # Constraints
     opti.subject_to(lift == weight)
     opti.subject_to(thrust == drag)
@@ -60,3 +65,21 @@ def cruise_analysis(
     )
 
     return cruise_conditions
+
+
+def eval_thrust(
+        velocity: float,
+        thrust_velocity: list[int, int, int], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
+) -> float:
+    """
+    Evaluate the thrust at a given velocity using the provided thrust-velocity curve.
+
+    Args:
+        velocity: The velocity at which to evaluate the thrust.
+        thrust_velocity: A list containing the coefficients [a, b, c] of the quadratic equation representing the thrust-velocity curve.
+
+    Returns:
+        The evaluated thrust at the given velocity.
+    """
+    a, b, c = thrust_velocity
+    return a * velocity**2 + b * velocity + c
