@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import numpy as np
-import aerosandbox as asb
 
 # Constants from DFO baseline
 V_H  = 0.50
@@ -27,7 +26,11 @@ OPT_VARS = [
 
 @dataclass
 class DesignVector:
-    """Baseline aircraft sizing vector in meters."""
+    """Baseline aircraft sizing vector in meters.
+
+    ``tail_arm`` is the leading-edge-to-leading-edge distance from the main
+    wing to the common horizontal/vertical-tail leading-edge station.
+    """
     # The only four things you actually set
     # Aero geometries
     wing_span: float = 1.181 # [m]
@@ -43,6 +46,10 @@ class DesignVector:
     # Prop components
     batt_capacity: float = 4.5 # [Ah]
 
+    # Packaging geometry. These are configurable inputs, but they are not
+    # currently included in OPT_VARS.
+    fuselage_width: float = FUSELAGE_BOX_SIZE
+    fuselage_height: float = FUSELAGE_BOX_SIZE
 
     # Derived, do not set manually
     wing_area:        float = field(init=False)
@@ -52,14 +59,19 @@ class DesignVector:
     vstab_area:       float = field(init=False)
     vstab_span:       float = field(init=False)
     vstab_chord:      float = field(init=False)
-    fuselage_width:   float = field(init=False)
-    fuselage_height:  float = field(init=False)
     batt_energy:      float = field(init=False)
 
 
     def __post_init__(self):
         """Calculates derived parameters and checks for validity."""
-        if self.wing_span <= 0 or self.wing_chord <= 0 or self.tail_arm <= 0 or self.nose_length <= 0:
+        if (
+            self.wing_span <= 0
+            or self.wing_chord <= 0
+            or self.tail_arm <= 0
+            or self.nose_length <= 0
+            or self.fuselage_width <= 0
+            or self.fuselage_height <= 0
+        ):
             raise ValueError("All DesignVector primary dimensions must be positive and expressed in meters.")
 
         self.wing_area   = self.wing_span * self.wing_chord
@@ -71,9 +83,6 @@ class DesignVector:
         self.vstab_area  = V_V * self.wing_area * self.wing_span / self.tail_arm
         self.vstab_span  = np.sqrt(AR_V * self.vstab_area)
         self.vstab_chord = self.vstab_area / self.vstab_span
-
-        self.fuselage_width = FUSELAGE_BOX_SIZE
-        self.fuselage_height = FUSELAGE_BOX_SIZE
 
         self.batt_energy = self.batt_capacity * ParameterVector.voltage
 
@@ -134,6 +143,12 @@ class ASBDesignVector(DesignVector):
             wing_chord=design_vector.wing_chord * unit_scale,
             tail_arm=design_vector.tail_arm * unit_scale,
             nose_length=design_vector.nose_length * unit_scale,
+            ducks_num=design_vector.ducks_num,
+            pucks_num=design_vector.pucks_num,
+            banner_length=design_vector.banner_length * unit_scale,
+            batt_capacity=design_vector.batt_capacity,
+            fuselage_width=design_vector.fuselage_width * unit_scale,
+            fuselage_height=design_vector.fuselage_height * unit_scale,
         )
 
     def make_airplane(
@@ -150,9 +165,8 @@ class ASBDesignVector(DesignVector):
 
         wing_qc_x = wing_le[0] + 0.25 * self.wing_chord
         wing_te_x = wing_le[0] + self.wing_chord
-        tail_qc_x = wing_qc_x + self.tail_arm
-        horizontal_tail_le_x = tail_qc_x - 0.25 * self.hstab_chord
-        vertical_tail_le_x = tail_qc_x - 0.25 * self.vstab_chord
+        horizontal_tail_le_x = wing_le[0] + self.tail_arm
+        vertical_tail_le_x = wing_le[0] + self.tail_arm
         tail_te_x = max(
             horizontal_tail_le_x + self.hstab_chord,
             vertical_tail_le_x + self.vstab_chord,
