@@ -542,7 +542,6 @@ def make_motor_from_design(
     """
     Creates a Motor object from the DesignVector and ParameterVector.
 
-    Matches your current Motor dataclass:
         Motor(kv, Rm, max_power, I0, max_current, mass=None)
     """
 
@@ -571,8 +570,7 @@ def make_battery_from_design(
     """
     Creates a Battery object from the DesignVector and ParameterVector.
 
-    Matches your current Battery dataclass:
-        Battery(vnom, cells, Rb, Crat, capacity, mass=None, useable_fraction=...)
+    Battery(vnom, cells, Rb, Crat, capacity, mass=None, useable_fraction=...)
     """
 
     capacity_ah = float(_get_value(design_vector, "batt_capacity", 4.5))
@@ -581,14 +579,9 @@ def make_battery_from_design(
     cells_default = max(1, int(round(vnom / 3.7)))
     cells = int(_get_value(parameter_vector, "num_battery_cells", cells_default))
 
-    useable_fraction = float(
-        _get_value(parameter_vector, "usable_battery_fraction", 0.85)
-    )
+    useable_fraction = float(_get_value(parameter_vector, "usable_battery_fraction", 0.85))
 
-    Rb = battery_resistance(
-        capacity_ah=capacity_ah,
-        num_cells=cells,
-    )
+    Rb = battery_resistance(capacity_ah=capacity_ah,num_cells=cells,)
 
     return Battery(
         vnom=vnom,
