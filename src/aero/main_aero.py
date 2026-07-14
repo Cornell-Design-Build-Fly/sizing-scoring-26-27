@@ -9,15 +9,17 @@ import numpy as np
 from src.aero.custom_classes import AeroOutput, StabilityResult, CruiseCondition, AirplaneAnalysisResult
 from src.vectors import ASBDesignVector, DesignVector
 from src.aero.vlm import require_scalar
-from src.aero import cruise_analysis, stability_analysis, aero_analysis
+from src.aero.cruise_analysis import cruise_analysis
+from src.aero.aero_analysis import aero_analysis
+from src.aero.stability_analysis import stability_analysis
 
 def aero_main(
         design_vector: DesignVector,
-        thrust_velocity: np.ndarray, # array containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
+        thrust_velocity: list[int, int, int],
         cg: tuple[float, float, float],
-        inertia_matrix: np.ndarray, # not sure what data type will be
+        inertia_matrix: list[float, float, float],
         mass: float,
-        sm: float,
+        sm: float, # TODO - where is this used?
 ) -> AeroOutput:
 
     """
@@ -45,22 +47,31 @@ def aero_main(
     Ixz=inertia_matrix[0, 2],
     )
 
-    # Define an Airplane object from design vector.
-    airplane = design_vector.to_asb_airplane()
-
     # Main trim solver. Contains ASB optimization methods and calls to aero_analysis to perform force/moment balance.
     cruise_condition = cruise_analysis(design_vector, thrust_velocity, cg, mass)
+
+    if cruise_condition.converged == False:
+        return AeroOutput(
+            converged = False
+        )
 
     # Final call to aero_analysis to get final aerodynamic results for design vector at trim. 
     aero_result = aero_analysis(design_vector, cruise_condition, cg)
 
     # Final call to stability_analysis to get final stability results for design vector at trim.
-    stability_result = stability_analysis(airplane, cruise_condition, mass_props)
+    stability_result = stability_analysis(design_vector, cruise_condition, mass_props)
+
+    # Calculate and set stall speed
+    RHO = 1.225
+    S_REF = design_vector.wing_area
+    WEIGHT  = mass * 9.81
+    stall_speed = (2 * WEIGHT / (RHO * S_REF * aero_result.CL)) ** 0.5
+    cruise_condition.stall_speed = stall_speed
 
     # Return aero, cruise, and stability results in "AeroOutput" object.
-    result = AeroOutput(
+    return AeroOutput(
         aero_result=aero_result,
         cruise_condition=cruise_condition,
-        stability_result=stability_result
+        stability_result=stability_result,
+        converged = True
     )
-    return result

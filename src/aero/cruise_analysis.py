@@ -1,16 +1,34 @@
 import aerosandbox as asb
 from aerosandbox import OperatingPoint
 from aerosandbox import optimization as opti 
-from src.aero import aero_analysis
+from src.aero.aero_analysis import aero_analysis
 from src.aero.custom_classes import CruiseCondition
 from src.vectors import DesignVector
+from src.vectors import ASBDesignVector
 import numpy as np
+
+def eval_thrust(
+            velocity: float,
+            thrust_velocity: list[int, int, int], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
+    ) -> float:
+        """
+        Evaluate the thrust at a given velocity using the provided thrust-velocity curve.
+
+        Args:
+            velocity: The velocity at which to evaluate the thrust.
+            thrust_velocity: A list containing the coefficients [a, b, c] of the quadratic equation representing the thrust-velocity curve.
+
+        Returns:
+            The evaluated thrust at the given velocity.
+        """
+        a, b, c = thrust_velocity
+        return a * velocity**2 + b * velocity + c
 
 def cruise_analysis(
         design_vector: DesignVector,
-        thrust_velocity: np.array, # array containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
+        thrust_velocity: list[int, int, int], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
         cg: tuple[float, float, float],
-        weight: float,
+        mass: float,
 ) -> CruiseCondition:
     """
     Perform cruise analysis for a given design vector. Includes ASB optimization methods and 
@@ -23,40 +41,127 @@ def cruise_analysis(
         weight: The weight of the airplane.
     """
 
-    # Three optimization variables 
-    velocity = opti.variable(init_guess=1.0, scale=0.05, lower_bound=0.0, upper_bound=50.0) # m/s
-    alpha = opti.variable(init_guess=0.0, scale=0.05, lower_bound=-0.0, upper_bound=10.0) # deg
-    throttle = opti.variable(init_guess=0.0, scale=0.05, lower_bound=0.0, upper_bound=1.0) # unitless
+    # Create an optimization problem
+    opti = asb.Opti()  
 
-    # TODO - see Ishan's doc - apparently this might not work :()
-    # Define flight forces and moments as functions of velocity, alpha, and throttle
-    lift = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), throttle)).L
-    drag = aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), throttle)).D
-    thrust = thrust_velocity(velocity, throttle) # still not sure how this will work
-    moment = [aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), throttle)).l_b,
-                aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), throttle)).m_b,
-                aero_analysis(design_vector, CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), throttle)).n_b]
+    # Twp optimization variables 
+    velocity = opti.variable(init_guess=18.0, scale=0.05, lower_bound=3.0, upper_bound=50.0) # m/s
+    alpha = opti.variable(init_guess=4.0, scale=0.05, lower_bound=-4.0, upper_bound=15.0) # deg
+
+    # Build the airplane
+    airplane = ASBDesignVector.from_design_vector(design_vector).make_airplane()
+
+    # Operating point depends symbolically on velocity and alpha
+    op_point = asb.OperatingPoint(
+    velocity=velocity,
+    alpha=alpha,
+    beta=0.0,
+    p=0.0,
+    q=0.0,
+    r=0.0,
+    )
+
+    # Symbolic aero analysis on plane
+    aero = asb.AeroBuildup(
+        airplane=airplane,
+        op_point=op_point,
+        xyz_ref=cg,
+    ).run()
     
-    # Constraints
-    opti.subject_to(lift == weight)
-    opti.subject_to(thrust == drag)
-    opti.subject_to(moment[0] == 0.0)
-    opti.subject_to(moment[1] == 0.0)
-    opti.subject_to(moment[2] == 0.0)
+    # Define lift, drag, and pitching moment from AeroBuildup
+    lift = aero["L"]
+    drag = aero["D"]
+    pitching_moment = aero["m_b"]
+    
+    # Define weight and thrust
+    thrust = eval_thrust(velocity, thrust_velocity)
+    weight = mass * 9.81  # N
 
-    # Solve
-    opti.solve()
+    # ------------------- Initial approach: 2 variables 3 equations ----------------
 
-    cruise_conditions = CruiseCondition(
+    # # Constraints
+    # opti.subject_to(lift == weight)
+    # opti.subject_to(drag == thrust)
+    # opti.subject_to(pitching_moment == 0)
+
+    # # Solve
+    # try:
+    #     solution = opti.solve()
+
+    #     solved_velocity = float(solution.value(velocity))
+    #     solved_alpha = float(solution.value(alpha))
+
+    # except:
+    #     # If failed to converge, return with converged=False
+    #     return CruiseCondition(
+    #     operating_point=OperatingPoint(
+    #         velocity=-1,
+    #         alpha=-999,
+    #         beta=0.0,  
+    #         p=0.0,     
+    #         q=0.0,     
+    #         r=0.0     
+    #     ),
+    #     converged=False,
+    #     )
+    
+    # --------------------------------------------------------------------------------
+
+    # ---------------------- New approach: residual solver ---------------------------
+    lift_residual = (lift - weight) / weight
+    drag_residual = (drag - thrust) / weight
+    moment_residual = pitching_moment / (
+        weight * airplane.c_ref
+    )
+
+    trim_error = (
+        lift_residual**2
+        + drag_residual**2
+        + moment_residual**2
+    )
+
+    opti.minimize(trim_error)
+
+   # Tolerances used to decide whether the resulting point is truly trimmed.
+    LIFT_RESIDUAL_TOL = 1e-3
+    DRAG_RESIDUAL_TOL = 1e-3
+    MOMENT_RESIDUAL_TOL = 1e-3
+
+    try:
+        solution = opti.solve()
+
+        solved_velocity = float(solution.value(velocity))
+        solved_alpha = float(solution.value(alpha))
+
+        solved_lift_residual = abs(
+            float(solution.value(lift_residual))
+        )
+        solved_drag_residual = abs(
+            float(solution.value(drag_residual))
+        )
+        solved_moment_residual = abs(
+            float(solution.value(moment_residual))
+        )
+
+        converged = (
+            solved_lift_residual <= LIFT_RESIDUAL_TOL
+            and solved_drag_residual <= DRAG_RESIDUAL_TOL
+            and solved_moment_residual <= MOMENT_RESIDUAL_TOL
+        )
+
+    except RuntimeError:
+        converged = False
+
+    # Return solved values and whether converged within defined tolerances.
+    return CruiseCondition(
         operating_point=OperatingPoint(
-            velocity=opti.sol(velocity),
-            alpha=opti.sol(alpha),
+            velocity=solved_velocity,
+            alpha=solved_alpha,
             beta=0.0,  
             p=0.0,     
             q=0.0,     
             r=0.0     
         ),
-        throttle=opti.sol(throttle)
+        stall_speed=stall_speed,
+        converged=converged,
     )
-
-    return cruise_conditions

@@ -37,7 +37,8 @@ class CruiseCondition:
     throttle setting."""
 
     operating_point: OperatingPoint
-    throttle: float
+    converged: bool | None = None # False to indicate if trim solved failed to converge
+    throttle: float | None = None # TODO - Figure out throttle situation 
 
 @dataclass(frozen=True)
 class ModeResult:
@@ -46,7 +47,7 @@ class ModeResult:
     eigenvalue_real: float
     eigenvalue_imag: float
     damping_ratio: float
-    eigenvalue_image_approx: float | None = None # Only contained by phugoid mode
+    eigenvalue_imag_approx: float | None = None # Only contained by phugoid mode
     damping_ratio_approx: float | None = None # Only contained by phugoid mode
 
 @dataclass(frozen=True)
@@ -61,11 +62,13 @@ class StabilityResult:
 
 @dataclass(frozen=True)
 class AeroOutput:
-    """Total output for aero module to be sent to scoring."""
+    """Total output for aero module to be sent to scoring. If 
+    converged==False, then the first three args are None."""
 
-    aero_result: asb.AirplaneAnalysisResult
-    cruise_condition: CruiseCondition
-    stability_result: StabilityResult
+    converged: bool
+    aero_result: AirplaneAnalysisResult | None = None 
+    cruise_condition: CruiseCondition | None = None
+    stability_result: StabilityResult | None = None
 
 
 def dict_to_mode_result(mode_dict: dict) -> ModeResult:
@@ -74,6 +77,6 @@ def dict_to_mode_result(mode_dict: dict) -> ModeResult:
         eigenvalue_real=mode_dict["eigenvalue_real"],
         eigenvalue_imag=mode_dict["eigenvalue_imag"],
         damping_ratio=mode_dict["damping_ratio"],
-        eigenvalue_image_approx=mode_dict.get("eigenvalue_image_approx"),
+        eigenvalue_imag_approx=mode_dict.get("eigenvalue_imag_approx"),
         damping_ratio_approx=mode_dict.get("damping_ratio_approx"),
     )

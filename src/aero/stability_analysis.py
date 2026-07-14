@@ -1,8 +1,5 @@
 import aerosandbox as asb
-import numpy as np
-from aerosandbox import OperatingPoint
-from aerosandbox import optimization as opti 
-from src.aero.custom_classes import CruiseCondition, StabilityResult, AirplaneAnalysisResult, dict_to_mode_result
+from src.aero.custom_classes import CruiseCondition, StabilityResult, dict_to_mode_result
 from src.vectors import DesignVector
 from aerosandbox.dynamics.flight_dynamics.airplane import get_modes
 from aerosandbox.weights.mass_properties import MassProperties
