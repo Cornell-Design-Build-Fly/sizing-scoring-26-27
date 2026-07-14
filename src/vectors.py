@@ -6,9 +6,9 @@ import numpy as np
 
 # Constants from DFO baseline
 V_H  = 0.50
-V_V  = 0.075
+V_V  = 0.036   # tail volume coeff; 0.075 was 2× oversize vs actual DF1 (0.036)
 AR_H = 3
-AR_V = 1.75
+AR_V = 0.89    # actual DF1 fin: 5.20in × 5.83in → span/chord = 0.89; 1.75 was wrong shape
 FUSELAGE_BOX_SIZE = 0.13
 FUSELAGE_SHAPE = 8.0
 FUSELAGE_TIP_SIZE = 0.01
