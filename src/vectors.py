@@ -45,6 +45,12 @@ class DesignVector:
 
     # Prop components
     batt_capacity: float = 4.5 # [Ah]
+    prop_diameter_in: float = 14.0  # [in]
+    prop_pitch_in: float = 10.0  # [in]
+    motor_kv: float = 335.0  # [RPM/V]
+    motor_max_power: float = 2200.0  # [W]
+    cruise_throttle: float = 0.90
+    mission3_cruise_throttle: float = 0.85
 
     # Packaging geometry. These are configurable inputs, but they are not
     # currently included in OPT_VARS.
