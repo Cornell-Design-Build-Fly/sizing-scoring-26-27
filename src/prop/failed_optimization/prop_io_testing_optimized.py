@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from src.prop.main_prop_optimized import (
+from src.prop.failed_optimization.main_prop_optimized import (
     load_default_optimized_prop_database,
     prop_main_optimized,
     prop_main_interp_optimized,
