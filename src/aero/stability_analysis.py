@@ -22,6 +22,7 @@ def stability_analysis(
         design_vector: DesignVector,
         cruise_condition: CruiseCondition,
         mass_props: MassProperties,
+        static_margin: float,
 ) -> StabilityResult:
     """
     Perform stability analysis for a given design vector, cruise condition, and aerodynamic result.
@@ -61,4 +62,5 @@ def stability_analysis(
         dutch_roll=dict_to_mode_result(stability_modes["dutch_roll"]),
         spiral=dict_to_mode_result(stability_modes["spiral"]),
         roll_subsidence=dict_to_mode_result(stability_modes["roll_subsidence"]),
+        static_margin=static_margin,
     )

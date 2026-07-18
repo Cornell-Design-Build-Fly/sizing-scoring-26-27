@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import numpy as np
+import aerosandbox as asb
 
 # Constants from DFO baseline
 V_H  = 0.50
@@ -115,6 +116,31 @@ class DesignVector:
     def opt_names() -> list[str]:
         """Returns the optimizer variable names in array order."""
         return [name for name, _ in OPT_VARS]
+
+    def disp_vars(self) -> str:
+        """Returns a formatted display of optimization, fixed, and derived variables."""
+        opt_names = set(self.opt_names())
+        derived_names = [
+            name for name, dataclass_field in self.__dataclass_fields__.items()
+            if not dataclass_field.init
+        ]
+        fixed_names = [
+            name for name, dataclass_field in self.__dataclass_fields__.items()
+            if dataclass_field.init and name not in opt_names
+        ]
+
+        sections = [
+            ("--- Optimization Variables ---", self.opt_names()),
+            ("--- Fixed Variables ---", fixed_names),
+            ("--- Derived Variables ---", derived_names),
+        ]
+
+        lines = []
+        for title, names in sections:
+            lines.append(f"{title}")
+            lines.extend(f"  {name}: {getattr(self, name)}" for name in names)
+
+        return "\n".join(lines)
     
 # --------------------------------------------------
 # --------------------------------------------------
@@ -127,7 +153,7 @@ class ParameterVector:
     rho = 1.225 # [kg/m^3]
     voltage = 22.2 # [V]
     temp = 20.0 # [C]
-    press = 101325 # [Pa]
+    pressure = 101325 # [Pa]
 
 
 # --------------------------------------------------
@@ -169,7 +195,6 @@ class ASBDesignVector(DesignVector):
         tail_waterline: float = 0.00,
     ) -> asb.Airplane:
         """Builds a simple AeroSandbox airplane from the design-vector geometry."""
-        import aerosandbox as asb
 
         wing_qc_x = wing_le[0] + 0.25 * self.wing_chord
         wing_te_x = wing_le[0] + self.wing_chord
@@ -265,7 +290,6 @@ class ASBDesignVector(DesignVector):
         tail_te_x: float,
     ) -> "asb.Fuselage":
         """Builds a fuselage from nose tip to tail tip using the design vector."""
-        import aerosandbox as asb
 
         nose_tip_x = wing_le_x - self.nose_length
         nose_transition_x = nose_tip_x + 0.35 * self.nose_length

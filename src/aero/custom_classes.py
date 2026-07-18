@@ -59,6 +59,7 @@ class StabilityResult:
     dutch_roll: ModeResult
     spiral: ModeResult
     roll_subsidence: ModeResult
+    static_margin: float | None = None
 
 @dataclass(frozen=True)
 class AeroOutput:

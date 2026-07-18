@@ -19,7 +19,7 @@ def aero_main(
         cg: tuple[float, float, float],
         inertia_matrix: list[float, float, float],
         mass: float,
-        sm: float, # TODO - where is this used?
+        sm: float,
 ) -> AeroOutput:
 
     """
@@ -31,6 +31,7 @@ def aero_main(
         cg: The center of gravity of the airplane (x, y, z).
         inertia_matrix: The inertia matrix of the airplane.
         mass: The mass of the airplane.
+        sm: The static margin associated with the current design state.
     """
 
     # Define "mass properties" object for stability analysis.
@@ -59,7 +60,7 @@ def aero_main(
     aero_result = aero_analysis(design_vector, cruise_condition, cg)
 
     # Final call to stability_analysis to get final stability results for design vector at trim.
-    stability_result = stability_analysis(design_vector, cruise_condition, mass_props)
+    stability_result = stability_analysis(design_vector, cruise_condition, mass_props, sm)
 
     # Calculate and set stall speed
     RHO = 1.225
