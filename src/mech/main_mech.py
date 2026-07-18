@@ -8,6 +8,7 @@ import numpy as np
 
 from src.mech.electronics import ElectronicsLayout, resolve_electronics_layout
 from src.mech.mass_properties import (
+    GeometryStations,
     center_of_gravity,
     estimate_neutral_point_x,
     geometry_stations,
@@ -68,36 +69,31 @@ def _mission_properties(
     )
 
 
-def _place_landing_gear_relative_to_base_cg(
-    items_without_gear: tuple[MassItem, ...],
+def _place_landing_gear_under_wing_leading_edge(
+    stations: GeometryStations,
     config: MechanicalModuleConfig,
 ) -> MassItem:
-    """Place landing gear at the fixed-airframe CG and 4 inches below it.
-
-    The gear's own mass makes "4 inches below the final CG" an implicit
-    equation. It is solved analytically here rather than approximated.
-    """
+    """Place landing gear directly below the main-wing leading edge."""
 
     airframe = config.airframe
-    mass_without_gear = sum(item.mass_kg for item in items_without_gear)
-    cg_without_gear = center_of_gravity(items_without_gear)
-    gear_mass = airframe.landing_gear_mass_kg
-    offset = airframe.landing_gear_vertical_offset_m
-
-    final_cg_z = cg_without_gear[2] - (gear_mass / mass_without_gear) * offset
     gear_position = np.array(
-        [cg_without_gear[0], cg_without_gear[1], final_cg_z - offset], dtype=float
+        [
+            stations.wing_le_x_m,
+            0.0,
+            -airframe.landing_gear_vertical_offset_m,
+        ],
+        dtype=float,
     )
     return MassItem(
         name="Landing gear",
-        mass_kg=gear_mass,
+        mass_kg=airframe.landing_gear_mass_kg,
         position_m=gear_position,
         dimensions_m=airframe.landing_gear_dimensions_m,
         missions=ALL_MISSIONS,
         category="airframe",
         notes=(
-            "Installed with the fixed airframe at its CG station and 4 inches "
-            "below that assembly's final CG."
+            "Installed directly below the main-wing leading edge, with its "
+            "center 4 inches below the wing plane."
         ),
     )
 
@@ -266,7 +262,7 @@ def _fixed_airframe_items(
         )
     )
 
-    gear = _place_landing_gear_relative_to_base_cg(tuple(items), config)
+    gear = _place_landing_gear_under_wing_leading_edge(stations, config)
     return tuple(items) + (gear,)
 
 
@@ -594,6 +590,26 @@ def evaluate_mechanical_module(
             local_layout, translation_x
         )
 
+        fuselage = next(
+            item for item in base_items if item.name == "Fuselage structure"
+        )
+        fuselage_back_x = float(
+            fuselage.position_m[0] + 0.5 * fuselage.dimensions_m[0]
+        )
+        tail_front_x = float(
+            min(stations.horizontal_tail_le_x_m, stations.vertical_tail_le_x_m)
+        )
+        permitted_fuselage_back_x = (
+            tail_front_x - m2_config.tail_leading_edge_clearance_m
+        )
+        if fuselage_back_x >= permitted_fuselage_back_x - 1e-12:
+            attempt_failures.append(
+                f"width {fuselage_width:.4f} m puts the fuselage back at "
+                f"x={fuselage_back_x:.4f} m, at or behind the permitted "
+                f"tail-front limit x={permitted_fuselage_back_x:.4f} m"
+            )
+            continue
+
         electronics_bounds = config.airframe.electronics_x_bounds_m
         if electronics_bounds is not None and not (
             electronics_bounds[0]
@@ -658,8 +674,9 @@ def evaluate_mechanical_module(
     if accepted is None:
         detail = "; ".join(attempt_failures)
         raise PayloadPlacementError(
-            "No fuselage width produced exact M2 static margin while keeping "
-            f"M1 at or below {100*config.static_margin.maximum:.1f}% after "
+            "No fuselage width kept the fuselage ahead of the tail, produced "
+            "exact M2 static margin, and kept M1 at or below "
+            f"{100*config.static_margin.maximum:.1f}% after "
             f"{m2_config.maximum_width_increases} permitted width increases. "
             f"Attempts: {detail}"
         )

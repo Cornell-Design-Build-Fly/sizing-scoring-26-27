@@ -1,0 +1,25 @@
+element_id,name,category,missions,mass_kg,x_m,y_m,z_m,length_x_m,width_y_m,height_z_m,notes
+1,Main wing structure,airframe,"M1,M2,M3",0.35598723592,0.1535,0,0,0.307,1.181,0.02,
+2,Wing servo (left),controls,"M1,M2,M3",0.021,0.1535,-0.29525,0,0.04,0.02,0.04,
+3,Wing servo (right),controls,"M1,M2,M3",0.021,0.1535,0.29525,0,0.04,0.02,0.04,
+4,Wing integration,integration,"M1,M2,M3",0.1,0.1535,0,0,0.08,0.08,0.06,
+5,Wing spar,airframe,"M1,M2,M3",0.202171186441,0.0921,0,0,0.02,1.181,0.02,
+6,Horizontal tail structure,airframe,"M1,M2,M3",0.0840963051892,0.919084840286,0,0,0.148169680571,0.444509041714,0.012,
+7,Vertical tail structure,airframe,"M1,M2,M3",0.024106452285,0.916584168102,0,0.0637099096104,0.143168336203,0.012,0.127419819221,
+8,Horizontal tail servo,controls,"M1,M2,M3",0.021,0.919084840286,0,0,0.04,0.02,0.04,Placed at the horizontal stabilizer geometric center until a measured installation location is supplied.
+9,Vertical tail servo,controls,"M1,M2,M3",0.021,0.916584168102,0,0.0637099096104,0.04,0.02,0.04,Placed at the vertical stabilizer geometric center until a measured installation location is supplied.
+10,Boom spar,airframe,"M1,M2,M3",0.117462945318,0.650084840286,0,0,0.686169680571,0.02,0.02,
+11,Tail integration,integration,"M1,M2,M3",0.025,0.919084840286,0,0,0.06,0.06,0.05,
+12,Landing gear,airframe,"M1,M2,M3",0.22,0,0,-0.1016,0.08,0.18,0.08,"Installed directly below the main-wing leading edge, with its center 4 inches below the wing plane."
+13,Fuselage structure,airframe,"M1,M2,M3",0.2322,0.0293639226048,0,-0.065,0.387,0.0762,0.13,Fuselage-local uniform linear-density approximation from the electronics front edge to the aft-most Mission-2 payload edge.
+14,Battery,propulsion_and_electronics,"M1,M2,M3",0.69,-0.0451360773952,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+15,Motor and propeller,propulsion_and_electronics,"M1,M2,M3",0.39,-0.0451360773952,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+16,ESC,propulsion_and_electronics,"M1,M2,M3",0.118,-0.0451360773952,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+17,Other electronics,propulsion_and_electronics,"M1,M2,M3",0.05,-0.0451360773952,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+18,Duck 1,mission_2_payload,M2,0.018,0.0903639226048,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 0, column 0; first column is against the negative-y fuselage sidewall."
+19,Duck 2,mission_2_payload,M2,0.018,0.143363922605,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 1, column 0; first column is against the negative-y fuselage sidewall."
+20,Duck 3,mission_2_payload,M2,0.018,0.196363922605,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 2, column 0; first column is against the negative-y fuselage sidewall."
+21,Puck 1,mission_2_payload,M2,0.17,0.101963922605,0,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; row 0, column 0; first column is against the negative-y fuselage sidewall."
+22,M3 forward mechanism,mission_3_payload,M3,0.1,0.0888639226048,0,0,0.05,0.05,0.05,
+23,M3 banner,mission_3_payload,M3,0.00401724137931,0.163863922605,0,0,0.1,0.06,0.06,
+24,M3 aft mechanism,mission_3_payload,M3,0.1,0.238863922605,0,0,0.05,0.05,0.05,

@@ -108,6 +108,15 @@ def main() -> None:
     assert np.isclose(stations.wing_le_x_m, 0.0)
     assert np.isclose(stations.horizontal_tail_le_x_m, design.tail_arm)
     assert np.isclose(stations.vertical_tail_le_x_m, design.tail_arm)
+    landing_gear = next(item for item in fixed_items if item.name == "Landing gear")
+    assert np.allclose(
+        landing_gear.position_m,
+        (
+            stations.wing_le_x_m,
+            0.0,
+            -config.airframe.landing_gear_vertical_offset_m,
+        ),
+    )
 
     # The loaded fuselage is translated to exactly 12% M2 SM. M1 has only an
     # upper 20% acceptance limit; a value below 10% does not trigger widening.
@@ -115,6 +124,7 @@ def main() -> None:
     m2 = result.for_mission("M2")
     assert np.isclose(config.static_margin.target, 0.20)
     assert np.isclose(config.mission2.target_static_margin, 0.12)
+    assert config.mission2.maximum_width_increases == 4
     assert np.isclose(
         m2.static_margin,
         config.mission2.target_static_margin,
@@ -151,7 +161,8 @@ def main() -> None:
     assert threshold.profile == "fat"
 
     # Payload rows begin at the electronics back face and against a sidewall,
-    # fill laterally, then advance aft. There is deliberately no tail x limit.
+    # fill laterally, then advance aft. The installed fuselage must end before
+    # the leading edge of both tails.
     payloads = _payloads(result)
     ducks = [item for item in payloads if item.name.startswith("Duck")]
     pucks = [item for item in payloads if item.name.startswith("Puck")]
@@ -178,6 +189,12 @@ def main() -> None:
         assert payload.position_m[1] + 0.5 * payload.dimensions_m[1] <= half_width + 1e-12
     _assert_no_payload_overlap(result.for_mission("M2").items)
     _assert_fuselage_envelope(result, design)
+    fuselage = next(item for item in m1.items if item.name == "Fuselage structure")
+    fuselage_back_x = fuselage.position_m[0] + 0.5 * fuselage.dimensions_m[0]
+    tail_front_x = min(
+        stations.horizontal_tail_le_x_m, stations.vertical_tail_le_x_m
+    )
+    assert fuselage_back_x < tail_front_x
 
     # No-payload M2 is identical to M1 and keeps the initial 76.2 mm width.
     empty = evaluate_mechanical_module(DesignVector(ducks_num=0, pucks_num=0), config)
@@ -188,14 +205,15 @@ def main() -> None:
         empty.for_mission("M1").static_margin,
     )
 
-    # Large payloads widen only because the narrower exact-M2 layout puts M1
-    # above 20%; the accepted width is two duck-width increases.
+    # Large payloads widen because the narrower exact-M2 layouts fail an
+    # acceptance check; the new gear datum makes the accepted width three
+    # duck-width increases for this case.
     large_design = DesignVector(ducks_num=10, pucks_num=9)
     large = evaluate_mechanical_module(large_design, config)
-    assert large.fuselage_width_increases == 2
+    assert large.fuselage_width_increases == 3
     assert np.isclose(
         large.fuselage_width_m,
-        large_design.fuselage_width + 2 * config.mission2.duck.dimensions_m[1],
+        large_design.fuselage_width + 3 * config.mission2.duck.dimensions_m[1],
     )
     assert np.isclose(
         large.for_mission("M2").static_margin,
@@ -204,15 +222,44 @@ def main() -> None:
     )
     assert large.for_mission("M1").static_margin <= config.static_margin.maximum
 
-    # If three duck-width increases still leave M1 above 20%, raise the flag.
+    # Tail overlap is checked before static margins. This narrow, short-tail
+    # design overlaps the tail for its first two widths and succeeds at width 2.
+    tail_limited_design = DesignVector(tail_arm=0.3, ducks_num=0, pucks_num=4)
+    one_retry_config = replace(
+        config,
+        mission2=replace(config.mission2, maximum_width_increases=1),
+    )
+    try:
+        evaluate_mechanical_module(tail_limited_design, one_retry_config)
+    except PayloadPlacementError as exc:
+        tail_message = str(exc)
+        assert tail_message.count("puts the fuselage back") == 2
+        assert "gives M1 static margin" not in tail_message
+    else:
+        raise AssertionError("Expected the first two widths to overlap the tail.")
+    tail_limited = evaluate_mechanical_module(tail_limited_design, config)
+    assert tail_limited.fuselage_width_increases == 2
+    tail_fuselage = next(
+        item
+        for item in tail_limited.for_mission("M1").items
+        if item.name == "Fuselage structure"
+    )
+    assert (
+        tail_fuselage.position_m[0] + 0.5 * tail_fuselage.dimensions_m[0]
+        < tail_limited_design.tail_arm
+    )
+
+    # If four duck-width increases still violate an acceptance condition, raise
+    # the flag and report every attempted width.
     oversized_design = DesignVector(ducks_num=20, pucks_num=20)
     try:
         evaluate_mechanical_module(oversized_design, config)
     except PayloadPlacementError as exc:
         message = str(exc)
-        assert "after 3 permitted width increases" in message
+        assert "after 4 permitted width increases" in message
+        assert "width 0.2882 m" in message
+        assert "puts the fuselage back" in message
         assert "gives M1 static margin" in message
-        assert "width 0.2352 m" in message
     else:
         raise AssertionError("Expected width-retry exhaustion to raise a flag.")
 

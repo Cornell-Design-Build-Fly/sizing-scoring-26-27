@@ -59,25 +59,32 @@ The module performs these operations in order:
    front and pack all whole M2 payload pieces behind the electronics.
 3. Install the completed loaded fuselage at the location that makes Mission 2
    static margin exactly 12%.
-4. Remove the M2 payload mathematically and calculate Mission 1 static margin.
-5. Only when Mission 1 is above 20%, increase fuselage width by one duck width
-   and repeat from step 2. Payload capacity is not a width-selection criterion;
-   the fuselage can always grow aft.
-6. Accept the first feasible width. The initial width plus at most three width
+4. Check that the back of the installed fuselage is strictly ahead of the front
+   of both tails, then remove the M2 payload mathematically and calculate
+   Mission 1 static margin.
+5. When the fuselage reaches the tail or Mission 1 is above 20%, increase
+   fuselage width by one duck width and repeat from step 2.
+6. Accept the first feasible width. The initial width plus at most four width
    increases are tested. If none works, `PayloadPlacementError` is raised with
    every attempted width and failure reason.
 7. Build Mission 3 using the same fixed-distance process as before, after the
    M1/M2 fuselage has been accepted.
 
+The landing-gear center is fixed directly under the main-wing leading edge and
+four inches below the wing plane; its placement does not depend on CG.
+
 `DesignVector.fuselage_width` is the starting width and defaults to `0.0762 m`,
 which fits the `0.0762 m` puck exactly. The default duck width is `0.053 m`, so
-the attempted widths are `0.0762`, `0.1292`, `0.1822`, and `0.2352 m`. The selected values are returned as
+the attempted widths are `0.0762`, `0.1292`, `0.1822`, `0.2352`, and
+`0.2882 m`. The selected values are returned as
 `result.fuselage_width_m` and `result.fuselage_width_increases`.
 
 `Mission2Config.maximum_width_increases` changes the retry count. Every step is
 exactly one configured duck width.
 `Mission2Config.target_static_margin` sets the loaded placement target and
 defaults to `0.12`.
+`Mission2Config.tail_leading_edge_clearance_m` can reserve additional space
+ahead of the tail; its default is zero.
 
 ## Local electronics and M2 packing
 
@@ -124,7 +131,8 @@ inertia about the CG, fuselage envelope, or selected fuselage width.
 
 The fuselage runs from the electronics front face to the aft-most whole M2
 payload face. With no whole M2 payload, it ends at the electronics back face.
-Its default structural model remains `0.300 / 0.5 kg/m`.
+After installation, its back must remain strictly ahead of the nearer tail
+leading edge. Its default structural model remains `0.300 / 0.5 kg/m`.
 
 The permanent ledger still includes the battery, motor/propeller, ESC, and
 other electronics. The battery model and the lightweight `LinearMassModel`
@@ -145,7 +153,8 @@ python -m src.testing.mech_test
 python -m src.testing.mech_test_design_sweep_continuous
 ```
 
-The regression coverage includes fixed-airframe separation, exact 12% M2
+The regression coverage includes wing-leading-edge landing-gear placement,
+fixed-airframe separation, exact 12% M2
 placement, the one-sided 20% M1 check, M2 wall-to-wall row ordering, width
 retry and failure signaling, continuous
 fractional masses at CG, fuselage envelope sizing, M3 fixed distances, mass

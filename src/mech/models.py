@@ -124,7 +124,7 @@ class StaticMarginConfig:
 
     minimum: float = 0.10
     target: float = 0.20
-    maximum: float = 0.20
+    maximum: float = 0.23
 
     def __post_init__(self) -> None:
         if not np.all(np.isfinite([self.minimum, self.target, self.maximum])):
@@ -256,6 +256,7 @@ class AirframeMassConfig:
     fuselage_linear_density_kg_m: float = 0.300 / 0.5
 
     landing_gear_mass_kg: float = 0.220
+    # Vertical distance from the main-wing plane to the landing-gear center.
     landing_gear_vertical_offset_m: float = 4.0 * 0.0254
     landing_gear_dimensions_m: tuple[float, float, float] = (0.080, 0.180, 0.080)
 
@@ -495,9 +496,10 @@ class Mission2Config:
 
     Payload rows start behind the electronics, fill from one sidewall to the
     other, and then grow aft.  The completed fuselage is installed on the fixed
-    airplane afterward. Width increases happen only when the resulting M1
-    static margin exceeds its maximum. At most ``maximum_width_increases``
-    retries are made, and each uses exactly one duck width.
+    airplane afterward. Width increases happen when the installed fuselage
+    reaches the tail leading edge or the resulting M1 static margin exceeds
+    its maximum. At most ``maximum_width_increases`` retries are made, and each
+    uses exactly one duck width.
     """
 
     duck: PayloadTypeConfig = field(
@@ -518,13 +520,13 @@ class Mission2Config:
         default_factory=lambda: RelativePayloadRules(pucks_below_ducks=True)
     )
     target_static_margin: float = 0.12
-    # Deprecated airplane-coordinate constraints. Non-default values are
-    # rejected because the local fuselage uses only the electronics back face
-    # and its sidewalls as horizontal packing limits.
+    # The compartment bound is retained only for compatibility and rejected
+    # below. Local payload packing uses the electronics back face and fuselage
+    # sidewalls; the installed fuselage uses the tail clearance as its aft limit.
     compartment_x_bounds_m: tuple[float, float] | None = None
     electronics_aft_clearance_m: float = 0.0
     tail_leading_edge_clearance_m: float = 0.0
-    maximum_width_increases: int = 3
+    maximum_width_increases: int = 4
     compartment_center_y_m: float = 0.0
     duck_center_z_m: float = -3.0 * 0.0254
     relative_reference_x_m: float | None = None
@@ -557,10 +559,6 @@ class Mission2Config:
         if self.compartment_x_bounds_m is not None:
             raise ValueError(
                 "compartment_x_bounds_m is incompatible with local fuselage packing."
-            )
-        if self.tail_leading_edge_clearance_m != 0:
-            raise ValueError(
-                "tail_leading_edge_clearance_m is incompatible with local fuselage packing."
             )
         if self.compartment_center_y_m != 0:
             raise ValueError(

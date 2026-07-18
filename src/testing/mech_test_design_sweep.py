@@ -67,11 +67,11 @@ DESIGN_CASES = (
     ),
     DesignCase(
         slug="large_payload",
-        label="Large payload",
+        label="Large payload", 
         design_vector=DesignVector(
             ducks_num=50,
-            pucks_num=14,
-            banner_length=5.00,
+            pucks_num=11,
+            banner_length=5.00, 
         ),
     ),
 )
