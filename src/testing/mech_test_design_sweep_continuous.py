@@ -148,6 +148,14 @@ def _assert_continuous_case(
         continuous_fuselage.dimensions_m, floor_fuselage.dimensions_m
     )
     assert np.isclose(continuous_fuselage.mass_kg, floor_fuselage.mass_kg)
+    assert (
+        continuous_result.fuselage_width_increases
+        == floor_result.fuselage_width_increases
+    )
+    assert np.isclose(
+        continuous_result.fuselage_width_m,
+        floor_result.fuselage_width_m,
+    )
     assert np.allclose(continuous_m2.cg_m, floor_m2.cg_m, atol=1e-12)
     assert np.allclose(
         continuous_m2.inertia_tensor_kg_m2,
@@ -234,8 +242,8 @@ def _run_continuous_regressions() -> None:
         custom_config,
     )
 
-    # Packing capacity is governed by floor counts, and flooring is strict even
-    # for a representable value immediately below an integer.
+    # The whole-piece layout is governed by floor counts, and flooring is strict
+    # even for a representable value immediately below an integer.
     _assert_continuous_case(DesignVector(ducks_num=10.99, pucks_num=9.99))
     just_below_three = float(np.nextafter(3.0, 0.0))
     boundary = evaluate_mechanical_module_continuous(

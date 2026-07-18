@@ -88,9 +88,12 @@ def _validate_result(case: DesignCase, result: MechanicalResult) -> None:
     for mission in ("M1", "M2", "M3"):
         properties = result.for_mission(mission)
         assert properties.placement_feasible, f"{case.label} {mission} placement failed"
-        # Electronics target the pre-fuselage M1 margin. The final fuselage is
-        # sized from M2 payload extent, so final mission margins are reported
-        # values rather than a feasibility gate for this design sweep.
+        if mission in {"M1", "M2"}:
+            assert properties.static_margin_feasible
+        if mission == "M1":
+            assert properties.static_margin <= 0.20 + 1e-12
+        if mission == "M2":
+            assert np.isclose(properties.static_margin, 0.12, atol=1e-12)
         assert np.isfinite(properties.static_margin)
         assert properties.total_mass_kg > 0.0
         assert np.isclose(
@@ -166,6 +169,8 @@ def _write_mission_summary(path: Path, result: MechanicalResult) -> None:
         "static_margin_percent",
         "static_margin_feasible",
         "placement_feasible",
+        "fuselage_width_m",
+        "fuselage_width_increases",
         "inertia_xx_kg_m2",
         "inertia_xy_kg_m2",
         "inertia_xz_kg_m2",
@@ -192,6 +197,8 @@ def _write_mission_summary(path: Path, result: MechanicalResult) -> None:
                     "static_margin_percent": f"{100 * properties.static_margin:.12g}",
                     "static_margin_feasible": properties.static_margin_feasible,
                     "placement_feasible": properties.placement_feasible,
+                    "fuselage_width_m": f"{result.fuselage_width_m:.12g}",
+                    "fuselage_width_increases": result.fuselage_width_increases,
                     "inertia_xx_kg_m2": f"{inertia[0, 0]:.12g}",
                     "inertia_xy_kg_m2": f"{inertia[0, 1]:.12g}",
                     "inertia_xz_kg_m2": f"{inertia[0, 2]:.12g}",
@@ -213,13 +220,15 @@ def _print_report(case: DesignCase, result: MechanicalResult) -> None:
     for name, value in zip(design.opt_names(), design.to_array()):
         print(f"  {name:<16} {value:.6g}")
     print(f"Neutral point x:             {result.neutral_point_x_m:.6f} m")
-    print(f"Target CG x:                 {result.target_cg_x_m:.6f} m")
+    print(f"M2 target CG x:              {result.target_cg_x_m:.6f} m")
     print(
         "Acceptable CG x range:      "
         f"[{result.acceptable_cg_x_range_m[0]:.6f}, "
         f"{result.acceptable_cg_x_range_m[1]:.6f}] m"
     )
     print(f"Electronics CM:              {result.electronics_position_m} m")
+    print(f"Selected fuselage width:     {result.fuselage_width_m:.6f} m")
+    print(f"Fuselage width increases:    {result.fuselage_width_increases}")
     print(
         f"Electronics envelope x:      [{result.electronics_layout.front_edge_x_m:.6f}, "
         f"{result.electronics_layout.back_edge_x_m:.6f}] m"
@@ -411,7 +420,7 @@ def _save_m2_layout(
             color="#333333",
             linestyle="-.",
             linewidth=1.0,
-            label="Tail leading edge",
+            label="Tail leading edge (not an M2 packing bound)",
         )
 
     axes[0].set_title("Top projection (x-y)")

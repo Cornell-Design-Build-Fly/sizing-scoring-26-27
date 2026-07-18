@@ -116,7 +116,11 @@ class MassItem:
 
 @dataclass(frozen=True)
 class StaticMarginConfig:
-    """Static-margin limits, with the M1 target fixed at 20% MAC."""
+    """General static-margin limits and the Mission-3 placement target.
+
+    Mission 1 uses ``maximum`` as its one-sided acceptance limit. Mission 2 has
+    its own exact placement target in :class:`Mission2Config`.
+    """
 
     minimum: float = 0.10
     target: float = 0.20
@@ -413,11 +417,12 @@ class AirframeMassConfig:
 
 @dataclass(frozen=True)
 class PlacementRules:
-    """Per-type direction controls retained around the center-out anchor.
+    """Per-type direction controls retained for configuration compatibility.
 
-    The current fixed-layer process uses ``allow_forward`` and ``allow_aft``.
-    The older vertical/stacking flags remain in the public configuration for
-    compatibility; vertical ordering is now set by ``RelativePayloadRules``.
+    Local fuselage rows only grow aft and therefore require ``allow_aft``.
+    ``allow_forward`` and the older vertical/stacking flags remain in the public
+    configuration for compatibility; vertical ordering is set by
+    ``RelativePayloadRules``.
     """
 
     allow_forward: bool = True
@@ -435,12 +440,12 @@ class PlacementRules:
 
 @dataclass(frozen=True)
 class RelativePayloadRules:
-    """Relative duck/puck ordering for the fixed-layer M2 process.
+    """Relative duck/puck ordering for the local-row M2 process.
 
     The default Mission-2 configuration selects ``pucks_below_ducks``.
     Longitudinal fields are retained for configuration compatibility, but the
-    center-out process rejects them because both first items must share the
-    starting-CG plane.
+    local process rejects them because both payload types start immediately
+    behind the electronics.
     """
 
     pucks_forward_of_ducks: bool = False
@@ -486,11 +491,13 @@ class PayloadTypeConfig:
 
 @dataclass(frozen=True)
 class Mission2Config:
-    """Mission-2 deterministic center-out payload configuration.
+    """Mission-2 local fuselage-packing and width-retry configuration.
 
-    The first duck and puck share the M1-CG x/y location.  Each type then grows
-    outward on its own bounding-box lattice.  The default vertical relationship
-    puts ducks three inches below the wing and pucks immediately below them.
+    Payload rows start behind the electronics, fill from one sidewall to the
+    other, and then grow aft.  The completed fuselage is installed on the fixed
+    airplane afterward. Width increases happen only when the resulting M1
+    static margin exceeds its maximum. At most ``maximum_width_increases``
+    retries are made, and each uses exactly one duck width.
     """
 
     duck: PayloadTypeConfig = field(
@@ -510,13 +517,14 @@ class Mission2Config:
     relative_payload_rules: RelativePayloadRules = field(
         default_factory=lambda: RelativePayloadRules(pucks_below_ducks=True)
     )
+    target_static_margin: float = 0.12
+    # Deprecated airplane-coordinate constraints. Non-default values are
+    # rejected because the local fuselage uses only the electronics back face
+    # and its sidewalls as horizontal packing limits.
     compartment_x_bounds_m: tuple[float, float] | None = None
     electronics_aft_clearance_m: float = 0.0
     tail_leading_edge_clearance_m: float = 0.0
-    # ``None`` uses the full fuselage width as the preferred packing region.
-    # A value may make that initial region narrower. Once all preferred cells
-    # are occupied, placement is allowed to expand laterally beyond it.
-    maximum_width_m: float | None = None
+    maximum_width_increases: int = 3
     compartment_center_y_m: float = 0.0
     duck_center_z_m: float = -3.0 * 0.0254
     relative_reference_x_m: float | None = None
@@ -527,6 +535,7 @@ class Mission2Config:
         scalar_values = [
             self.compartment_center_y_m,
             self.duck_center_z_m,
+            self.target_static_margin,
             self.electronics_aft_clearance_m,
             self.tail_leading_edge_clearance_m,
             self.clearance_m,
@@ -534,22 +543,33 @@ class Mission2Config:
         ]
         if not np.all(np.isfinite(scalar_values)):
             raise ValueError("Mission-2 scalar configuration values must be finite.")
-        if self.maximum_width_m is not None and (
-            not np.isfinite(self.maximum_width_m) or self.maximum_width_m <= 0
+        if not 0 <= self.target_static_margin <= 1:
+            raise ValueError("Mission-2 target static margin must lie in [0, 1].")
+        if (
+            not isinstance(self.maximum_width_increases, int)
+            or self.maximum_width_increases < 0
         ):
-            raise ValueError("Mission-2 maximum width must be positive when supplied.")
+            raise ValueError("maximum_width_increases must be a nonnegative integer.")
         if self.electronics_aft_clearance_m < 0 or self.tail_leading_edge_clearance_m < 0:
             raise ValueError("Mission-2 longitudinal keep-out distances cannot be negative.")
         if self.clearance_m < 0 or self.vertical_clearance_m < 0:
             raise ValueError("Mission-2 clearances cannot be negative.")
         if self.compartment_x_bounds_m is not None:
-            lower, upper = self.compartment_x_bounds_m
-            if not (np.isfinite(lower) and np.isfinite(upper) and lower < upper):
-                raise ValueError("compartment_x_bounds_m must be finite and increasing.")
+            raise ValueError(
+                "compartment_x_bounds_m is incompatible with local fuselage packing."
+            )
+        if self.tail_leading_edge_clearance_m != 0:
+            raise ValueError(
+                "tail_leading_edge_clearance_m is incompatible with local fuselage packing."
+            )
+        if self.compartment_center_y_m != 0:
+            raise ValueError(
+                "compartment_center_y_m is incompatible with fuselage-sidewall packing."
+            )
         if self.relative_reference_x_m is not None:
             raise ValueError(
                 "relative_reference_x_m is no longer configurable; Mission 2 "
-                "must start at the actual Mission-1 CG plane."
+                "starts behind the electronics in fuselage-local coordinates."
             )
 
 
@@ -644,6 +664,17 @@ class MechanicalModuleConfig:
     mission2: Mission2Config = field(default_factory=Mission2Config)
     mission3: Mission3Config = field(default_factory=Mission3Config)
 
+    def __post_init__(self) -> None:
+        if not (
+            self.static_margin.minimum
+            <= self.mission2.target_static_margin
+            <= self.static_margin.maximum
+        ):
+            raise ValueError(
+                "Mission-2 target static margin must lie inside the configured "
+                "general static-margin range."
+            )
+
 
 @dataclass(frozen=True)
 class MissionMassProperties:
@@ -668,6 +699,8 @@ class MechanicalResult:
     acceptable_cg_x_range_m: tuple[float, float]
     electronics_position_m: np.ndarray
     electronics_layout: ElectronicsLayout
+    fuselage_width_m: float
+    fuselage_width_increases: int
     all_items: tuple[MassItem, ...]
     missions: dict[str, MissionMassProperties]
     warnings: tuple[str, ...] = ()

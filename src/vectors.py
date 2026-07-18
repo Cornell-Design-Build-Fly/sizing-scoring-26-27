@@ -10,6 +10,7 @@ V_V  = 0.036   # tail volume coeff; 0.075 was 2× oversize vs actual DF1 (0.036)
 AR_H = 3
 AR_V = 0.89    # actual DF1 fin: 5.20in × 5.83in → span/chord = 0.89; 1.75 was wrong shape
 FUSELAGE_BOX_SIZE = 0.13
+FUSELAGE_START_WIDTH = 0.0762
 FUSELAGE_SHAPE = 8.0
 FUSELAGE_TIP_SIZE = 0.01
 
@@ -52,9 +53,10 @@ class DesignVector:
     cruise_throttle: float = 0.90
     mission3_cruise_throttle: float = 0.85
 
-    # Packaging geometry. These are configurable inputs, but they are not
-    # currently included in OPT_VARS.
-    fuselage_width: float = FUSELAGE_BOX_SIZE
+    # Packaging geometry. ``fuselage_width`` is the starting width for the
+    # mechanical module; it may grow by duck-width increments during M2 sizing.
+    # These inputs are not currently included in OPT_VARS.
+    fuselage_width: float = FUSELAGE_START_WIDTH
     fuselage_height: float = FUSELAGE_BOX_SIZE
 
     # Derived, do not set manually

@@ -1,10 +1,11 @@
 """Continuous-payload counterpart to :mod:`src.mech.main_mech`.
 
-This module floors Mission-2 duck and puck amounts for physical placement, then
-represents each fractional remainder as a point mass at the resulting M2 center
-of gravity. The payload-derived fuselage therefore encloses the whole payloads;
-fractional point-mass equivalents do not extend its envelope. Import this module
-directly when continuous optimizer values are required.
+This module floors Mission-2 duck and puck amounts for physical placement in
+the same locally built, width-retried fuselage as :mod:`src.mech.main_mech`,
+then represents each fractional remainder as a point mass at the resulting M2
+center of gravity. Fractional point-mass equivalents do not extend the fuselage
+or alter the selected width. Import this module directly when continuous
+optimizer values are required.
 """
 
 from __future__ import annotations
@@ -65,7 +66,8 @@ def evaluate_mechanical_module(
 ) -> MechanicalResult:
     """Evaluate all missions while accepting continuous M2 payload amounts.
 
-    Whole ducks and pucks are placed by the deterministic center-out process.
+    Whole ducks and pucks are placed by the deterministic front-to-back local
+    fuselage process.
     Fractional remainders add their exact mass at the CG of that
     floor-count arrangement, so they change total mass and weight without
     changing CG, static margin, or inertia about the CG.

@@ -1,15 +1,15 @@
-"""Fast, deterministic Mission-2 payload placement.
+"""Fast, deterministic Mission-2 payload placement inside a local fuselage.
 
-The packer implements one process: anchor the first item at the starting-CG
-plane and aircraft centerline, then take valid lattice locations in increasing
-distance from that point.  It does not optimize CG or fall back to a different
-search strategy.
+The fuselage is packed before it is installed on the airplane.  Each payload
+type starts immediately behind the electronics, with its first item against
+the negative-y sidewall.  Rows fill across the available width and then move
+aft.  Static margin is deliberately not part of this local packing step.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import ceil, floor
+from math import floor
 
 import numpy as np
 
@@ -21,166 +21,55 @@ class PayloadPlacementError(RuntimeError):
 
 
 @dataclass(frozen=True)
-class _LatticeLocation:
-    i: int
-    j: int
+class _FuselageLocation:
+    row: int
+    column: int
     x_m: float
     y_m: float
-    inside_preferred_width: bool
 
 
-def _integer_limits(
-    *, lower_m: float, upper_m: float, anchor_m: float, pitch_m: float
-) -> tuple[int, int]:
-    """Convert physical center bounds to inclusive lattice-index bounds."""
-
-    tolerance = 1e-12
-    return (
-        ceil((lower_m - anchor_m) / pitch_m - tolerance),
-        floor((upper_m - anchor_m) / pitch_m + tolerance),
-    )
-
-
-def _direction_rank(i: int, j: int) -> int:
-    """Stable tie order that keeps opposite center-out directions adjacent."""
-
-    if i == 0 and j == 0:
-        return 0
-    if j == 0:
-        return 1 if i < 0 else 2  # forward, then aft
-    if i == 0:
-        return 3 if j > 0 else 4  # right, then left
-    if i < 0 and j > 0:
-        return 5
-    if i > 0 and j < 0:
-        return 6
-    if i < 0 and j < 0:
-        return 7
-    return 8
-
-
-def _center_out_locations(
+def _front_to_back_locations(
     *,
     payload: PayloadTypeConfig,
     count: int,
-    anchor_x_m: float,
-    anchor_y_m: float,
-    x_bounds_m: tuple[float, float],
+    electronics_back_x_m: float,
     y_bounds_m: tuple[float, float],
     clearance_m: float,
-) -> tuple[_LatticeLocation, ...]:
-    """Return center-out positions, overflowing laterally only when necessary."""
+) -> tuple[_FuselageLocation, ...]:
+    """Fill wall-to-wall rows beginning directly behind the electronics."""
 
     if count == 0:
         return ()
+    if not payload.rules.allow_aft:
+        raise PayloadPlacementError(
+            f"The {payload.label} rules forbid the required aftward placement."
+        )
 
     length_x, width_y, _ = payload.dimensions_m
-    x_center_bounds = (
-        x_bounds_m[0] + 0.5 * length_x,
-        x_bounds_m[1] - 0.5 * length_x,
+    available_width = y_bounds_m[1] - y_bounds_m[0]
+    columns = floor(
+        (available_width + clearance_m + 1e-12) / (width_y + clearance_m)
     )
-    y_center_bounds = (
-        y_bounds_m[0] + 0.5 * width_y,
-        y_bounds_m[1] - 0.5 * width_y,
-    )
-    if x_center_bounds[0] > x_center_bounds[1]:
-        raise PayloadPlacementError(
-            f"The {payload.label} bounding box is longer than the Mission-2 bay."
+    if columns < 1:
+        raise ValueError(
+            "Mission2Config violates the required starting-width invariant: "
+            f"{payload.label} width is {width_y:.4f} m but the fuselage width "
+            f"is {available_width:.4f} m."
         )
 
+    first_x = electronics_back_x_m + clearance_m + 0.5 * length_x
+    first_y = y_bounds_m[0] + 0.5 * width_y
     pitch_x = length_x + clearance_m
     pitch_y = width_y + clearance_m
-    i_min, i_max = _integer_limits(
-        lower_m=x_center_bounds[0],
-        upper_m=x_center_bounds[1],
-        anchor_m=anchor_x_m,
-        pitch_m=pitch_x,
-    )
-    j_min, j_max = _integer_limits(
-        lower_m=y_center_bounds[0],
-        upper_m=y_center_bounds[1],
-        anchor_m=anchor_y_m,
-        pitch_m=pitch_y,
-    )
-
-    if not i_min <= 0 <= i_max:
-        raise PayloadPlacementError(
-            f"The first {payload.label} cannot be centered at the starting CG "
-            "without crossing the electronics or tail boundary."
+    return tuple(
+        _FuselageLocation(
+            row=index // columns,
+            column=index % columns,
+            x_m=float(first_x + (index // columns) * pitch_x),
+            y_m=float(first_y + (index % columns) * pitch_y),
         )
-
-    rules = payload.rules
-    valid_i = tuple(
-        i
-        for i in range(i_min, i_max + 1)
-        if not (i < 0 and not rules.allow_forward)
-        and not (i > 0 and not rules.allow_aft)
+        for index in range(count)
     )
-    if not valid_i:
-        raise PayloadPlacementError(
-            f"No longitudinal lattice locations are allowed for {payload.label}."
-        )
-
-    def make_locations(
-        lateral_indices: tuple[int, ...], *, inside_preferred_width: bool
-    ) -> list[_LatticeLocation]:
-        return [
-            _LatticeLocation(
-                i=i,
-                j=j,
-                x_m=float(anchor_x_m + i * pitch_x),
-                y_m=float(anchor_y_m + j * pitch_y),
-                inside_preferred_width=inside_preferred_width,
-            )
-            for i in valid_i
-            for j in lateral_indices
-        ]
-
-    def sort_center_out(candidates: list[_LatticeLocation]) -> None:
-        candidates.sort(
-            key=lambda candidate: (
-                round(
-                    (candidate.i * pitch_x) ** 2
-                    + (candidate.j * pitch_y) ** 2,
-                    15,
-                ),
-                abs(candidate.i) + abs(candidate.j),
-                _direction_rank(candidate.i, candidate.j),
-                abs(candidate.i),
-                abs(candidate.j),
-            )
-        )
-
-    preferred_j = tuple(range(j_min, j_max + 1)) if j_min <= j_max else ()
-    preferred_candidates = make_locations(
-        preferred_j, inside_preferred_width=True
-    )
-    sort_center_out(preferred_candidates)
-    if len(preferred_candidates) >= count:
-        return tuple(preferred_candidates[:count])
-
-    # Sidewalls define the preferred packing envelope. Once its complete
-    # lattice capacity is consumed, add rows beyond both sides as needed.
-    overflow_candidates: list[_LatticeLocation] = []
-    used_j = set(preferred_j)
-    lateral_step = 0
-    while len(preferred_candidates) + len(overflow_candidates) < count:
-        lateral_step += 1
-        if preferred_j:
-            new_j = (j_max + lateral_step, j_min - lateral_step)
-        elif lateral_step == 1:
-            new_j = (0,)
-        else:
-            offset = lateral_step - 1
-            new_j = (offset, -offset)
-        unique_new_j = tuple(j for j in new_j if j not in used_j)
-        used_j.update(unique_new_j)
-        overflow_candidates.extend(
-            make_locations(unique_new_j, inside_preferred_width=False)
-        )
-
-    sort_center_out(overflow_candidates)
-    return tuple((preferred_candidates + overflow_candidates)[:count])
 
 
 def _payload_items(
@@ -188,18 +77,14 @@ def _payload_items(
     payload: PayloadTypeConfig,
     count: int,
     z_m: float,
-    anchor_x_m: float,
-    anchor_y_m: float,
-    x_bounds_m: tuple[float, float],
+    electronics_back_x_m: float,
     y_bounds_m: tuple[float, float],
     clearance_m: float,
 ) -> tuple[MassItem, ...]:
-    locations = _center_out_locations(
+    locations = _front_to_back_locations(
         payload=payload,
         count=count,
-        anchor_x_m=anchor_x_m,
-        anchor_y_m=anchor_y_m,
-        x_bounds_m=x_bounds_m,
+        electronics_back_x_m=electronics_back_x_m,
         y_bounds_m=y_bounds_m,
         clearance_m=clearance_m,
     )
@@ -212,13 +97,9 @@ def _payload_items(
             missions=frozenset({"M2"}),
             category="mission_2_payload",
             notes=(
-                "Fixed-layer, center-out placement; lattice index "
-                f"({location.i}, {location.j}); "
-                + (
-                    "inside the preferred fuselage width."
-                    if location.inside_preferred_width
-                    else "laterally outside the preferred fuselage width."
-                )
+                "Fuselage-local front-to-back placement; "
+                f"row {location.row}, column {location.column}; first column "
+                "is against the negative-y fuselage sidewall."
             ),
         )
         for index, location in enumerate(locations, start=1)
@@ -239,9 +120,8 @@ def _vertical_layer_centers(
         rules.pucks_forward_of_ducks or rules.pucks_aft_of_ducks
     ):
         raise PayloadPlacementError(
-            "The fixed center-out process anchors the first duck and puck on the "
-            "same CG plane, so a global forward/aft type separation cannot also "
-            "be imposed."
+            "The local row process starts both payload types at the electronics, "
+            "so a global forward/aft type separation cannot also be imposed."
         )
     duck_height = config.duck.dimensions_m[2]
     puck_height = config.puck.dimensions_m[2]
@@ -258,8 +138,6 @@ def _vertical_layer_centers(
             "pucks_below_ducks or pucks_above_ducks."
         )
     else:
-        # With only one type there is no relative ordering to enforce. A
-        # puck-only load uses the configured payload plane directly.
         puck_z = duck_z
     return float(duck_z), float(puck_z)
 
@@ -288,56 +166,40 @@ def place_mission2_payload(
     *,
     duck_count: int,
     puck_count: int,
-    base_items: tuple[MassItem, ...],
-    target_cg_x_m: float | None = None,
     config: Mission2Config,
-    x_bounds_m: tuple[float, float],
-    reference_x_m: float | None = None,
-    y_bounds_m: tuple[float, float] | None = None,
+    electronics_back_x_m: float,
+    y_bounds_m: tuple[float, float],
     z_bounds_m: tuple[float, float] | None = None,
+    base_items: tuple[MassItem, ...] = (),
+    target_cg_x_m: float | None = None,
+    x_bounds_m: tuple[float, float] | None = None,
+    reference_x_m: float | None = None,
 ) -> tuple[MassItem, ...]:
-    """Place M2 payloads with the required deterministic center-out process.
+    """Pack M2 payload in fuselage-local coordinates.
 
-    ``target_cg_x_m`` is retained as a compatibility keyword but is not used as
-    an optimization target.  If ``reference_x_m`` is omitted, the actual base
-    airplane CG supplies the starting plane.
+    The last four keywords are retained only to produce clear errors for code
+    written for the former airplane-CG-centered API.  They cannot override the
+    electronics back face or the fuselage sidewalls in the new workflow.
     """
 
-    del target_cg_x_m
+    del base_items, target_cg_x_m
     if duck_count < 0 or puck_count < 0:
         raise ValueError("Mission-2 payload counts cannot be negative.")
-    if not x_bounds_m[0] < x_bounds_m[1]:
-        raise PayloadPlacementError("Mission-2 x bounds must be increasing.")
-
-    base_mass = sum(item.mass_kg for item in base_items)
-    if base_mass <= 0:
-        raise ValueError("Mission-2 placement requires positive base-airplane mass.")
-    base_cg = sum(
-        (item.mass_kg * item.position_m for item in base_items), start=np.zeros(3)
-    ) / base_mass
-    anchor_x_m = float(base_cg[0])
-    anchor_y_m = float(base_cg[1])
-    if reference_x_m is not None and not np.isclose(
-        reference_x_m, anchor_x_m, rtol=0.0, atol=1e-12
+    if not np.isfinite(electronics_back_x_m):
+        raise ValueError("electronics_back_x_m must be finite.")
+    if not (
+        np.all(np.isfinite(y_bounds_m)) and y_bounds_m[0] < y_bounds_m[1]
     ):
+        raise PayloadPlacementError("Mission-2 y bounds must be finite and increasing.")
+    if z_bounds_m is not None and not (
+        np.all(np.isfinite(z_bounds_m)) and z_bounds_m[0] < z_bounds_m[1]
+    ):
+        raise PayloadPlacementError("Mission-2 z bounds must be finite and increasing.")
+    if x_bounds_m is not None or reference_x_m is not None:
         raise ValueError(
-            "reference_x_m cannot override the required actual Mission-1 CG plane."
+            "Mission 2 no longer accepts airplane x bounds or a CG reference; "
+            "packing starts at electronics_back_x_m and grows aft."
         )
-
-    if y_bounds_m is None:
-        if config.maximum_width_m is None:
-            raise ValueError(
-                "y_bounds_m is required when Mission2Config.maximum_width_m is None."
-            )
-        half_width = 0.5 * config.maximum_width_m
-        y_bounds_m = (
-            config.compartment_center_y_m - half_width,
-            config.compartment_center_y_m + half_width,
-        )
-    if not y_bounds_m[0] < y_bounds_m[1]:
-        raise PayloadPlacementError("Mission-2 y bounds must be increasing.")
-    if z_bounds_m is not None and not z_bounds_m[0] < z_bounds_m[1]:
-        raise PayloadPlacementError("Mission-2 z bounds must be increasing.")
 
     duck_z, puck_z = _vertical_layer_centers(
         config, duck_count=duck_count, puck_count=puck_count
@@ -358,9 +220,7 @@ def place_mission2_payload(
         payload=config.duck,
         count=duck_count,
         z_m=duck_z,
-        anchor_x_m=anchor_x_m,
-        anchor_y_m=anchor_y_m,
-        x_bounds_m=x_bounds_m,
+        electronics_back_x_m=electronics_back_x_m,
         y_bounds_m=y_bounds_m,
         clearance_m=config.clearance_m,
     )
@@ -368,9 +228,7 @@ def place_mission2_payload(
         payload=config.puck,
         count=puck_count,
         z_m=puck_z,
-        anchor_x_m=anchor_x_m,
-        anchor_y_m=anchor_y_m,
-        x_bounds_m=x_bounds_m,
+        electronics_back_x_m=electronics_back_x_m,
         y_bounds_m=y_bounds_m,
         clearance_m=config.clearance_m,
     )

@@ -1,7 +1,7 @@
 # Mechanical module
 
-The mechanical module keeps one component ledger and reports total mass, center
-of gravity, static margin, and inertia for Missions 1, 2, and 3.
+The mechanical module maintains a component ledger and reports total mass,
+center of gravity, static margin, and inertia for Missions 1, 2, and 3.
 
 ## Coordinate system
 
@@ -9,33 +9,25 @@ of gravity, static margin, and inertia for Missions 1, 2, and 3.
 - `x` is positive aft, `y` is positive toward the right wing, and `z` is
   positive upward.
 - The main-wing root leading edge is `(0, 0, 0)`.
-- `DesignVector.tail_arm` is the distance from the main-wing leading edge to
-  the common horizontal/vertical-tail leading-edge station.
+- `DesignVector.tail_arm` is wing-leading-edge to tail-leading-edge distance.
 
-The existing tail-volume sizing formulas continue to use that design variable
-as their simple sizing arm. Neutral-point calculations use the actual derived
-quarter-chord stations of the resulting wing and horizontal tail.
+Static margin is `(neutral_point_x - cg_x) / wing_chord`. The completed loaded
+fuselage is placed to make Mission 2 exactly 12% MAC. Mission 1 is then accepted
+whenever its static margin is at or below 20%; falling slightly below 10% does
+not trigger a width increase.
 
-Static margin is `(neutral_point_x - cg_x) / wing_chord`. The neutral point is
-estimated from the wing and horizontal-tail finite-wing lift-curve slopes,
-areas, aerodynamic centers, tail efficiency, downwash, and dynamic-pressure
-ratio.
+## Primary calls
 
-## Primary call
+The discrete evaluator rounds payload counts to whole pieces:
 
 ```python
 from src.mech import evaluate_mechanical_module
 from src.vectors import DesignVector
 
 result = evaluate_mechanical_module(DesignVector())
-
-for mission in ("M1", "M2", "M3"):
-    properties = result.for_mission(mission)
-    print(properties.total_mass_kg)
-    print(properties.cg_m)
-    print(properties.static_margin)
-
-print(result.component_array("M2"))
+print(result.fuselage_width_m)
+print(result.fuselage_width_increases)
+print(result.for_mission("M2").static_margin)
 ```
 
 The aero-compatible adapter remains:
@@ -46,151 +38,115 @@ from src.mech import mech_main
 cg_m, inertia_kg_m2, weight_n = mech_main(DesignVector(), mission="M2")
 ```
 
-## Permanent airplane and Mission 1
+For continuous optimizer payload values, import the alternate module directly:
 
-The default ledger contains:
+```python
+from src.mech.main_mech_continuous import evaluate_mechanical_module_continuous
 
-- wing structure at `0.356 / 0.36258 kg/m^2`;
-- one 21 g servo at the center of each wing half;
-- 100 g wing integration mass;
-- a span-scaled wing spar at `0.202 / 1.18 kg/m`;
-- horizontal- and vertical-tail structure at the existing
-  `0.049 / 0.259 kg/m` assumption;
-- one 21 g servo at each tail surface's geometric center;
-- a boom spar from wing trailing edge to the aft-most tail trailing edge at
-  `0.202 / 1.18 kg/m`;
-- 25 g tail integration mass;
-- fuselage structure at `0.300 / 0.5 kg/m`, with its length derived after M2
-  placement from the electronics front edge to the aft-most payload edge;
-- 220 g landing gear at the M1 CG station and four inches below the final M1
-  CG;
-- battery, motor/propeller, ESC, and other electronics.
+result = evaluate_mechanical_module_continuous(
+    DesignVector(ducks_num=3.75, pucks_num=1.25)
+)
+```
 
-The electronics equivalent CM is solved analytically so the pre-fuselage
-Mission 1 airplane has exactly 20% static margin. It is then fixed for Missions
-2 and 3. The payload-derived fuselage is added afterward, so the reported final
-Mission 1 static margin may shift away from 20%. Electronics are three inches
-below the wing.
+## Workflow
 
-`electronics.py` converts that required CM into a physical longitudinal area:
+The module performs these operations in order:
+
+1. Build the fixed airframe: wing, wing controls and integration, wing spar,
+   horizontal and vertical tails, tail controls and integration, boom spar,
+   and landing gear. No fuselage or electronics are included yet.
+2. Build a separate fuselage in local coordinates. Put the electronics at its
+   front and pack all whole M2 payload pieces behind the electronics.
+3. Install the completed loaded fuselage at the location that makes Mission 2
+   static margin exactly 12%.
+4. Remove the M2 payload mathematically and calculate Mission 1 static margin.
+5. Only when Mission 1 is above 20%, increase fuselage width by one duck width
+   and repeat from step 2. Payload capacity is not a width-selection criterion;
+   the fuselage can always grow aft.
+6. Accept the first feasible width. The initial width plus at most three width
+   increases are tested. If none works, `PayloadPlacementError` is raised with
+   every attempted width and failure reason.
+7. Build Mission 3 using the same fixed-distance process as before, after the
+   M1/M2 fuselage has been accepted.
+
+`DesignVector.fuselage_width` is the starting width and defaults to `0.0762 m`,
+which fits the `0.0762 m` puck exactly. The default duck width is `0.053 m`, so
+the attempted widths are `0.0762`, `0.1292`, `0.1822`, and `0.2352 m`. The selected values are returned as
+`result.fuselage_width_m` and `result.fuselage_width_increases`.
+
+`Mission2Config.maximum_width_increases` changes the retry count. Every step is
+exactly one configured duck width.
+`Mission2Config.target_static_margin` sets the loaded placement target and
+defaults to `0.12`.
+
+## Local electronics and M2 packing
+
+The electronics front face defines local `x=0`. The existing packaging
+profiles remain available:
 
 | Fuselage classification | Area length | CM from front |
 |---|---:|---:|
-| skinny: width **and** height `< 0.127 m` | `0.254 m` | `0.135 m` |
+| skinny: width and height `< 0.127 m` | `0.254 m` | `0.135 m` |
 | fat: every other cross-section | `0.228 m` | `0.119 m` |
 
-The resolved front, CM, and back locations are available through
-`result.electronics_layout`. Optional electronics CM bounds are treated as hard
-feasibility checks; they never clip the CM and silently spoil the exact target.
+Electronics are three inches below the wing. After the completed fuselage is
+translated onto the airplane, its absolute envelope is available through
+`result.electronics_layout`.
 
-### Linear battery, motor, and propeller masses
+M2 packing is deterministic and does not use the airplane CG or tail position:
 
-The default battery line passes through 4.5 Ah / 0.690 kg and the origin. Its
-slope can be replaced after fitting measured battery data.
+1. The first item of each payload type touches the electronics back face.
+2. Its negative-y face touches the negative-y fuselage sidewall.
+3. A row fills laterally across the fuselage, using bounding-box width plus
+   configured clearance as pitch.
+4. When the row is full, the next row moves aft by bounding-box length plus
+   clearance.
+5. Every complete payload bounding box must remain inside the fuselage width.
+   The back of the electronics is the only longitudinal packing wall; the
+   fuselage grows aft to the final payload edge.
 
-The supplied 0.390 kg motor/propeller mass remains a combined ledger item until
-separate fits are configured. `LinearMassModel` provides a dependency-free
-two-point framework for those fits:
+Ducks and pucks retain their configured vertical layers. The default places
+ducks three inches below the wing and pucks immediately below them. Whole
+payload pieces determine fuselage length; no item is silently dropped.
 
-```python
-from dataclasses import replace
-from src.mech import LinearMassModel, MechanicalModuleConfig
+## Continuous payload values
 
-config = MechanicalModuleConfig()
-motor_fit = LinearMassModel.from_points(
-    500.0, 0.200,
-    1000.0, 0.400,
-    input_name="motor power [W]",
-)
-propeller_fit = LinearMassModel.from_points(
-    10.0, 0.040,
-    20.0, 0.080,
-    input_name="propeller diameter [in]",
-)
-config = replace(
-    config,
-    airframe=replace(
-        config.airframe,
-        motor_mass_model=motor_fit,
-        propeller_mass_model=propeller_fit,
-        motor_sizing_value=750.0,
-        propeller_sizing_value=15.0,
-    ),
-)
-```
+`main_mech_continuous.py` uses the identical workflow for the whole portions of
+the requested payload amounts. It strictly floors each amount, physically packs
+those whole pieces, and uses them for fuselage length and width selection.
 
-Both propulsion fits and both sizing inputs must be supplied together. This
-prevents the combined 0.390 kg fallback from being double-counted.
+Each fractional remainder is then added as an auditable zero-size point mass at
+the floor-count M2 CG. This preserves the prior continuous method: fractional
+mass changes total mass and weight, but does not change CG, static margin,
+inertia about the CG, fuselage envelope, or selected fuselage width.
 
-## Mission 2 center-out placement
+## Fuselage and mass ledger
 
-Mission 2 uses one deterministic process with no optimizer or fallback solver:
+The fuselage runs from the electronics front face to the aft-most whole M2
+payload face. With no whole M2 payload, it ends at the electronics back face.
+Its default structural model remains `0.300 / 0.5 kg/m`.
 
-1. Use the 20%-static-margin pre-fuselage M1 CG as the starting x-plane and the
-   aircraft centerline as the starting y-location.
-2. Put the first duck and first puck at that same x/y location.
-3. Put duck centers three inches below the wing and put pucks directly below
-   the duck layer.
-4. For each payload type, make a lattice whose pitch is that type's bounding
-   box plus the configured clearance.
-5. Take valid lattice cells in increasing physical distance from the starting
-   point. Symmetric forward/aft and left/right cells are considered in a fixed
-   order.
-6. Reject cells whose full bounding box crosses the electronics back edge or
-   forward-most tail leading edge. Fill every lattice cell within the preferred
-   fuselage width first, then add rows beyond both sidewalls when more payload
-   remains.
-
-The lateral direction has no hard capacity limit. `PayloadPlacementError` is
-still raised when the longitudinal interval or fixed vertical layers cannot fit
-the payload geometry. No payload is silently dropped and no more expensive
-search is attempted. Mission 2 static margin is calculated after placement;
-payload positions are not moved to optimize it.
-
-After all whole M2 payloads are placed, the fuselage is added from the resolved
-electronics front edge to the aft-most M2 payload back edge. If M2 has no whole
-payload, the electronics back edge supplies the aft endpoint. The design-vector
-fuselage width and height still define its cross-section, but design-vector nose
-and tail stations no longer define its length. The continuous evaluator uses
-the same whole-payload envelope; fractional remainders remain point-mass
-equivalents and do not extend the fuselage.
-
-The default zero vertical clearance lets the current 53 mm duck and 25.4 mm
-puck layers fit beneath a duck CM at `z=-0.0762 m` in the 130 mm fuselage. Use
-`Mission2Config.vertical_clearance_m` when geometry provides more space.
+The permanent ledger still includes the battery, motor/propeller, ESC, and
+other electronics. The battery model and the lightweight `LinearMassModel`
+hooks for motor and propeller interpolation are unchanged.
 
 ## Mission 3
 
-Mission 3 starts from the same permanent M1 airplane, not from Mission 2. It
-uses two 100 g mechanism masses and the existing banner density model. The
-mechanism locations are explicit fixed distances from the banner center:
-
-```python
-from dataclasses import replace
-
-config = replace(
-    config,
-    mission3=replace(
-        config.mission3,
-        forward_mechanism_distance_m=0.075,
-        aft_mechanism_distance_m=0.125,
-    ),
-)
-```
-
-Unless an absolute banner center is supplied, the group translates together to
-the configured static-margin target while those relative distances remain
-fixed. Every M3 bounding box remains between the electronics back edge and the
-forward-most tail leading edge; a manual center range is intersected with those
-physical walls.
+Mission 3 starts from the accepted M1 airplane, not from Mission 2. It retains
+the prior banner and two-mechanism model with explicit fixed distances from the
+banner center. Unless an absolute center is configured, the group translates
+together toward the configured static-margin target while preserving those
+distances. Its physical electronics/tail bounds are unchanged.
 
 ## Validation
 
 ```powershell
 python -m src.testing.mech_test
+python -m src.testing.mech_test_design_sweep_continuous
 ```
 
-The regression covers the pre-fuselage 20% M1 target, LE-to-LE tail arm, skinny/fat
-electronics layouts, component mass fits, payload ordering and boundaries,
-maximum payload counts, deterministic placement, M3 fixed distances, and
-positive-semidefinite inertia tensors.
+The regression coverage includes fixed-airframe separation, exact 12% M2
+placement, the one-sided 20% M1 check, M2 wall-to-wall row ordering, width
+retry and failure signaling, continuous
+fractional masses at CG, fuselage envelope sizing, M3 fixed distances, mass
+interpolation hooks, and positive-semidefinite inertia tensors.
