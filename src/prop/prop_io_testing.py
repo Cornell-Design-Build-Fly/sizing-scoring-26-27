@@ -213,6 +213,148 @@ def main():
 
     print("Passed basic prop input/output sanity checks.")
 
+    print("\n=== Inputs ===")
+    print(f"Mission: {MISSION}")
+    print(f"Battery capacity: {BATT_CAPACITY_AH} Ah")
+    print(f"Battery voltage: {BATTERY_VOLTAGE_V} V")
+    print(f"Battery cells: {NUM_BATTERY_CELLS}")
+    print(f"Max current: {MAX_CURRENT_A} A")
+    print(f"Usable battery fraction: {USABLE_BATTERY_FRACTION}")
+
+    print(f"\nProp diameter: {PROP_DIAMETER_IN} in")
+    print(f"Prop pitch: {PROP_PITCH_IN} in")
+
+    print(f"\nMotor Kv: {MOTOR_KV}")
+    print(f"Motor max power: {MOTOR_MAX_POWER_W} W")
+
+    print(f"\nCruise throttle: {CRUISE_THROTTLE}")
+    print(f"Mission 3 cruise throttle: {MISSION3_CRUISE_THROTTLE}")
+
+    print("\nVelocity samples used for fitting [m/s]:")
+    print(VELOCITIES_MPS)
+
+    print("\n=== Running prop_main ===")
+    result = prop_main(
+        design_vector=design_vector,
+        parameter_vector=parameter_vector,
+        mission=MISSION,
+        prop_database=prop_database,
+        velocities_mps=VELOCITIES_MPS,
+        disp_res=False,
+    )
+
+    print("\n=== Prop Section Outputs: Full Python Result ===")
+
+    print("\nPolynomial fits:")
+    print("result.throttled_thrust:")
+    print(result.throttled_thrust)
+
+    print("\nresult.max_thrust:")
+    print(result.max_thrust)
+
+    print("\nresult.throttled_time:")
+    print(result.throttled_time)
+
+    print("\nresult.max_time:")
+    print(result.max_time)
+
+    print("\nRaw sample outputs used to create fits:")
+
+    print("\nSample velocities [m/s]:")
+    print(result.sample_velocities_mps)
+
+    print("\nThrottled thrust samples [N]:")
+    print(result.throttled_thrust_samples)
+
+    print("\nMax thrust samples [N]:")
+    print(result.max_thrust_samples)
+
+    print("\nThrottled flight time samples [s]:")
+    print(result.throttled_time_samples)
+
+    print("\nMax flight time samples [s]:")
+    print(result.max_time_samples)
+
+    print("\n=== MATLAB-style prop_main_interp outputs ===")
+    p_throttled_thrust, p_max_thrust, p_throttled_t, p_max_t = prop_main_interp(
+        design_vector=design_vector,
+        parameter_vector=parameter_vector,
+        mission=MISSION,
+        prop_database=prop_database,
+        velocities_mps=VELOCITIES_MPS,
+        disp_res=False,
+    )
+
+    print("\np_throttled_thrust:")
+    print(p_throttled_thrust)
+
+    print("\np_max_thrust:")
+    print(p_max_thrust)
+
+    print("\np_throttled_t:")
+    print(p_throttled_t)
+
+    print("\np_max_t:")
+    print(p_max_t)
+
+    print("\n=== Evaluating curve fits at chosen speeds ===")
+
+    throttled_thrust_eval = np.polyval(
+        result.throttled_thrust,
+        EVALUATION_SPEEDS_MPS,
+    )
+
+    max_thrust_eval = np.polyval(
+        result.max_thrust,
+        EVALUATION_SPEEDS_MPS,
+    )
+
+    throttled_time_eval = np.polyval(
+        result.throttled_time,
+        EVALUATION_SPEEDS_MPS,
+    )
+
+    max_time_eval = np.polyval(
+        result.max_time,
+        EVALUATION_SPEEDS_MPS,
+    )
+
+    print(
+        "\n"
+        "Speed [m/s] | Cruise thrust [N] | Max thrust [N] | "
+        "Cruise time [s] | Max time [s]"
+    )
+
+    for speed, cruise_thrust, max_thrust, cruise_time, max_time in zip(
+        EVALUATION_SPEEDS_MPS,
+        throttled_thrust_eval,
+        max_thrust_eval,
+        throttled_time_eval,
+        max_time_eval,
+    ):
+        print(
+            f"{speed:10.3f} | "
+            f"{cruise_thrust:17.3f} | "
+            f"{max_thrust:14.3f} | "
+            f"{cruise_time:15.3f} | "
+            f"{max_time:12.3f}"
+        )
+
+    print("\n=== Basic sanity checks ===")
+
+    assert np.all(np.isfinite(result.throttled_thrust))
+    assert np.all(np.isfinite(result.max_thrust))
+    assert np.all(np.isfinite(result.throttled_time))
+    assert np.all(np.isfinite(result.max_time))
+
+    assert np.all(np.isfinite(result.throttled_thrust_samples))
+    assert np.all(np.isfinite(result.max_thrust_samples))
+    assert np.all(np.isfinite(result.throttled_time_samples))
+    assert np.all(np.isfinite(result.max_time_samples))
+
+    assert np.any(result.max_thrust_samples > 0.0)
+
+    print("Passed basic prop input/output sanity checks.")
 
 if __name__ == "__main__":
     main()
