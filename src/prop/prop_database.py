@@ -285,28 +285,79 @@ def load_continuous_prop_database(json_path=DEFAULT_PROP_DATA_PATH) -> Continuou
 
 
 
+# @lru_cache(maxsize=1)
+# def load_default_prop_database() -> ContinuousPropDatabase:
+#     """
+#     Load the prebuilt prop interpolator from .pkl if available.
+#     If not available/outdated, rebuild from JSON and save a new .pkl.
+#     """
+#     json_path = DEFAULT_PROP_DATA_PATH
+#     cache_path = DEFAULT_PROP_CACHE_PATH
+
+#     if cache_path.exists():
+#         with cache_path.open("rb") as file:
+#             payload = pickle.load(file)
+
+#         if (
+#             isinstance(payload, dict)
+#             and payload.get("version") == PROP_CACHE_VERSION
+#             and "prop_database" in payload
+#         ):
+#             return payload["prop_database"]
+
+#     prop_database = load_continuous_prop_database(json_path)
+
+#     payload = {
+#         "version": PROP_CACHE_VERSION,
+#         "prop_database": prop_database,
+#     }
+
+#     with cache_path.open("wb") as file:
+#         pickle.dump(payload, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+#     return prop_database
+
 @lru_cache(maxsize=1)
 def load_default_prop_database() -> ContinuousPropDatabase:
-    """
-    Load the prebuilt prop interpolator from .pkl if available.
-    If not available/outdated, rebuild from JSON and save a new .pkl.
-    """
+    import time
+
     json_path = DEFAULT_PROP_DATA_PATH
     cache_path = DEFAULT_PROP_CACHE_PATH
 
+    print("load_default_prop_database() called")
+
     if cache_path.exists():
-        with cache_path.open("rb") as file:
-            payload = pickle.load(file)
+        print(f"Found cache file: {cache_path}")
+        print(f"Cache file size: {cache_path.stat().st_size / 1_000_000:.2f} MB")
 
-        if (
-            isinstance(payload, dict)
-            and payload.get("version") == PROP_CACHE_VERSION
-            and "prop_database" in payload
-        ):
-            return payload["prop_database"]
+        start = time.perf_counter()
 
+        try:
+            with cache_path.open("rb") as file:
+                payload = pickle.load(file)
+
+            print(f"pickle.load() took {time.perf_counter() - start:.2f} seconds")
+
+            if (
+                isinstance(payload, dict)
+                and payload.get("version") == PROP_CACHE_VERSION
+                and "prop_database" in payload
+            ):
+                print("Using prop database from .pkl cache")
+                return payload["prop_database"]
+
+            print("Cache exists but is invalid/outdated. Rebuilding...")
+
+        except Exception as error:
+            print(f"Could not load cache. Rebuilding. Reason: {error}")
+
+    start = time.perf_counter()
+    print("Building prop database from JSON...")
     prop_database = load_continuous_prop_database(json_path)
+    print(f"Building prop database took {time.perf_counter() - start:.2f} seconds")
 
+    start = time.perf_counter()
+    print("Saving prop database to .pkl...")
     payload = {
         "version": PROP_CACHE_VERSION,
         "prop_database": prop_database,
@@ -314,5 +365,7 @@ def load_default_prop_database() -> ContinuousPropDatabase:
 
     with cache_path.open("wb") as file:
         pickle.dump(payload, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+    print(f"Saving .pkl took {time.perf_counter() - start:.2f} seconds")
 
     return prop_database
