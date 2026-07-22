@@ -6,9 +6,9 @@ from src.prop.main_prop import (
     load_default_prop_database,
     prop_main,
     prop_main_interp,
-    evaluate_curve,
 )
 
+from src.prop.plotting import evaluate_curve
 
 def main():
     print("=== Loading prop database ===")

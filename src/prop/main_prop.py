@@ -39,7 +39,8 @@ def prop_main(
     prop_database: ContinuousPropDatabase | None = None,
     velocities_mps: np.ndarray | None = None,
     disp_res: bool = False,
-) -> PropulsionCurveFit:
+) -> tuple[np.ndarray, np.ndarray]:
+# changed return type from this: -> PropulsionCurveFit:
 
     """
     Evaluates propulsion performance across a range of flight velocities.
@@ -167,8 +168,10 @@ def prop_main(
     if disp_res:
         plot_propulsion_result(result)
 
-    return result
+    # used to be this: return result
+    return throttled_thrust_fit, max_thrust_fit
 
+'''
 def prop_main_interp(
     design_vector: DesignVector,
     parameter_vector: ParameterVector = ParameterVector,
@@ -199,3 +202,4 @@ def prop_main_interp(
         result.throttled_time,
         result.max_time,
     )
+    '''
