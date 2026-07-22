@@ -286,10 +286,17 @@ def _fuselage_item_from_m2_envelope(
     length = float(back_edge_x - front_edge_x)
     if length <= 0:
         raise RuntimeError("The locally packed fuselage length must be positive.")
+    cross_sectional_perimeter = 2.0 * (
+        fuselage_width_m + design_vector.fuselage_height
+    )
 
     return MassItem(
         name="Fuselage structure",
-        mass_kg=config.airframe.fuselage_linear_density_kg_m * length,
+        mass_kg=(
+            config.airframe.fuselage_shell_areal_density_kg_m2
+            * length
+            * cross_sectional_perimeter
+        ),
         position_m=(
             0.5 * (front_edge_x + back_edge_x),
             0.0,
@@ -303,8 +310,9 @@ def _fuselage_item_from_m2_envelope(
         missions=ALL_MISSIONS,
         category="airframe",
         notes=(
-            "Fuselage-local uniform linear-density approximation from the "
-            "electronics front edge to the aft-most Mission-2 payload edge."
+            "Fuselage-local uniform shell-area-density approximation from the "
+            "electronics front edge to the aft-most Mission-2 payload edge; "
+            "mass scales with length and cross-sectional perimeter."
         ),
     )
 
@@ -354,7 +362,9 @@ def _local_fuselage_assembly(
             ),
         )
         for component_name, component_mass in airframe.electronics_component_masses_kg(
-            design_vector.batt_capacity
+            design_vector.batt_capacity,
+            design_vector.motor_max_power,
+            design_vector.prop_diameter_in,
         )
     )
     if sum(item.mass_kg for item in electronics_items) <= 0:

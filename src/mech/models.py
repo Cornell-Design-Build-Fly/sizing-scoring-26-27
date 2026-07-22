@@ -25,6 +25,7 @@ from src.mech.electronics import (
     ElectronicsLayout,
     ElectronicsPackagingConfig,
     LinearMassModel,
+    PiecewiseLinearMassModel,
 )
 
 ALL_MISSIONS = frozenset({"M1", "M2", "M3"})
@@ -210,6 +211,40 @@ class BatteryMassModel:
         ):
             raise ValueError("Battery masses and capacity slope cannot be negative.")
 
+    @classmethod
+    def from_points(
+        cls,
+        first_capacity_ah: float,
+        first_mass_kg: float,
+        second_capacity_ah: float,
+        second_mass_kg: float,
+        *,
+        minimum_mass_kg: float = 0.0,
+    ) -> "BatteryMassModel":
+        """Create the line through two measured ``(capacity, mass)`` points."""
+
+        values = (
+            first_capacity_ah,
+            first_mass_kg,
+            second_capacity_ah,
+            second_mass_kg,
+        )
+        if not np.all(np.isfinite(values)):
+            raise ValueError("Battery interpolation points must be finite.")
+        if first_capacity_ah <= 0 or second_capacity_ah <= 0:
+            raise ValueError("Battery interpolation capacities must be positive.")
+        if np.isclose(first_capacity_ah, second_capacity_ah):
+            raise ValueError("Battery interpolation capacities must be distinct.")
+        slope = (second_mass_kg - first_mass_kg) / (
+            second_capacity_ah - first_capacity_ah
+        )
+        return cls(
+            reference_capacity_ah=float(first_capacity_ah),
+            reference_mass_kg=float(first_mass_kg),
+            slope_kg_per_ah=float(slope),
+            minimum_mass_kg=minimum_mass_kg,
+        )
+
     def mass_kg(self, capacity_ah: float) -> float:
         if not np.isfinite(capacity_ah) or capacity_ah <= 0:
             raise ValueError("Battery capacity must be finite and positive.")
@@ -253,7 +288,10 @@ class AirframeMassConfig:
     tail_integration_mass_kg: float = 0.025
     tail_integration_dimensions_m: tuple[float, float, float] = (0.060, 0.060, 0.050)
 
-    fuselage_linear_density_kg_m: float = 0.300 / 0.5
+    # A 0.5 m fuselage with a 0.457 m cross-sectional perimeter weighs 0.300 kg.
+    # Treat this as a shell-area density so the structural mass changes with
+    # both fuselage length and cross-sectional size.
+    fuselage_shell_areal_density_kg_m2: float = 0.300 / (0.5 * 0.457)
 
     landing_gear_mass_kg: float = 0.220
     # Vertical distance from the main-wing plane to the landing-gear center.
@@ -261,18 +299,18 @@ class AirframeMassConfig:
     landing_gear_dimensions_m: tuple[float, float, float] = (0.080, 0.180, 0.080)
 
     motor_prop_mass_kg: float = 0.390
-    # The supplied baseline combines motor and propeller mass.  Leave these
-    # models as ``None`` to use that exact 0.390 kg combined item.  Once two
-    # catalogue fits and their sizing inputs are available, supply both models
-    # to list the motor and propeller separately without double-counting the
-    # combined baseline.
-    motor_mass_model: LinearMassModel | None = None
-    propeller_mass_model: LinearMassModel | None = None
-    motor_sizing_value: float | None = None
-    propeller_sizing_value: float | None = None
+    # Put the motor and propeller catalogue points in these models. Their
+    # evaluated inputs come directly from
+    # DesignVector.motor_max_power and DesignVector.prop_diameter_in. Leave both
+    # as None to retain the legacy combined 0.390 kg item until real split data
+    # are supplied. Supplying both produces separate Motor and Propeller items.
+    motor_mass_model: LinearMassModel | PiecewiseLinearMassModel | None = None
+    propeller_mass_model: LinearMassModel | PiecewiseLinearMassModel | None = None
     esc_mass_kg: float = 0.118
     other_electronics_mass_kg: float = 0.050
-    battery_model: BatteryMassModel = field(default_factory=BatteryMassModel)
+    battery_model: BatteryMassModel | PiecewiseLinearMassModel = field(
+        default_factory=BatteryMassModel
+    )
     electronics_packaging: ElectronicsPackagingConfig = field(
         default_factory=ElectronicsPackagingConfig
     )
@@ -300,7 +338,9 @@ class AirframeMassConfig:
             "wing_integration_mass_kg": self.wing_integration_mass_kg,
             "spar_linear_density_kg_m": self.spar_linear_density_kg_m,
             "tail_integration_mass_kg": self.tail_integration_mass_kg,
-            "fuselage_linear_density_kg_m": self.fuselage_linear_density_kg_m,
+            "fuselage_shell_areal_density_kg_m2": (
+                self.fuselage_shell_areal_density_kg_m2
+            ),
             "landing_gear_mass_kg": self.landing_gear_mass_kg,
             "landing_gear_vertical_offset_m": self.landing_gear_vertical_offset_m,
             "motor_prop_mass_kg": self.motor_prop_mass_kg,
@@ -349,25 +389,16 @@ class AirframeMassConfig:
             if not (np.isfinite(lower) and np.isfinite(upper) and lower < upper):
                 raise ValueError("electronics_x_bounds_m must be finite and increasing.")
 
-        interpolation_fields = (
-            self.motor_mass_model,
-            self.propeller_mass_model,
-            self.motor_sizing_value,
-            self.propeller_sizing_value,
-        )
-        if any(value is not None for value in interpolation_fields):
-            if any(value is None for value in interpolation_fields):
-                raise ValueError(
-                    "Motor and propeller interpolation requires both mass models "
-                    "and both sizing values."
-                )
-            if not np.all(
-                np.isfinite((self.motor_sizing_value, self.propeller_sizing_value))
-            ):
-                raise ValueError("Motor and propeller sizing values must be finite.")
+        if (self.motor_mass_model is None) != (self.propeller_mass_model is None):
+            raise ValueError(
+                "Motor and propeller interpolation requires both mass models."
+            )
 
     def electronics_component_masses_kg(
-        self, battery_capacity_ah: float
+        self,
+        battery_capacity_ah: float,
+        motor_max_power_w: float,
+        propeller_diameter_in: float,
     ) -> tuple[tuple[str, float], ...]:
         """Resolve the permanent electronics ledger without double-counting."""
 
@@ -377,23 +408,19 @@ class AirframeMassConfig:
         if self.motor_mass_model is None:
             components.append(("Motor and propeller", self.motor_prop_mass_kg))
         else:
-            # Validation guarantees that the paired values are present.
+            # Validation guarantees that both paired models are present.
             motor_model = self.motor_mass_model
             propeller_model = self.propeller_mass_model
-            motor_input = self.motor_sizing_value
-            propeller_input = self.propeller_sizing_value
             assert propeller_model is not None
-            assert motor_input is not None
-            assert propeller_input is not None
             components.extend(
                 [
                     (
                         "Motor",
-                        motor_model.mass_kg(motor_input),
+                        motor_model.mass_kg(motor_max_power_w),
                     ),
                     (
                         "Propeller",
-                        propeller_model.mass_kg(propeller_input),
+                        propeller_model.mass_kg(propeller_diameter_in),
                     ),
                 ]
             )
@@ -405,12 +432,19 @@ class AirframeMassConfig:
         )
         return tuple(components)
 
-    def electronics_mass_kg(self, battery_capacity_ah: float) -> float:
+    def electronics_mass_kg(
+        self,
+        battery_capacity_ah: float,
+        motor_max_power_w: float,
+        propeller_diameter_in: float,
+    ) -> float:
         return float(
             sum(
                 mass
                 for _, mass in self.electronics_component_masses_kg(
-                    battery_capacity_ah
+                    battery_capacity_ah,
+                    motor_max_power_w,
+                    propeller_diameter_in,
                 )
             )
         )

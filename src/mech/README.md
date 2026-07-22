@@ -132,11 +132,77 @@ inertia about the CG, fuselage envelope, or selected fuselage width.
 The fuselage runs from the electronics front face to the aft-most whole M2
 payload face. With no whole M2 payload, it ends at the electronics back face.
 After installation, its back must remain strictly ahead of the nearer tail
-leading edge. Its default structural model remains `0.300 / 0.5 kg/m`.
+leading edge. Its structural mass is based on a `0.300 kg` reference fuselage
+with `0.5 m` length and `0.457 m` cross-sectional perimeter. Mass scales with
+both length and the rectangular cross-sectional perimeter, `2 * (width + height)`.
 
 The permanent ledger still includes the battery, motor/propeller, ESC, and
-other electronics. The battery model and the lightweight `LinearMassModel`
-hooks for motor and propeller interpolation are unchanged.
+other electronics.
+
+## Motor, propeller, and battery mass interpolation
+
+Enter all measured catalogue points for each component in the piecewise-linear
+mass models below. The values being evaluated belong in `DesignVector`: battery
+capacity in Ah, motor maximum power in W, and propeller diameter in inches.
+
+```python
+from dataclasses import replace
+
+from src.mech import (
+    MechanicalModuleConfig,
+    PiecewiseLinearMassModel,
+    evaluate_mechanical_module,
+)
+from src.vectors import DesignVector
+
+base_config = MechanicalModuleConfig()
+config = replace(
+    base_config,
+    airframe=replace(
+        base_config.airframe,
+        # Add every measured (input, mass_kg) pair to the relevant list.
+        motor_mass_model=PiecewiseLinearMassModel.from_points(
+            [
+                (500.0, 0.200),   # power [W], mass [kg]
+                (750.0, 0.280),
+                (1000.0, 0.400),
+            ],
+            input_name="motor maximum power [W]",
+        ),
+        propeller_mass_model=PiecewiseLinearMassModel.from_points(
+            [
+                (10.0, 0.040),    # diameter [in], mass [kg]
+                (15.0, 0.055),
+                (20.0, 0.080),
+            ],
+            input_name="propeller diameter [in]",
+        ),
+        battery_model=PiecewiseLinearMassModel.from_points(
+            [
+                (4.0, 0.600),     # capacity [Ah], mass [kg]
+                (5.0, 0.720),
+                (6.0, 0.900),
+            ],
+            input_name="battery capacity [Ah]",
+        ),
+    ),
+)
+
+design = DesignVector(
+    motor_max_power=875.0,
+    prop_diameter_in=17.5,
+    batt_capacity=5.5,
+)
+result = evaluate_mechanical_module(design, config)
+```
+
+With both propulsion models supplied, `Motor` and `Propeller` are separate mass
+ledger items. They, the battery, ESC, and other electronics remain separate for
+auditing but share the same equivalent electronics position and feed the same
+electronics point-mass calculation. If the motor and propeller catalogue models
+are omitted, the legacy combined `Motor and propeller` 0.390 kg item is used.
+Inputs between adjacent catalogue points are linearly interpolated. Inputs
+outside the supplied range use the slope of the nearest end segment.
 
 ## Mission 3
 

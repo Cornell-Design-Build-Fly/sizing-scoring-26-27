@@ -13,9 +13,9 @@ import numpy as np
 
 from src.mech import (
     ElectronicsPackagingConfig,
-    LinearMassModel,
     MechanicalModuleConfig,
     PayloadPlacementError,
+    PiecewiseLinearMassModel,
     evaluate_mechanical_module,
     mech_main,
     resolve_electronics_layout,
@@ -60,7 +60,9 @@ def _assert_mass_properties(result) -> None:
         assert np.all(np.linalg.eigvalsh(properties.inertia_tensor_kg_m2) >= -1e-10)
 
 
-def _assert_fuselage_envelope(result, design: DesignVector) -> None:
+def _assert_fuselage_envelope(
+    result, design: DesignVector, config: MechanicalModuleConfig
+) -> None:
     fuselage = next(
         item
         for item in result.for_mission("M1").items
@@ -80,6 +82,13 @@ def _assert_fuselage_envelope(result, design: DesignVector) -> None:
     assert np.isclose(back_edge, expected_back_edge)
     assert np.isclose(fuselage.dimensions_m[1], result.fuselage_width_m)
     assert np.isclose(fuselage.dimensions_m[2], design.fuselage_height)
+    expected_perimeter = 2.0 * (result.fuselage_width_m + design.fuselage_height)
+    expected_mass = (
+        config.airframe.fuselage_shell_areal_density_kg_m2
+        * fuselage.dimensions_m[0]
+        * expected_perimeter
+    )
+    assert np.isclose(fuselage.mass_kg, expected_mass)
 
 
 def main() -> None:
@@ -188,7 +197,7 @@ def main() -> None:
         assert payload.position_m[1] - 0.5 * payload.dimensions_m[1] >= -half_width - 1e-12
         assert payload.position_m[1] + 0.5 * payload.dimensions_m[1] <= half_width + 1e-12
     _assert_no_payload_overlap(result.for_mission("M2").items)
-    _assert_fuselage_envelope(result, design)
+    _assert_fuselage_envelope(result, design, config)
     fuselage = next(item for item in m1.items if item.name == "Fuselage structure")
     fuselage_back_x = fuselage.position_m[0] + 0.5 * fuselage.dimensions_m[0]
     tail_front_x = min(
@@ -205,15 +214,41 @@ def main() -> None:
         empty.for_mission("M1").static_margin,
     )
 
+    # For an otherwise identical empty layout, increasing only fuselage width
+    # leaves length unchanged and increases structural mass with perimeter.
+    wide_empty_design = DesignVector(
+        ducks_num=0,
+        pucks_num=0,
+        fuselage_width=0.1292,
+    )
+    wide_empty = evaluate_mechanical_module(wide_empty_design, config)
+    empty_fuselage = next(
+        item for item in empty.for_mission("M1").items
+        if item.name == "Fuselage structure"
+    )
+    wide_empty_fuselage = next(
+        item for item in wide_empty.for_mission("M1").items
+        if item.name == "Fuselage structure"
+    )
+    assert np.isclose(
+        wide_empty_fuselage.dimensions_m[0], empty_fuselage.dimensions_m[0]
+    )
+    assert wide_empty_fuselage.mass_kg > empty_fuselage.mass_kg
+    assert np.isclose(
+        wide_empty_fuselage.mass_kg / empty_fuselage.mass_kg,
+        (wide_empty_design.fuselage_width + wide_empty_design.fuselage_height)
+        / (design.fuselage_width + design.fuselage_height),
+    )
+
     # Large payloads widen because the narrower exact-M2 layouts fail an
-    # acceptance check; the new gear datum makes the accepted width three
-    # duck-width increases for this case.
+    # acceptance check. With perimeter-scaled fuselage mass, this case is
+    # accepted after two duck-width increases.
     large_design = DesignVector(ducks_num=10, pucks_num=9)
     large = evaluate_mechanical_module(large_design, config)
-    assert large.fuselage_width_increases == 3
+    assert large.fuselage_width_increases == 2
     assert np.isclose(
         large.fuselage_width_m,
-        large_design.fuselage_width + 3 * config.mission2.duck.dimensions_m[1],
+        large_design.fuselage_width + 2 * config.mission2.duck.dimensions_m[1],
     )
     assert np.isclose(
         large.for_mission("M2").static_margin,
@@ -267,11 +302,13 @@ def main() -> None:
     m1_items = {item.name: item for item in m1.items}
     assert np.isclose(m1_items["Battery"].mass_kg, 0.690)
     assert np.isclose(m1_items["Motor and propeller"].mass_kg, 0.390)
-    motor_model = LinearMassModel.from_points(
-        500.0, 0.200, 1000.0, 0.400, input_name="motor power [W]"
+    motor_model = PiecewiseLinearMassModel.from_points(
+        [(500.0, 0.200), (750.0, 0.280), (1000.0, 0.400)],
+        input_name="motor power [W]",
     )
-    propeller_model = LinearMassModel.from_points(
-        10.0, 0.040, 20.0, 0.080, input_name="propeller diameter [in]"
+    propeller_model = PiecewiseLinearMassModel.from_points(
+        [(10.0, 0.040), (15.0, 0.055), (20.0, 0.080)],
+        input_name="propeller diameter [in]",
     )
     interpolated_config = replace(
         config,
@@ -279,16 +316,35 @@ def main() -> None:
             config.airframe,
             motor_mass_model=motor_model,
             propeller_mass_model=propeller_model,
-            motor_sizing_value=750.0,
-            propeller_sizing_value=15.0,
+            battery_model=PiecewiseLinearMassModel.from_points(
+                [(4.0, 0.600), (5.0, 0.720), (6.0, 0.900)],
+                input_name="battery capacity [Ah]",
+            ),
         ),
     )
-    interpolated = evaluate_mechanical_module(design, interpolated_config)
+    interpolated_design = replace(
+        design,
+        batt_capacity=5.5,
+        motor_max_power=875.0,
+        prop_diameter_in=17.5,
+    )
+    interpolated = evaluate_mechanical_module(
+        interpolated_design, interpolated_config
+    )
     interpolated_items = {
         item.name: item for item in interpolated.for_mission("M1").items
     }
-    assert np.isclose(interpolated_items["Motor"].mass_kg, 0.300)
-    assert np.isclose(interpolated_items["Propeller"].mass_kg, 0.060)
+    assert np.isclose(interpolated_items["Motor"].mass_kg, 0.340)
+    assert np.isclose(interpolated_items["Propeller"].mass_kg, 0.0675)
+    assert np.isclose(interpolated_items["Battery"].mass_kg, 0.810)
+    assert np.array_equal(
+        interpolated_items["Motor"].position_m,
+        interpolated_items["Propeller"].position_m,
+    )
+    assert np.array_equal(
+        interpolated_items["Motor"].position_m,
+        interpolated_items["Battery"].position_m,
+    )
 
     # Mission 3 still uses the prior fixed-distance process after M1/M2 finish.
     m3_items = {item.name: item for item in result.for_mission("M3").items}

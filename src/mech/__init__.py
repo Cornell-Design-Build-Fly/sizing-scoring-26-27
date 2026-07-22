@@ -4,6 +4,7 @@ from src.mech.electronics import (
     ElectronicsLayout,
     ElectronicsPackagingConfig,
     LinearMassModel,
+    PiecewiseLinearMassModel,
     resolve_electronics_layout,
 )
 from src.mech.main_mech import evaluate_mechanical_module, mech_main
@@ -47,6 +48,7 @@ __all__ = [
     "NeutralPointConfig",
     "PayloadPlacementError",
     "PayloadTypeConfig",
+    "PiecewiseLinearMassModel",
     "PlacementRules",
     "RelativePayloadRules",
     "StaticMarginConfig",
