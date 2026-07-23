@@ -10,6 +10,7 @@ from src.mech.electronics import (
 from src.mech.main_mech import evaluate_mechanical_module, mech_main
 from src.mech.mass_properties import (
     center_of_gravity,
+    estimate_aerodynamic_center_x,
     estimate_neutral_point_x,
     geometry_stations,
     inertia_tensor_about_cg,
@@ -22,6 +23,8 @@ from src.mech.models import (
     MassItem,
     MechanicalModuleConfig,
     MechanicalResult,
+    MotorMassModel,
+    PropellerMassModel,
     Mission2Config,
     Mission3Config,
     MissionMassProperties,
@@ -42,6 +45,8 @@ __all__ = [
     "MassItem",
     "MechanicalModuleConfig",
     "MechanicalResult",
+    "MotorMassModel",
+    "PropellerMassModel",
     "Mission2Config",
     "Mission3Config",
     "MissionMassProperties",
@@ -53,6 +58,7 @@ __all__ = [
     "RelativePayloadRules",
     "StaticMarginConfig",
     "center_of_gravity",
+    "estimate_aerodynamic_center_x",
     "estimate_neutral_point_x",
     "evaluate_mechanical_module",
     "geometry_stations",

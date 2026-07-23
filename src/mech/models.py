@@ -24,8 +24,6 @@ import numpy as np
 from src.mech.electronics import (
     ElectronicsLayout,
     ElectronicsPackagingConfig,
-    LinearMassModel,
-    PiecewiseLinearMassModel,
 )
 
 ALL_MISSIONS = frozenset({"M1", "M2", "M3"})
@@ -140,14 +138,11 @@ class StaticMarginConfig:
 
 @dataclass(frozen=True)
 class NeutralPointConfig:
-    """Parameters for the wing-plus-horizontal-tail neutral-point estimate.
+    """Deprecated neutral-point inputs retained for configuration compatibility.
 
-    The estimate weights the wing and horizontal-tail aerodynamic centers by
-    their finite-wing lift-curve slopes, areas, tail dynamic-pressure ratio,
-    tail efficiency, and downwash. This is more appropriate for static margin
-    than a simple geometric area average. Fuselage effects can later be
-    calibrated with ``fuselage_shift_chords`` using measured or higher-fidelity
-    stability data.
+    The formula-sheet aerodynamic-center estimator no longer uses these
+    empirical parameters. Existing configurations may continue to provide them
+    without changing the result.
     """
 
     two_dimensional_lift_curve_slope_per_rad: float = 2.0 * np.pi
@@ -177,81 +172,123 @@ class NeutralPointConfig:
 
 @dataclass(frozen=True)
 class BatteryMassModel:
-    """Linear battery-capacity-to-mass model.
+    """Battery-mass regression using capacity and nominal pack voltage.
 
-    The default line passes through the supplied 4.5 Ah, 0.690 kg baseline and
-    the origin. This prevents the optimizer from receiving additional battery
-    capacity with no mass penalty. When CUDBF has measured several candidate
-    packs, replace ``slope_kg_per_ah`` with a regression slope; the reference
-    point guarantees the baseline pack remains exactly 0.690 kg.
-
-    Set ``slope_kg_per_ah=0`` to temporarily recover a fixed 0.690 kg battery.
+    The supplied single-cell fit is ``28.4 * capacity_ah + 0.63`` grams.
+    Multiplying by ``nominal_voltage_v / 3.7`` accounts for the cell count;
+    ``mass_kg`` then converts the result to kilograms for the mass ledger.
     """
 
-    reference_capacity_ah: float = 4.5
-    reference_mass_kg: float = 0.690
-    slope_kg_per_ah: float = 0.690 / 4.5
-    minimum_mass_kg: float = 0.0
+    slope_g_per_ah: float = 28.4
+    intercept_g: float = 0.63
+    cell_nominal_voltage_v: float = 3.7
 
     def __post_init__(self) -> None:
-        values = [
-            self.reference_capacity_ah,
-            self.reference_mass_kg,
-            self.slope_kg_per_ah,
-            self.minimum_mass_kg,
-        ]
-        if not np.all(np.isfinite(values)):
-            raise ValueError("Battery mass-model values must be finite.")
-        if self.reference_capacity_ah <= 0:
-            raise ValueError("reference_capacity_ah must be positive.")
-        if (
-            self.reference_mass_kg < 0
-            or self.minimum_mass_kg < 0
-            or self.slope_kg_per_ah < 0
-        ):
-            raise ValueError("Battery masses and capacity slope cannot be negative.")
+        values = (self.slope_g_per_ah, self.intercept_g, self.cell_nominal_voltage_v)
+        if not np.all(np.isfinite(values)) or np.any(np.asarray(values) <= 0):
+            raise ValueError("Battery mass-model values must be finite and positive.")
 
-    @classmethod
-    def from_points(
-        cls,
-        first_capacity_ah: float,
-        first_mass_kg: float,
-        second_capacity_ah: float,
-        second_mass_kg: float,
-        *,
-        minimum_mass_kg: float = 0.0,
-    ) -> "BatteryMassModel":
-        """Create the line through two measured ``(capacity, mass)`` points."""
+    def mass_kg(self, capacity_ah: float, nominal_voltage_v: float) -> float:
+        """Estimate total battery-pack mass in kilograms."""
 
-        values = (
-            first_capacity_ah,
-            first_mass_kg,
-            second_capacity_ah,
-            second_mass_kg,
-        )
-        if not np.all(np.isfinite(values)):
-            raise ValueError("Battery interpolation points must be finite.")
-        if first_capacity_ah <= 0 or second_capacity_ah <= 0:
-            raise ValueError("Battery interpolation capacities must be positive.")
-        if np.isclose(first_capacity_ah, second_capacity_ah):
-            raise ValueError("Battery interpolation capacities must be distinct.")
-        slope = (second_mass_kg - first_mass_kg) / (
-            second_capacity_ah - first_capacity_ah
-        )
-        return cls(
-            reference_capacity_ah=float(first_capacity_ah),
-            reference_mass_kg=float(first_mass_kg),
-            slope_kg_per_ah=float(slope),
-            minimum_mass_kg=minimum_mass_kg,
-        )
-
-    def mass_kg(self, capacity_ah: float) -> float:
         if not np.isfinite(capacity_ah) or capacity_ah <= 0:
             raise ValueError("Battery capacity must be finite and positive.")
-        mass = self.reference_mass_kg + self.slope_kg_per_ah * (
-            capacity_ah - self.reference_capacity_ah
+        if not np.isfinite(nominal_voltage_v) or nominal_voltage_v <= 0:
+            raise ValueError("Battery nominal voltage must be finite and positive.")
+        mass_g = (self.slope_g_per_ah * capacity_ah + self.intercept_g) * (
+            nominal_voltage_v / self.cell_nominal_voltage_v
         )
-        return max(float(mass), self.minimum_mass_kg)
+        return float(mass_g / 1000.0)
+
+
+@dataclass(frozen=True)
+class MotorMassModel:
+    """Quadratic motor-mass regression using motor Kv and maximum power.
+
+    The supplied regression produces mass in grams for Kv in RPM/V and maximum
+    power in watts. ``mass_kg`` converts that result to the kilograms used by
+    the mechanical component ledger.
+    """
+
+    coefficients_g: tuple[float, float, float, float, float, float] = (
+        49.1108060785,
+        -0.0414442103,
+        0.2336039917,
+        0.0000566359,
+        -0.0001090885,
+        -0.0000104182,
+    )
+
+    def __post_init__(self) -> None:
+        coefficients = np.asarray(self.coefficients_g, dtype=float)
+        if coefficients.shape != (6,) or not np.all(np.isfinite(coefficients)):
+            raise ValueError("Motor mass model requires six finite coefficients.")
+
+    def mass_kg(self, kv_rpm_per_v: float, max_power_w: float) -> float:
+        """Estimate motor mass in kilograms."""
+
+        if not np.isfinite(kv_rpm_per_v) or kv_rpm_per_v <= 0:
+            raise ValueError("Motor Kv must be finite and positive.")
+        if not np.isfinite(max_power_w) or max_power_w <= 0:
+            raise ValueError("Motor maximum power must be finite and positive.")
+
+        c0, c_kv, c_power, c_kv2, c_cross, c_power2 = self.coefficients_g
+        mass_g = (
+            c0
+            + c_kv * kv_rpm_per_v
+            + c_power * max_power_w
+            + c_kv2 * kv_rpm_per_v**2
+            + c_cross * kv_rpm_per_v * max_power_w
+            + c_power2 * max_power_w**2
+        )
+        if mass_g < 0:
+            raise ValueError(
+                "Motor mass regression produced a negative mass; "
+                "the requested Kv and power are outside its usable range."
+            )
+        return float(mass_g / 1000.0)
+
+
+@dataclass(frozen=True)
+class PropellerMassModel:
+    """Cubic propeller-mass regression using diameter in inches.
+
+    The supplied polynomial returns grams. ``mass_kg`` converts its result to
+    the kilograms used by the mechanical component ledger.
+    """
+
+    cubic_g_per_in3: float = 0.0181235
+    quadratic_g_per_in2: float = -0.192008
+    linear_g_per_in: float = 1.17229
+    intercept_g: float = 9.76484
+
+    def __post_init__(self) -> None:
+        coefficients = (
+            self.cubic_g_per_in3,
+            self.quadratic_g_per_in2,
+            self.linear_g_per_in,
+            self.intercept_g,
+        )
+        if not np.all(np.isfinite(coefficients)):
+            raise ValueError("Propeller mass-model coefficients must be finite.")
+
+    def mass_kg(self, diameter_in: float) -> float:
+        """Estimate propeller mass in kilograms."""
+
+        if not np.isfinite(diameter_in) or diameter_in <= 0:
+            raise ValueError("Propeller diameter must be finite and positive.")
+        mass_g = (
+            self.cubic_g_per_in3 * diameter_in**3
+            + self.quadratic_g_per_in2 * diameter_in**2
+            + self.linear_g_per_in * diameter_in
+            + self.intercept_g
+        )
+        if mass_g < 0:
+            raise ValueError(
+                "Propeller mass regression produced a negative mass; "
+                "the requested diameter is outside its usable range."
+            )
+        return float(mass_g / 1000.0)
 
 
 @dataclass(frozen=True)
@@ -298,19 +335,15 @@ class AirframeMassConfig:
     landing_gear_vertical_offset_m: float = 4.0 * 0.0254
     landing_gear_dimensions_m: tuple[float, float, float] = (0.080, 0.180, 0.080)
 
-    motor_prop_mass_kg: float = 0.390
-    # Put the motor and propeller catalogue points in these models. Their
-    # evaluated inputs come directly from
-    # DesignVector.motor_max_power and DesignVector.prop_diameter_in. Leave both
-    # as None to retain the legacy combined 0.390 kg item until real split data
-    # are supplied. Supplying both produces separate Motor and Propeller items.
-    motor_mass_model: LinearMassModel | PiecewiseLinearMassModel | None = None
-    propeller_mass_model: LinearMassModel | PiecewiseLinearMassModel | None = None
+    # Motor and propeller masses are evaluated directly from DesignVector
+    # propulsion inputs using their supplied regressions.
+    motor_mass_model: MotorMassModel = field(default_factory=MotorMassModel)
+    propeller_mass_model: PropellerMassModel = field(
+        default_factory=PropellerMassModel
+    )
     esc_mass_kg: float = 0.118
     other_electronics_mass_kg: float = 0.050
-    battery_model: BatteryMassModel | PiecewiseLinearMassModel = field(
-        default_factory=BatteryMassModel
-    )
+    battery_model: BatteryMassModel = field(default_factory=BatteryMassModel)
     electronics_packaging: ElectronicsPackagingConfig = field(
         default_factory=ElectronicsPackagingConfig
     )
@@ -343,7 +376,6 @@ class AirframeMassConfig:
             ),
             "landing_gear_mass_kg": self.landing_gear_mass_kg,
             "landing_gear_vertical_offset_m": self.landing_gear_vertical_offset_m,
-            "motor_prop_mass_kg": self.motor_prop_mass_kg,
             "esc_mass_kg": self.esc_mass_kg,
             "other_electronics_mass_kg": self.other_electronics_mass_kg,
         }
@@ -388,42 +420,54 @@ class AirframeMassConfig:
             lower, upper = self.electronics_x_bounds_m
             if not (np.isfinite(lower) and np.isfinite(upper) and lower < upper):
                 raise ValueError("electronics_x_bounds_m must be finite and increasing.")
-
-        if (self.motor_mass_model is None) != (self.propeller_mass_model is None):
+        if not isinstance(self.motor_mass_model, MotorMassModel):
             raise ValueError(
-                "Motor and propeller interpolation requires both mass models."
+                "motor_mass_model must be a MotorMassModel; one-dimensional "
+                "motor-mass interpolation is no longer supported."
+            )
+        if not isinstance(self.propeller_mass_model, PropellerMassModel):
+            raise ValueError(
+                "propeller_mass_model must be a PropellerMassModel; "
+                "propeller-mass interpolation is no longer supported."
+            )
+        if not isinstance(self.battery_model, BatteryMassModel):
+            raise ValueError(
+                "battery_model must be a BatteryMassModel; capacity-only "
+                "battery-mass interpolation is no longer supported."
             )
 
     def electronics_component_masses_kg(
         self,
         battery_capacity_ah: float,
+        battery_nominal_voltage_v: float,
+        motor_kv_rpm_per_v: float,
         motor_max_power_w: float,
         propeller_diameter_in: float,
     ) -> tuple[tuple[str, float], ...]:
         """Resolve the permanent electronics ledger without double-counting."""
 
         components: list[tuple[str, float]] = [
-            ("Battery", self.battery_model.mass_kg(battery_capacity_ah))
-        ]
-        if self.motor_mass_model is None:
-            components.append(("Motor and propeller", self.motor_prop_mass_kg))
-        else:
-            # Validation guarantees that both paired models are present.
-            motor_model = self.motor_mass_model
-            propeller_model = self.propeller_mass_model
-            assert propeller_model is not None
-            components.extend(
-                [
-                    (
-                        "Motor",
-                        motor_model.mass_kg(motor_max_power_w),
-                    ),
-                    (
-                        "Propeller",
-                        propeller_model.mass_kg(propeller_diameter_in),
-                    ),
-                ]
+            (
+                "Battery",
+                self.battery_model.mass_kg(
+                    battery_capacity_ah, battery_nominal_voltage_v
+                ),
             )
+        ]
+        components.extend(
+            [
+                (
+                    "Motor",
+                    self.motor_mass_model.mass_kg(
+                        motor_kv_rpm_per_v, motor_max_power_w
+                    ),
+                ),
+                (
+                    "Propeller",
+                    self.propeller_mass_model.mass_kg(propeller_diameter_in),
+                ),
+            ]
+        )
         components.extend(
             [
                 ("ESC", self.esc_mass_kg),
@@ -435,6 +479,8 @@ class AirframeMassConfig:
     def electronics_mass_kg(
         self,
         battery_capacity_ah: float,
+        battery_nominal_voltage_v: float,
+        motor_kv_rpm_per_v: float,
         motor_max_power_w: float,
         propeller_diameter_in: float,
     ) -> float:
@@ -443,6 +489,8 @@ class AirframeMassConfig:
                 mass
                 for _, mass in self.electronics_component_masses_kg(
                     battery_capacity_ah,
+                    battery_nominal_voltage_v,
+                    motor_kv_rpm_per_v,
                     motor_max_power_w,
                     propeller_diameter_in,
                 )
@@ -732,6 +780,7 @@ class MechanicalResult:
     electronics_position_m: np.ndarray
     electronics_layout: ElectronicsLayout
     fuselage_width_m: float
+    fuselage_height_m: float
     fuselage_width_increases: int
     all_items: tuple[MassItem, ...]
     missions: dict[str, MissionMassProperties]

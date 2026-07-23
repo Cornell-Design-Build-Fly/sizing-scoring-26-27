@@ -11,20 +11,21 @@ element_id,name,category,missions,mass_kg,x_m,y_m,z_m,length_x_m,width_y_m,heigh
 10,Boom spar,airframe,"M1,M2,M3",0.117462945318,0.650084840286,0,0,0.686169680571,0.02,0.02,
 11,Tail integration,integration,"M1,M2,M3",0.025,0.919084840286,0,0,0.06,0.06,0.05,
 12,Landing gear,airframe,"M1,M2,M3",0.22,0,0,-0.1016,0.08,0.18,0.08,"Installed directly below the main-wing leading edge, with its center 4 inches below the wing plane."
-13,Fuselage structure,airframe,"M1,M2,M3",0.3594,0.107956010498,0,-0.065,0.599,0.0762,0.13,Fuselage-local uniform linear-density approximation from the electronics front edge to the aft-most Mission-2 payload edge.
-14,Battery,propulsion_and_electronics,"M1,M2,M3",0.69,-0.0725439895025,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
-15,Motor and propeller,propulsion_and_electronics,"M1,M2,M3",0.39,-0.0725439895025,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
-16,ESC,propulsion_and_electronics,"M1,M2,M3",0.118,-0.0725439895025,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
-17,Other electronics,propulsion_and_electronics,"M1,M2,M3",0.05,-0.0725439895025,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
-18,Duck 1,mission_2_payload,M2,0.018,0.0629560104975,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 0, column 0; first column is against the negative-y fuselage sidewall."
-19,Duck 2,mission_2_payload,M2,0.018,0.115956010498,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 1, column 0; first column is against the negative-y fuselage sidewall."
-20,Duck 3,mission_2_payload,M2,0.018,0.168956010498,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 2, column 0; first column is against the negative-y fuselage sidewall."
-21,Duck 4,mission_2_payload,M2,0.018,0.221956010498,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 3, column 0; first column is against the negative-y fuselage sidewall."
-22,Duck 5,mission_2_payload,M2,0.018,0.274956010498,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 4, column 0; first column is against the negative-y fuselage sidewall."
-23,Duck 6,mission_2_payload,M2,0.018,0.327956010498,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 5, column 0; first column is against the negative-y fuselage sidewall."
-24,Duck 7,mission_2_payload,M2,0.018,0.380956010498,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 6, column 0; first column is against the negative-y fuselage sidewall."
-25,Puck 1,mission_2_payload,M2,0.17,0.0745560104975,0,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; row 0, column 0; first column is against the negative-y fuselage sidewall."
-26,Puck 2,mission_2_payload,M2,0.17,0.150756010498,0,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; row 1, column 0; first column is against the negative-y fuselage sidewall."
-27,M3 forward mechanism,mission_3_payload,M3,0.1,0.0614560104975,0,0,0.05,0.05,0.05,
-28,M3 banner,mission_3_payload,M3,0.0220948275862,0.136456010498,0,0,0.1,0.06,0.06,
-29,M3 aft mechanism,mission_3_payload,M3,0.1,0.211456010498,0,0,0.05,0.05,0.05,
+13,Fuselage structure,airframe,"M1,M2,M3",0.324325076586,0.0807076029222,0,-0.065,0.599,0.0762,0.13,Fuselage-local uniform shell-area-density approximation from the electronics front edge to the aft-most Mission-2 payload edge; mass scales with length and cross-sectional perimeter.
+14,Battery,propulsion_and_electronics,"M1,M2,M3",0.77058,-0.0997923970778,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+15,Motor,propulsion_and_electronics,"M1,M2,M3",0.424689428745,-0.0997923970778,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+16,Propeller,propulsion_and_electronics,"M1,M2,M3",0.038274216,-0.0997923970778,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+17,ESC,propulsion_and_electronics,"M1,M2,M3",0.118,-0.0997923970778,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+18,Other electronics,propulsion_and_electronics,"M1,M2,M3",0.05,-0.0997923970778,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+19,Duck 1,mission_2_payload,M2,0.018,0.0357076029222,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 0, column 0; first column is against the negative-y fuselage sidewall."
+20,Duck 2,mission_2_payload,M2,0.018,0.0887076029222,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 1, column 0; first column is against the negative-y fuselage sidewall."
+21,Duck 3,mission_2_payload,M2,0.018,0.141707602922,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 2, column 0; first column is against the negative-y fuselage sidewall."
+22,Duck 4,mission_2_payload,M2,0.018,0.194707602922,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 3, column 0; first column is against the negative-y fuselage sidewall."
+23,Duck 5,mission_2_payload,M2,0.018,0.247707602922,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 4, column 0; first column is against the negative-y fuselage sidewall."
+24,Duck 6,mission_2_payload,M2,0.018,0.300707602922,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 5, column 0; first column is against the negative-y fuselage sidewall."
+25,Duck 7,mission_2_payload,M2,0.018,0.353707602922,-0.0116,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; row 6, column 0; first column is against the negative-y fuselage sidewall."
+26,Puck 1,mission_2_payload,M2,0.17,0.0473076029222,0,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; row 0, column 0; first column is against the negative-y fuselage sidewall."
+27,Puck 2,mission_2_payload,M2,0.17,0.123507602922,0,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; row 1, column 0; first column is against the negative-y fuselage sidewall."
+28,M3 forward mechanism,mission_3_payload,M3,0.1,0.0342076029222,0,0,0.05,0.05,0.05,
+29,M3 banner,mission_3_payload,M3,0.0220948275862,0.109207602922,0,0,0.1,0.06,0.06,
+30,M3 aft mechanism,mission_3_payload,M3,0.1,0.184207602922,0,0,0.05,0.05,0.05,

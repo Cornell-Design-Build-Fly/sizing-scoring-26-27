@@ -16,6 +16,11 @@ fuselage is placed to make Mission 2 exactly 12% MAC. Mission 1 is then accepted
 whenever its static margin is at or below 20%; falling slightly below 10% does
 not trigger a width increase.
 
+The longitudinal neutral point is the aircraft aerodynamic center from the
+MAE 4070 formula-sheet method. It area- and lift-slope-weights the wing and
+horizontal-tail quarter-chord locations and applies the formula-sheet
+horizontal-tail correction `(AR_w - 2) / (AR_w + 2)`.
+
 ## Primary calls
 
 The discrete evaluator rounds payload counts to whole pieces:
@@ -37,6 +42,20 @@ from src.mech import mech_main
 
 cg_m, inertia_kg_m2, weight_n = mech_main(DesignVector(), mission="M2")
 ```
+
+`main_mech.py` is the small public caller/facade. The implementation is grouped
+by responsibility:
+
+- `airframe_assembly.py` builds and translates airframe, electronics, and
+  fuselage mass items.
+- `mission2_sizing.py` resolves payload counts and selects an accepted fuselage
+  width and placement.
+- `mission3_placement.py` places the fixed-spacing banner system.
+- `mission_properties.py` calculates mission mass, CG, inertia, and margin.
+- `mechanical_evaluation.py` coordinates those functions and assembles the
+  result.
+
+Public imports and call signatures remain unchanged.
 
 For continuous optimizer payload values, import the alternate module directly:
 
@@ -139,70 +158,35 @@ both length and the rectangular cross-sectional perimeter, `2 * (width + height)
 The permanent ledger still includes the battery, motor/propeller, ESC, and
 other electronics.
 
-## Motor, propeller, and battery mass interpolation
+## Motor, battery, and propeller mass regressions
 
-Enter all measured catalogue points for each component in the piecewise-linear
-mass models below. The values being evaluated belong in `DesignVector`: battery
-capacity in Ah, motor maximum power in W, and propeller diameter in inches.
+Motor mass is evaluated directly from `DesignVector.motor_kv` in RPM/V and
+`DesignVector.motor_max_power` in W using the supplied quadratic regression.
+Battery mass is evaluated from `DesignVector.batt_capacity` in Ah and
+`ParameterVector.voltage` in V. Propeller mass is evaluated directly from
+`DesignVector.prop_diameter_in` using the supplied cubic regression.
 
 ```python
-from dataclasses import replace
-
-from src.mech import (
-    MechanicalModuleConfig,
-    PiecewiseLinearMassModel,
-    evaluate_mechanical_module,
-)
-from src.vectors import DesignVector
-
-base_config = MechanicalModuleConfig()
-config = replace(
-    base_config,
-    airframe=replace(
-        base_config.airframe,
-        # Add every measured (input, mass_kg) pair to the relevant list.
-        motor_mass_model=PiecewiseLinearMassModel.from_points(
-            [
-                (500.0, 0.200),   # power [W], mass [kg]
-                (750.0, 0.280),
-                (1000.0, 0.400),
-            ],
-            input_name="motor maximum power [W]",
-        ),
-        propeller_mass_model=PiecewiseLinearMassModel.from_points(
-            [
-                (10.0, 0.040),    # diameter [in], mass [kg]
-                (15.0, 0.055),
-                (20.0, 0.080),
-            ],
-            input_name="propeller diameter [in]",
-        ),
-        battery_model=PiecewiseLinearMassModel.from_points(
-            [
-                (4.0, 0.600),     # capacity [Ah], mass [kg]
-                (5.0, 0.720),
-                (6.0, 0.900),
-            ],
-            input_name="battery capacity [Ah]",
-        ),
-    ),
-)
+from src.mech import evaluate_mechanical_module
+from src.vectors import DesignVector, ParameterVector
 
 design = DesignVector(
+    motor_kv=335.0,
     motor_max_power=875.0,
     prop_diameter_in=17.5,
     batt_capacity=5.5,
 )
-result = evaluate_mechanical_module(design, config)
+parameters = ParameterVector()  # nominal battery voltage defaults to 22.2 V
+result = evaluate_mechanical_module(design, parameter_vector=parameters)
 ```
 
-With both propulsion models supplied, `Motor` and `Propeller` are separate mass
-ledger items. They, the battery, ESC, and other electronics remain separate for
-auditing but share the same equivalent electronics position and feed the same
-electronics point-mass calculation. If the motor and propeller catalogue models
-are omitted, the legacy combined `Motor and propeller` 0.390 kg item is used.
-Inputs between adjacent catalogue points are linearly interpolated. Inputs
-outside the supplied range use the slope of the nearest end segment.
+`Motor` and `Propeller` are separate ledger items. Motor mass is not
+interpolated; its quadratic model uses both Kv and maximum power. Battery mass
+in grams is `(28.4 * capacity_ah + 0.63) * (V_nom / 3.7)`. Propeller mass in
+grams is `0.0181235*d^3 - 0.192008*d^2 + 1.17229*d + 9.76484`, where `d` is
+diameter in inches. All regression results are converted to kilograms. The
+components remain separate for auditing but share the same equivalent
+electronics position and feed the same electronics point-mass calculation.
 
 ## Mission 3
 

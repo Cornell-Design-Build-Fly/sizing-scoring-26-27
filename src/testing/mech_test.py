@@ -12,16 +12,23 @@ from itertools import combinations
 import numpy as np
 
 from src.mech import (
+    BatteryMassModel,
     ElectronicsPackagingConfig,
     MechanicalModuleConfig,
+    MotorMassModel,
+    NeutralPointConfig,
     PayloadPlacementError,
-    PiecewiseLinearMassModel,
+    PropellerMassModel,
     evaluate_mechanical_module,
     mech_main,
     resolve_electronics_layout,
 )
-from src.mech.main_mech import _fixed_airframe_items
-from src.mech.mass_properties import geometry_stations
+from src.mech.airframe_assembly import build_fixed_airframe_items
+from src.mech.mass_properties import (
+    estimate_aerodynamic_center_x,
+    estimate_neutral_point_x,
+    geometry_stations,
+)
 from src.vectors import DesignVector
 
 
@@ -91,7 +98,98 @@ def _assert_fuselage_envelope(
     assert np.isclose(fuselage.mass_kg, expected_mass)
 
 
+def _assert_aerodynamic_center_model() -> None:
+    design = DesignVector()
+    stations = geometry_stations(design)
+
+    wing_area = design.wing_span * design.wing_chord
+    tail_area = design.hstab_span * design.hstab_chord
+    wing_ar = design.wing_span**2 / wing_area
+    tail_ar = design.hstab_span**2 / tail_area
+    wing_slope = 2.0 * np.pi / (1.0 + 2.0 / wing_ar)
+    tail_slope = 2.0 * np.pi / (1.0 + 2.0 / tail_ar)
+    tail_correction = (wing_ar - 2.0) / (wing_ar + 2.0)
+    wing_weight = wing_area * wing_slope
+    tail_weight = tail_area * tail_correction * tail_slope
+    expected = (
+        stations.wing_ac_x_m * wing_weight
+        + stations.horizontal_tail_ac_x_m * tail_weight
+    ) / (wing_weight + tail_weight)
+
+    aerodynamic_center = estimate_aerodynamic_center_x(design, stations)
+    assert np.isclose(aerodynamic_center, expected)
+    assert stations.wing_ac_x_m < aerodynamic_center
+    assert aerodynamic_center < stations.horizontal_tail_ac_x_m
+
+    longer_tail_arm = replace(design, tail_arm=0.90)
+    assert estimate_aerodynamic_center_x(longer_tail_arm) > aerodynamic_center
+
+    larger_tail_span = replace(design)
+    larger_tail_span.hstab_span *= 1.10
+    assert estimate_aerodynamic_center_x(larger_tail_span) > aerodynamic_center
+
+    larger_tail_chord = replace(design)
+    larger_tail_chord.hstab_chord *= 1.10
+    assert estimate_aerodynamic_center_x(larger_tail_chord) > aerodynamic_center
+
+    changed_vertical_tail = replace(design)
+    changed_vertical_tail.vstab_span *= 3.0
+    changed_vertical_tail.vstab_chord *= 2.0
+    assert np.isclose(
+        estimate_aerodynamic_center_x(changed_vertical_tail), aerodynamic_center
+    )
+
+    obsolete_config = NeutralPointConfig(
+        two_dimensional_lift_curve_slope_per_rad=4.0,
+        wing_oswald_efficiency=0.50,
+        tail_oswald_efficiency=0.55,
+        tail_efficiency=0.60,
+        tail_dynamic_pressure_ratio=0.65,
+        downwash_gradient=0.75,
+        fuselage_shift_chords=2.0,
+    )
+    assert np.isclose(
+        estimate_neutral_point_x(design, obsolete_config, stations),
+        aerodynamic_center,
+    )
+
+    for dimension_name, invalid_value in (
+        ("wing_span", 0.0),
+        ("wing_chord", np.inf),
+        ("hstab_span", -1.0),
+        ("hstab_chord", np.nan),
+    ):
+        invalid_design = replace(design)
+        setattr(invalid_design, dimension_name, invalid_value)
+        try:
+            estimate_aerodynamic_center_x(invalid_design)
+        except ValueError as exc:
+            assert dimension_name in str(exc)
+        else:
+            raise AssertionError(f"Expected invalid {dimension_name} to raise.")
+
+    low_aspect_ratio = replace(design)
+    low_aspect_ratio.wing_span = 2.0 * low_aspect_ratio.wing_chord
+    try:
+        estimate_aerodynamic_center_x(low_aspect_ratio)
+    except ValueError as exc:
+        assert "greater than 2" in str(exc)
+    else:
+        raise AssertionError("Expected wing aspect ratio <= 2 to raise.")
+
+
 def main() -> None:
+    _assert_aerodynamic_center_model()
+
+    battery_mass_model = BatteryMassModel()
+    assert np.isclose(battery_mass_model.mass_kg(4.5, 22.2), 0.77058)
+
+    # The supplied motor regression returns grams; the mechanical API uses kg.
+    motor_mass_model = MotorMassModel()
+    assert np.isclose(motor_mass_model.mass_kg(335.0, 2200.0), 0.4246894287455)
+    propeller_mass_model = PropellerMassModel()
+    assert np.isclose(propeller_mass_model.mass_kg(14.0), 0.038274216)
+
     design = DesignVector()
     config = MechanicalModuleConfig()
     result = evaluate_mechanical_module(design, config)
@@ -106,7 +204,7 @@ def main() -> None:
     assert np.isclose(adapter_weight, result.for_mission("M1").weight_n)
 
     # Fixed airframe is built first and contains no fuselage or electronics.
-    fixed_items = _fixed_airframe_items(design, config)
+    fixed_items = build_fixed_airframe_items(design, config)
     fixed_names = {item.name for item in fixed_items}
     assert "Landing gear" in fixed_names
     assert "Fuselage structure" not in fixed_names
@@ -149,6 +247,7 @@ def main() -> None:
     assert np.isclose(design.fuselage_width, 0.0762)
     assert result.fuselage_width_increases == 0
     assert np.isclose(result.fuselage_width_m, design.fuselage_width)
+    assert np.isclose(result.fuselage_height_m, design.fuselage_height)
     assert not any("duck-width increase" in warning for warning in result.warnings)
 
     # Electronics are packed locally first; profile selection still follows
@@ -242,7 +341,8 @@ def main() -> None:
 
     # Large payloads widen because the narrower exact-M2 layouts fail an
     # acceptance check. With perimeter-scaled fuselage mass, this case is
-    # accepted after two duck-width increases.
+    # accepted after two duck-width increases with the formula-sheet neutral
+    # point and regression-based propulsion masses.
     large_design = DesignVector(ducks_num=10, pucks_num=9)
     large = evaluate_mechanical_module(large_design, config)
     assert large.fuselage_width_increases == 2
@@ -272,7 +372,17 @@ def main() -> None:
         assert "gives M1 static margin" not in tail_message
     else:
         raise AssertionError("Expected the first two widths to overlap the tail.")
-    tail_limited = evaluate_mechanical_module(tail_limited_design, config)
+    short_tail_config = replace(
+        config,
+        mission3=replace(
+            config.mission3,
+            forward_mechanism_distance_m=0.01,
+            aft_mechanism_distance_m=0.01,
+        ),
+    )
+    tail_limited = evaluate_mechanical_module(
+        tail_limited_design, short_tail_config
+    )
     assert tail_limited.fuselage_width_increases == 2
     tail_fuselage = next(
         item
@@ -298,52 +408,31 @@ def main() -> None:
     else:
         raise AssertionError("Expected width-retry exhaustion to raise a flag.")
 
-    # Component masses and lightweight interpolation hooks remain intact.
+    # Propulsion and battery regressions use the design/parameter inputs.
     m1_items = {item.name: item for item in m1.items}
-    assert np.isclose(m1_items["Battery"].mass_kg, 0.690)
-    assert np.isclose(m1_items["Motor and propeller"].mass_kg, 0.390)
-    motor_model = PiecewiseLinearMassModel.from_points(
-        [(500.0, 0.200), (750.0, 0.280), (1000.0, 0.400)],
-        input_name="motor power [W]",
-    )
-    propeller_model = PiecewiseLinearMassModel.from_points(
-        [(10.0, 0.040), (15.0, 0.055), (20.0, 0.080)],
-        input_name="propeller diameter [in]",
-    )
-    interpolated_config = replace(
-        config,
-        airframe=replace(
-            config.airframe,
-            motor_mass_model=motor_model,
-            propeller_mass_model=propeller_model,
-            battery_model=PiecewiseLinearMassModel.from_points(
-                [(4.0, 0.600), (5.0, 0.720), (6.0, 0.900)],
-                input_name="battery capacity [Ah]",
-            ),
-        ),
-    )
-    interpolated_design = replace(
+    assert np.isclose(m1_items["Battery"].mass_kg, 0.77058)
+    assert np.isclose(m1_items["Motor"].mass_kg, 0.4246894287455)
+    assert np.isclose(m1_items["Propeller"].mass_kg, 0.038274216)
+    modeled_design = replace(
         design,
         batt_capacity=5.5,
         motor_max_power=875.0,
         prop_diameter_in=17.5,
     )
-    interpolated = evaluate_mechanical_module(
-        interpolated_design, interpolated_config
-    )
-    interpolated_items = {
-        item.name: item for item in interpolated.for_mission("M1").items
+    modeled = evaluate_mechanical_module(modeled_design, config)
+    modeled_items = {
+        item.name: item for item in modeled.for_mission("M1").items
     }
-    assert np.isclose(interpolated_items["Motor"].mass_kg, 0.340)
-    assert np.isclose(interpolated_items["Propeller"].mass_kg, 0.0675)
-    assert np.isclose(interpolated_items["Battery"].mass_kg, 0.810)
+    assert np.isclose(modeled_items["Motor"].mass_kg, 0.2060334513055)
+    assert np.isclose(modeled_items["Propeller"].mass_kg, 0.0686080978125)
+    assert np.isclose(modeled_items["Battery"].mass_kg, 0.94098)
     assert np.array_equal(
-        interpolated_items["Motor"].position_m,
-        interpolated_items["Propeller"].position_m,
+        modeled_items["Motor"].position_m,
+        modeled_items["Propeller"].position_m,
     )
     assert np.array_equal(
-        interpolated_items["Motor"].position_m,
-        interpolated_items["Battery"].position_m,
+        modeled_items["Motor"].position_m,
+        modeled_items["Battery"].position_m,
     )
 
     # Mission 3 still uses the prior fixed-distance process after M1/M2 finish.
