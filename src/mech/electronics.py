@@ -9,6 +9,7 @@ location in the mass ledger.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Iterable
 
 import numpy as np
 
@@ -82,6 +83,80 @@ class LinearMassModel:
             raise ValueError(f"{self.input_name} must be finite.")
         mass = self.reference_mass_kg + self.slope_kg_per_unit * (
             sizing_value - self.reference_input
+        )
+        return max(float(mass), self.minimum_mass_kg)
+
+
+@dataclass(frozen=True)
+class PiecewiseLinearMassModel:
+    """Piecewise-linear mass interpolation through two or more data points.
+
+    Values between catalogue points are linearly interpolated. Values outside
+    the supplied range use the slope of the nearest end segment, matching the
+    existing two-point model's extrapolation behavior.
+    """
+
+    inputs: tuple[float, ...]
+    masses_kg: tuple[float, ...]
+    minimum_mass_kg: float = 0.0
+    input_name: str = "sizing value"
+
+    def __post_init__(self) -> None:
+        inputs = np.asarray(self.inputs, dtype=float)
+        masses = np.asarray(self.masses_kg, dtype=float)
+        if inputs.ndim != 1 or masses.ndim != 1 or len(inputs) != len(masses):
+            raise ValueError("Interpolation inputs and masses must be equal-length lists.")
+        if len(inputs) < 2:
+            raise ValueError("At least two interpolation points are required.")
+        if not np.all(np.isfinite(inputs)) or not np.all(np.isfinite(masses)):
+            raise ValueError("Interpolation points must be finite.")
+        if np.any(np.diff(inputs) <= 0):
+            raise ValueError("Interpolation inputs must be strictly increasing.")
+        if np.any(masses < 0) or not np.isfinite(self.minimum_mass_kg):
+            raise ValueError("Interpolation masses must be finite and nonnegative.")
+        if self.minimum_mass_kg < 0:
+            raise ValueError("minimum_mass_kg cannot be negative.")
+        if not self.input_name:
+            raise ValueError("Piecewise mass-model input_name cannot be empty.")
+
+    @classmethod
+    def from_points(
+        cls,
+        points: Iterable[tuple[float, float]],
+        *,
+        minimum_mass_kg: float = 0.0,
+        input_name: str = "sizing value",
+    ) -> "PiecewiseLinearMassModel":
+        """Create a model from any number of ``(input, mass_kg)`` points."""
+
+        ordered_points = sorted(
+            ((float(input_value), float(mass_kg)) for input_value, mass_kg in points),
+            key=lambda point: point[0],
+        )
+        return cls(
+            inputs=tuple(point[0] for point in ordered_points),
+            masses_kg=tuple(point[1] for point in ordered_points),
+            minimum_mass_kg=minimum_mass_kg,
+            input_name=input_name,
+        )
+
+    def mass_kg(self, sizing_value: float) -> float:
+        if not np.isfinite(sizing_value):
+            raise ValueError(f"{self.input_name} must be finite.")
+
+        inputs = np.asarray(self.inputs, dtype=float)
+        masses = np.asarray(self.masses_kg, dtype=float)
+        upper_index = int(np.searchsorted(inputs, sizing_value, side="right"))
+        if upper_index == 0:
+            upper_index = 1
+        elif upper_index == len(inputs):
+            upper_index = len(inputs) - 1
+        lower_index = upper_index - 1
+        fraction = (sizing_value - inputs[lower_index]) / (
+            inputs[upper_index] - inputs[lower_index]
+        )
+        mass = masses[lower_index] + fraction * (
+            masses[upper_index] - masses[lower_index]
         )
         return max(float(mass), self.minimum_mass_kg)
 

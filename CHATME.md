@@ -78,6 +78,14 @@ Learned:
 - With the updated tail mass and servo data, the baseline M1 result is approximately 3.264 kg with 6.93% estimated static margin. The unconstrained combined-electronics location required for the 15% target is approximately `x=-0.2945 m`, which lies about 40 mm ahead of the modeled nose tip; the module clips it to the physical bound and correctly flags M1 as outside the 10-20% range.
 - Exact horizontal- and vertical-tail servo installation coordinates have not been supplied, so both servos currently sit at their stabilizer geometric centers.
 - Banner density is interpreted as `0.233 kg / 2.9 m^2` rather than `0.233 g / 2.9 m^2`.
+- Fuselage structural mass uses a `0.300 kg / (0.5 m * 0.457 m perimeter)`
+  shell-area density, so it scales with both fuselage length and cross-sectional
+  perimeter as the selected fuselage width changes.
+- Motor, propeller, and battery masses support piecewise-linear interpolation
+  through any number of catalogue points. Motor power, propeller diameter, and
+  battery capacity come directly from `DesignVector`; interpolated motor and
+  propeller masses remain separate ledger items at the shared electronics
+  equivalent-CM location.
 
 Artifacts:
 - No new `data_dump` artifacts. Run `python -m src.testing.mech_test` for the baseline report.
