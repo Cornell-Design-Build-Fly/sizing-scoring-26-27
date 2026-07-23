@@ -20,29 +20,26 @@ def main(dv: DesignVector, pv: ParameterVector) -> tuple[float, list[float]]:
     fit_m3 = prop_main(dv, pv, 3)
 
     # Aero section
-    output_m1 = aero_main(
+    output_m1 = main_aero(
         design_vector=dv,
         thrust_velocity=fit_m1,
         cg=cg_m1,
         inertia_matrix=inertia_tensor_m1,
-        mass=weight_n_m1 / 9.81,
-        sm=0.0,  # TODO - where is this used?
+        mass=weight_n_m1 / pv.gravity,
     )
-    output_m2 = aero_main(
+    output_m2 = main_aero(
         design_vector=dv,
         thrust_velocity=fit_m2,
         cg=cg_m2,
         inertia_matrix=inertia_tensor_m2,
-        mass=weight_n_m2 / 9.81,
-        sm=0.0,  # TODO - where is this used?
+        mass=weight_n_m2 / pv.gravity,
     )
-    output_m3 = aero_main(
+    output_m3 = main_aero(
         design_vector=dv,
         thrust_velocity=fit_m3,
         cg=cg_m3,
         inertia_matrix=inertia_tensor_m3,
-        mass=weight_n_m3 / 9.81,
-        sm=0.0,  # TODO - where is this used?
+        mass=weight_n_m3 / pv.gravity,
     )
 
     # return total_score(dv)

@@ -15,11 +15,10 @@ from src.aero.stability_analysis import stability_analysis
 
 def aero_main(
         design_vector: DesignVector,
-        thrust_velocity: list[int, int, int],
+        thrust_velocity: tuple[float, float, float],
         cg: tuple[float, float, float],
         inertia_matrix: list[float, float, float],
         mass: float,
-        sm: float,
 ) -> AeroOutput:
 
     """
@@ -60,14 +59,7 @@ def aero_main(
     aero_result = aero_analysis(design_vector, cruise_condition, cg)
 
     # Final call to stability_analysis to get final stability results for design vector at trim.
-    stability_result = stability_analysis(design_vector, cruise_condition, mass_props, sm)
-
-    # Calculate and set stall speed
-    RHO = 1.225
-    S_REF = design_vector.wing_area
-    WEIGHT  = mass * 9.81
-    stall_speed = (2 * WEIGHT / (RHO * S_REF * aero_result.CL)) ** 0.5
-    cruise_condition.stall_speed = stall_speed
+    stability_result = stability_analysis(design_vector, cruise_condition, mass_props)
 
     # Return aero, cruise, and stability results in "AeroOutput" object.
     return AeroOutput(

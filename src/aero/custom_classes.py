@@ -37,6 +37,7 @@ class CruiseCondition:
     throttle setting."""
 
     operating_point: OperatingPoint
+    stall_speed: float
     converged: bool | None = None # False to indicate if trim solved failed to converge
     throttle: float | None = None # TODO - Figure out throttle situation 
 
