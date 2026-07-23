@@ -16,6 +16,11 @@ fuselage is placed to make Mission 2 exactly 12% MAC. Mission 1 is then accepted
 whenever its static margin is at or below 20%; falling slightly below 10% does
 not trigger a width increase.
 
+The longitudinal neutral point is the aircraft aerodynamic center from the
+MAE 4070 formula-sheet method. It area- and lift-slope-weights the wing and
+horizontal-tail quarter-chord locations and applies the formula-sheet
+horizontal-tail correction `(AR_w - 2) / (AR_w + 2)`.
+
 ## Primary calls
 
 The discrete evaluator rounds payload counts to whole pieces:
@@ -37,6 +42,20 @@ from src.mech import mech_main
 
 cg_m, inertia_kg_m2, weight_n = mech_main(DesignVector(), mission="M2")
 ```
+
+`main_mech.py` is the small public caller/facade. The implementation is grouped
+by responsibility:
+
+- `airframe_assembly.py` builds and translates airframe, electronics, and
+  fuselage mass items.
+- `mission2_sizing.py` resolves payload counts and selects an accepted fuselage
+  width and placement.
+- `mission3_placement.py` places the fixed-spacing banner system.
+- `mission_properties.py` calculates mission mass, CG, inertia, and margin.
+- `mechanical_evaluation.py` coordinates those functions and assembles the
+  result.
+
+Public imports and call signatures remain unchanged.
 
 For continuous optimizer payload values, import the alternate module directly:
 
@@ -132,11 +151,42 @@ inertia about the CG, fuselage envelope, or selected fuselage width.
 The fuselage runs from the electronics front face to the aft-most whole M2
 payload face. With no whole M2 payload, it ends at the electronics back face.
 After installation, its back must remain strictly ahead of the nearer tail
-leading edge. Its default structural model remains `0.300 / 0.5 kg/m`.
+leading edge. Its structural mass is based on a `0.300 kg` reference fuselage
+with `0.5 m` length and `0.457 m` cross-sectional perimeter. Mass scales with
+both length and the rectangular cross-sectional perimeter, `2 * (width + height)`.
 
 The permanent ledger still includes the battery, motor/propeller, ESC, and
-other electronics. The battery model and the lightweight `LinearMassModel`
-hooks for motor and propeller interpolation are unchanged.
+other electronics.
+
+## Motor, battery, and propeller mass regressions
+
+Motor mass is evaluated directly from `DesignVector.motor_kv` in RPM/V and
+`DesignVector.motor_max_power` in W using the supplied quadratic regression.
+Battery mass is evaluated from `DesignVector.batt_capacity` in Ah and
+`ParameterVector.voltage` in V. Propeller mass is evaluated directly from
+`DesignVector.prop_diameter_in` using the supplied cubic regression.
+
+```python
+from src.mech import evaluate_mechanical_module
+from src.vectors import DesignVector, ParameterVector
+
+design = DesignVector(
+    motor_kv=335.0,
+    motor_max_power=875.0,
+    prop_diameter_in=17.5,
+    batt_capacity=5.5,
+)
+parameters = ParameterVector()  # nominal battery voltage defaults to 22.2 V
+result = evaluate_mechanical_module(design, parameter_vector=parameters)
+```
+
+`Motor` and `Propeller` are separate ledger items. Motor mass is not
+interpolated; its quadratic model uses both Kv and maximum power. Battery mass
+in grams is `(28.4 * capacity_ah + 0.63) * (V_nom / 3.7)`. Propeller mass in
+grams is `0.0181235*d^3 - 0.192008*d^2 + 1.17229*d + 9.76484`, where `d` is
+diameter in inches. All regression results are converted to kilograms. The
+components remain separate for auditing but share the same equivalent
+electronics position and feed the same electronics point-mass calculation.
 
 ## Mission 3
 

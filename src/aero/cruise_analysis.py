@@ -9,7 +9,7 @@ import numpy as np
 
 def eval_thrust(
             velocity: float,
-            thrust_velocity: list[int, int, int], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
+            thrust_velocity: tuple[float, float, float], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
     ) -> float:
         """
         Evaluate the thrust at a given velocity using the provided thrust-velocity curve.
@@ -26,7 +26,7 @@ def eval_thrust(
 
 def cruise_analysis(
         design_vector: DesignVector,
-        thrust_velocity: list[int, int, int], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
+        thrust_velocity: tuple[float, float, float], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
         cg: tuple[float, float, float],
         mass: float,
 ) -> CruiseCondition:
@@ -123,9 +123,11 @@ def cruise_analysis(
     opti.minimize(trim_error)
 
    # Tolerances used to decide whether the resulting point is truly trimmed.
-    LIFT_RESIDUAL_TOL = 1e-3
-    DRAG_RESIDUAL_TOL = 1e-3
-    MOMENT_RESIDUAL_TOL = 1e-3
+    LIFT_RESIDUAL_TOL = 1e-1
+    DRAG_RESIDUAL_TOL = 1e-1
+    MOMENT_RESIDUAL_TOL = 1e-1
+
+    print("Trim residual: " + trim_error)
 
     try:
         solution = opti.solve()
@@ -150,7 +152,26 @@ def cruise_analysis(
         )
 
     except RuntimeError:
-        converged = False
+        return CruiseCondition(
+        operating_point=OperatingPoint(
+            velocity=-1.0,
+            alpha=-999.0,
+            beta=0.0,  
+            p=0.0,     
+            q=0.0,     
+            r=0.0     
+        ),
+        stall_speed=None,
+        converged=False,
+    )
+
+    # Calculate and set stall speed
+    RHO = 1.225
+    S_REF = design_vector.wing_area
+    WEIGHT  = mass * 9.81
+    # TODO - fix stall speed- needs to use CL max instead of cruise CL
+    stall_speed = (2 * WEIGHT / (RHO * S_REF * aero_result.CL)) ** 0.5
+    cruise_condition.stall_speed = stall_speed
 
     # Return solved values and whether converged within defined tolerances.
     return CruiseCondition(

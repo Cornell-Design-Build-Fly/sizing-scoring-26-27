@@ -90,50 +90,65 @@ def finite_wing_lift_curve_slope(
     )
 
 
-def estimate_neutral_point_x(
+def estimate_aerodynamic_center_x(
     design_vector: DesignVector,
-    config: NeutralPointConfig,
     stations: GeometryStations | None = None,
 ) -> float:
-    """Estimate the airplane longitudinal neutral point.
-
-    The wing and horizontal-tail aerodynamic centers are weighted by their
-    contributions to total lift-curve slope. The vertical tail is deliberately
-    excluded because it does not provide the longitudinal restoring lift used
-    to define pitch static margin.
-    """
+    """Estimate the aircraft aerodynamic center, used as the neutral point."""
 
     stations = stations or geometry_stations(design_vector)
-    wing_aspect_ratio = design_vector.wing_span**2 / design_vector.wing_area
-    tail_aspect_ratio = design_vector.hstab_span**2 / design_vector.hstab_area
+    wing_span = float(design_vector.wing_span)
+    wing_chord = float(design_vector.wing_chord)
+    tail_span = float(design_vector.hstab_span)
+    tail_chord = float(design_vector.hstab_chord)
 
-    wing_slope = finite_wing_lift_curve_slope(
-        wing_aspect_ratio,
-        config.wing_oswald_efficiency,
-        config.two_dimensional_lift_curve_slope_per_rad,
-    )
-    tail_slope = finite_wing_lift_curve_slope(
-        tail_aspect_ratio,
-        config.tail_oswald_efficiency,
-        config.two_dimensional_lift_curve_slope_per_rad,
-    )
+    dimensions = {
+        "wing_span": wing_span,
+        "wing_chord": wing_chord,
+        "hstab_span": tail_span,
+        "hstab_chord": tail_chord,
+    }
+    for name, value in dimensions.items():
+        if not np.isfinite(value) or value <= 0.0:
+            raise ValueError(f"{name} must be finite and positive.")
 
-    wing_weight = wing_slope * design_vector.wing_area
-    tail_weight = (
-        config.tail_efficiency
-        * config.tail_dynamic_pressure_ratio
-        * (1.0 - config.downwash_gradient)
-        * tail_slope
-        * design_vector.hstab_area
-    )
+    wing_area = wing_span * wing_chord
+    tail_area = tail_span * tail_chord
+    wing_ar = wing_span**2 / wing_area
+    tail_ar = tail_span**2 / tail_area
 
-    neutral_point = (
-        wing_weight * stations.wing_ac_x_m
-        + tail_weight * stations.horizontal_tail_ac_x_m
-    ) / (wing_weight + tail_weight)
+    if wing_ar <= 2.0:
+        raise ValueError(
+            "Wing aspect ratio must be greater than 2 for the "
+            "formula-sheet horizontal-tail correction."
+        )
 
-    neutral_point += config.fuselage_shift_chords * design_vector.wing_chord
-    return float(neutral_point)
+    wing_slope = 2.0 * np.pi / (1.0 + 2.0 / wing_ar)
+    tail_slope = 2.0 * np.pi / (1.0 + 2.0 / tail_ar)
+    tail_correction = (wing_ar - 2.0) / (wing_ar + 2.0)
+
+    wing_weight = wing_area * wing_slope
+    tail_weight = tail_area * tail_correction * tail_slope
+    total_weight = wing_weight + tail_weight
+    if not np.isfinite(total_weight) or total_weight <= 0.0:
+        raise ValueError("Combined aerodynamic-center weight must be positive.")
+
+    aerodynamic_center_x = (
+        stations.wing_ac_x_m * wing_weight
+        + stations.horizontal_tail_ac_x_m * tail_weight
+    ) / total_weight
+    return float(aerodynamic_center_x)
+
+
+def estimate_neutral_point_x(
+    design_vector: DesignVector,
+    config: NeutralPointConfig | None = None,
+    stations: GeometryStations | None = None,
+) -> float:
+    """Compatibility wrapper; the aircraft aerodynamic center is the neutral point."""
+
+    del config
+    return estimate_aerodynamic_center_x(design_vector, stations=stations)
 
 
 def total_mass(items: Iterable[MassItem]) -> float:

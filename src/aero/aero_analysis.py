@@ -39,45 +39,45 @@ def aero_analysis (
         r=0.0,
     )
 
-    # VLM Method
-    vlm_result = run_vlm_on_design_vector(
-        design_vector=design_vector,
-        cg=cg,
-        velocity=cruise_condition.operating_point.velocity,
-        alpha=cruise_condition.operating_point.alpha,
-        beta=0.0,  
-        p=0.0, 
-        q=0.0,  
-        r=0.0,  
-        spanwise_resolution=6,  # Default resolution, can be adjusted (no idea what to put here)
-        chordwise_resolution=6,  # Default resolution, can be adjusted (no idea what to put here)
+    # # VLM Method
+    # vlm_result = run_vlm_on_design_vector(
+    #     design_vector=design_vector,
+    #     cg=cg,
+    #     velocity=cruise_condition.operating_point.velocity,
+    #     alpha=cruise_condition.operating_point.alpha,
+    #     beta=0.0,  
+    #     p=0.0, 
+    #     q=0.0,  
+    #     r=0.0,  
+    #     spanwise_resolution=6,  # Default resolution, can be adjusted (no idea what to put here)
+    #     chordwise_resolution=6,  # Default resolution, can be adjusted (no idea what to put here)
         
-        # a few other optional params can be changed but didn't seem necessary for now
-        )
+    #     # a few other optional params can be changed but didn't seem necessary for now
+    #     )
     
-    # Lifting Line Method
-    lifting_line_result = run_lifting_line_on_design_vector(
-        design_vector=design_vector,
-        cg=cg,
-        velocity=cruise_condition.operating_point.velocity,
-        alpha=cruise_condition.operating_point.alpha,
-        beta=0.0,  
-        p=0.0,  
-        q=0.0,  
-        r=0.0,  
-    )
+    # # Lifting Line Method
+    # lifting_line_result = run_lifting_line_on_design_vector(
+    #     design_vector=design_vector,
+    #     cg=cg,
+    #     velocity=cruise_condition.operating_point.velocity,
+    #     alpha=cruise_condition.operating_point.alpha,
+    #     beta=0.0,  
+    #     p=0.0,  
+    #     q=0.0,  
+    #     r=0.0,  
+    # )
 
-    # Nonlinear Lifting Line Method
-    nonlinear_lifting_line_result = run_nonlinear_lifting_line_on_design_vector(
-        design_vector=design_vector,
-        cg=cg,
-        velocity=cruise_condition.operating_point.velocity,
-        alpha=cruise_condition.operating_point.alpha,   
-        beta=0.0,  
-        p=0.0, 
-        q=0.0,  
-        r=0.0, 
-    )
+    # # Nonlinear Lifting Line Method
+    # nonlinear_lifting_line_result = run_nonlinear_lifting_line_on_design_vector(
+    #     design_vector=design_vector,
+    #     cg=cg,
+    #     velocity=cruise_condition.operating_point.velocity,
+    #     alpha=cruise_condition.operating_point.alpha,   
+    #     beta=0.0,  
+    #     p=0.0, 
+    #     q=0.0,  
+    #     r=0.0, 
+    # )
 
 
     return aero_buildup_result 

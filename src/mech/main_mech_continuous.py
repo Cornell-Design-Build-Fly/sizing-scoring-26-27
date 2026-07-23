@@ -63,6 +63,7 @@ def _fractional_payload_item(
 def evaluate_mechanical_module(
     design_vector: DesignVector,
     config: MechanicalModuleConfig | None = None,
+    parameter_vector: ParameterVector | None = None,
 ) -> MechanicalResult:
     """Evaluate all missions while accepting continuous M2 payload amounts.
 
@@ -85,7 +86,7 @@ def evaluate_mechanical_module(
         ducks_num=float(duck_count),
         pucks_num=float(puck_count),
     )
-    result = _evaluate_discrete(floor_design, resolved_config)
+    result = _evaluate_discrete(floor_design, resolved_config, parameter_vector)
 
     if duck_fraction == 0.0 and puck_fraction == 0.0:
         return result
@@ -166,10 +167,11 @@ def mech_main(
     design_vector: DesignVector,
     mission: str = "M1",
     config: MechanicalModuleConfig | None = None,
+    parameter_vector: ParameterVector | None = None,
 ) -> tuple[tuple[float, float, float], np.ndarray, float]:
     """Continuous-payload counterpart to the standard compatibility entry point."""
 
-    result = evaluate_mechanical_module(design_vector, config)
+    result = evaluate_mechanical_module(design_vector, config, parameter_vector)
     mission_result = result.for_mission(mission)
     return (
         tuple(float(value) for value in mission_result.cg_m),

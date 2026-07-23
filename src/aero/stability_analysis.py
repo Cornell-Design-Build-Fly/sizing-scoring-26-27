@@ -22,7 +22,6 @@ def stability_analysis(
         design_vector: DesignVector,
         cruise_condition: CruiseCondition,
         mass_props: MassProperties,
-        static_margin: float,
 ) -> StabilityResult:
     """
     Perform stability analysis for a given design vector, cruise condition, and aerodynamic result.
