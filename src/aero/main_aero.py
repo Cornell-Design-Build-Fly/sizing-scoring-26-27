@@ -7,19 +7,21 @@ import aerosandbox as asb
 import numpy as np
 
 from src.aero.custom_classes import AeroOutput, StabilityResult, CruiseCondition, AirplaneAnalysisResult
-from src.vectors import ASBDesignVector, DesignVector
+from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 from src.aero.vlm import require_scalar
 from src.aero.cruise_analysis import cruise_analysis
 from src.aero.aero_analysis import aero_analysis
 from src.aero.stability_analysis import stability_analysis
+from src.aero.aero_score import AeroScore, aero_score
 
 def aero_main(
         design_vector: DesignVector,
+        parameter_vector: ParameterVector,
         thrust_velocity: tuple[float, float, float],
         cg: tuple[float, float, float],
-        inertia_matrix: list[float, float, float],
+        inertia_matrix: np.ndarray,
         mass: float,
-) -> AeroOutput:
+) -> AeroScore:
 
     """
     Main function for aero analysis of a design vector.
@@ -30,7 +32,6 @@ def aero_main(
         cg: The center of gravity of the airplane (x, y, z).
         inertia_matrix: The inertia matrix of the airplane.
         mass: The mass of the airplane.
-        sm: The static margin associated with the current design state.
     """
 
     # Define "mass properties" object for stability analysis.
@@ -48,23 +49,16 @@ def aero_main(
     )
 
     # Main trim solver. Contains ASB optimization methods and calls to aero_analysis to perform force/moment balance.
-    cruise_condition = cruise_analysis(design_vector, thrust_velocity, cg, mass)
+    cruise_condition = cruise_analysis(design_vector, parameter_vector, thrust_velocity, cg, mass)
 
-    if cruise_condition.converged == False:
-        return AeroOutput(
-            converged = False
+    # If cruise condition doesn't converge for this design, exit early with flagged AeroScore result.
+    if not cruise_condition.converged:
+        return AeroScore(
+            can_fly = False,
         )
-
-    # Final call to aero_analysis to get final aerodynamic results for design vector at trim. 
-    aero_result = aero_analysis(design_vector, cruise_condition, cg)
 
     # Final call to stability_analysis to get final stability results for design vector at trim.
     stability_result = stability_analysis(design_vector, cruise_condition, mass_props)
 
-    # Return aero, cruise, and stability results in "AeroOutput" object.
-    return AeroOutput(
-        aero_result=aero_result,
-        cruise_condition=cruise_condition,
-        stability_result=stability_result,
-        converged = True
-    )
+    # Return final score for design vector based on cruise speed, stall speed, and stability numbers.
+    return aero_score(cruise_condition, stability_result, parameter_vector)

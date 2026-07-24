@@ -11,7 +11,7 @@ from src.aero.main_aero import aero_main
 def main(
     dv: DesignVector,
     pv: ParameterVector,
-) -> tuple[AeroOutput, AeroOutput, AeroOutput]:
+) -> list[AeroScore]=[]:
     """Evaluate mechanics, propulsion, and aerodynamics for all missions."""
 
     mech_result = evaluate_mechanical_module(dv, parameter_vector=pv)
@@ -37,8 +37,9 @@ def main(
     ):
         properties = mech_result.for_mission(mission)
         outputs.append(
-            aero_main(
+            main_aero(
                 design_vector=aero_design,
+                parameter_vector=pv,
                 thrust_velocity=thrust_velocity,
                 cg=tuple(float(value) for value in properties.cg_m),
                 inertia_matrix=properties.inertia_tensor_kg_m2,

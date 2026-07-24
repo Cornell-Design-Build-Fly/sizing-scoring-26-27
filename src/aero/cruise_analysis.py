@@ -3,8 +3,7 @@ from aerosandbox import OperatingPoint
 from aerosandbox import optimization as opti 
 from src.aero.aero_analysis import aero_analysis
 from src.aero.custom_classes import CruiseCondition
-from src.vectors import DesignVector
-from src.vectors import ASBDesignVector
+from src.vectors import DesignVector, ASBDesignVector, ParameterVector
 import numpy as np
 
 def eval_thrust(
@@ -24,8 +23,23 @@ def eval_thrust(
         a, b, c = thrust_velocity
         return a * velocity**2 + b * velocity + c
 
+# TODO
+def calc_stall_speed(
+        design_vector: DesignVector,
+        cruise_condition: CruiseCondition,
+    ) -> float:
+        """
+        Estimate CL_max and stall speed using an angle-of-attack sweep.
+
+        Returns:
+        stall_speed_mps
+        cl_max
+        alpha_at_cl_max_deg
+        """
+
 def cruise_analysis(
         design_vector: DesignVector,
+        parameter_vector: ParameterVector,
         thrust_velocity: tuple[float, float, float], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
         cg: tuple[float, float, float],
         mass: float,
@@ -75,7 +89,7 @@ def cruise_analysis(
     
     # Define weight and thrust
     thrust = eval_thrust(velocity, thrust_velocity)
-    weight = mass * 9.81  # N
+    weight = mass * parameter_vector.gravity  # N
 
     # ------------------- Initial approach: 2 variables 3 equations ----------------
 
@@ -127,7 +141,7 @@ def cruise_analysis(
     DRAG_RESIDUAL_TOL = 1e-1
     MOMENT_RESIDUAL_TOL = 1e-1
 
-    print("Trim residual: " + trim_error)
+    print("Trim residual: " + float(solution.value(trim_error)))
 
     try:
         solution = opti.solve()
@@ -166,12 +180,12 @@ def cruise_analysis(
     )
 
     # Calculate and set stall speed
-    RHO = 1.225
+    RHO = parameter_vector.rho
     S_REF = design_vector.wing_area
-    WEIGHT  = mass * 9.81
+    WEIGHT  = mass * parameter_vector.gravity
+    CL = 0.5 # TODO - TEMPORARY, NEED TO FIX
     # TODO - fix stall speed- needs to use CL max instead of cruise CL
-    stall_speed = (2 * WEIGHT / (RHO * S_REF * aero_result.CL)) ** 0.5
-    cruise_condition.stall_speed = stall_speed
+    stall_speed = (2 * WEIGHT / (RHO * S_REF * CL)) ** 0.5
 
     # Return solved values and whether converged within defined tolerances.
     return CruiseCondition(

@@ -60,6 +60,8 @@ class StabilityResult:
     dutch_roll: ModeResult
     spiral: ModeResult
     roll_subsidence: ModeResult
+    Cma: float
+    Cnb: float
     static_margin: float | None = None
 
 @dataclass(frozen=True)
@@ -76,9 +78,9 @@ class AeroOutput:
 def dict_to_mode_result(mode_dict: dict) -> ModeResult:
     """Converts a dictionary of mode results to a ModeResult object."""
     return ModeResult(
-        eigenvalue_real=mode_dict["eigenvalue_real"],
-        eigenvalue_imag=mode_dict["eigenvalue_imag"],
-        damping_ratio=mode_dict["damping_ratio"],
-        eigenvalue_imag_approx=mode_dict.get("eigenvalue_imag_approx"),
-        damping_ratio_approx=mode_dict.get("damping_ratio_approx"),
+        eigenvalue_real=require_scalar(mode_dict["eigenvalue_real"]),
+        eigenvalue_imag=require_scalar(mode_dict["eigenvalue_imag"]),
+        damping_ratio=require_scalar(mode_dict["damping_ratio"]),
+        eigenvalue_imag_approx=require_scalar(mode_dict.get("eigenvalue_imag_approx")),
+        damping_ratio_approx=require_scalar(mode_dict.get("damping_ratio_approx")),
     )
