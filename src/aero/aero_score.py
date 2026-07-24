@@ -25,13 +25,13 @@ how far each hard constraint is violated.
 Usage
 -----
     from src.aero.aero_score import aero_score, AeroScore
-    score: AeroScore = aero_score(cruise_speed_m_s, stability_result)
+    score: AeroScore = aero_score(cruise_condition, stability_result)
 """
 
 import numpy as np
 from dataclasses import dataclass
 
-from src.aero.custom_classes import StabilityResult
+from src.aero.custom_classes import CruiseCondition, StabilityResult
 
 # ── DBF Course Geometry ────────────────────────────────────────────────────
 # Per 26-27 DBF rules (Figure 3.1.1; confirmed from course diagram):
@@ -223,7 +223,7 @@ def _compute_lap_time(cruise_speed: float, stall_speed: float) -> float:
 # ──────────────────────────────────────────────────────────────────────────
 
 def aero_score(
-        cruise_speed: float,
+        cruise_condition: CruiseCondition,
         stability_result: StabilityResult,
 ) -> AeroScore:
     """
@@ -231,12 +231,13 @@ def aero_score(
 
     Parameters
     ----------
-    cruise_speed : float
-        True airspeed at trimmed cruise [m/s]. Typically comes from
-        cruise_condition.operating_point.velocity.
+    cruise_condition : CruiseCondition
+        Output of cruise_analysis(). Provides trimmed cruise speed
+        (cruise_condition.operating_point.velocity) and stall speed
+        (cruise_condition.stall_speed) for the lap-time calculation.
     stability_result : StabilityResult
-        Output of stability_analysis(). Must contain Cma, Cnb, and
-        static_margin at minimum.
+        Output of stability_analysis(). Must contain Cma, Cnb,
+        static_margin, and spiral (ModeResult) at minimum.
 
     Returns
     -------
@@ -255,7 +256,9 @@ def aero_score(
     Cma < 0, Cnb > 0, static_margin > 0, and spiral doubling time ≥ 4 s.
     """
     # ── Lap time ──────────────────────────────────────────────────────────
-    lap_time = _compute_lap_time(cruise_speed, stability_result.stall_speed)
+    cruise_speed = cruise_condition.operating_point.velocity
+    stall_speed  = cruise_condition.stall_speed
+    lap_time = _compute_lap_time(cruise_speed, stall_speed)
 
     # ── Flyability gates ──────────────────────────────────────────────────
     longitudinally_stable = stability_result.Cma < CMA_LIMIT          # Cma < 0
@@ -264,7 +267,8 @@ def aero_score(
 
     # Spiral: eigenvalue is real; positive means bank angle grows.
     # Pass if growth rate ≤ SPIRAL_RATE_MAX (doubling time ≥ 4 s).
-    spiral_rate = stability_result.spiral_eigenvalue.real
+    # stability_result.spiral is a ModeResult; eigenvalue_real is its real part.
+    spiral_rate = stability_result.spiral.eigenvalue_real
     spiral_ok   = spiral_rate <= SPIRAL_RATE_MAX
 
     can_fly = longitudinally_stable and directionally_stable and cg_ahead_of_np and spiral_ok
