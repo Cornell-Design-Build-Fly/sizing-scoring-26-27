@@ -279,54 +279,53 @@ def prop_main(
     max_time_fit = np.polyfit(velocities_mps, max_time_samples, 2)
     throttled_time_fit = np.polyfit(velocities_mps, throttled_time_samples, 2)
 
-    result = PropulsionCurveFit(
-        throttled_thrust=throttled_thrust_fit,
-        max_thrust=max_thrust_fit,
-        throttled_time=throttled_time_fit,
-        max_time=max_time_fit,
-        sample_velocities_mps=velocities_mps,
-        throttled_thrust_samples=throttled_thrust_samples,
-        max_thrust_samples=max_thrust_samples,
-        throttled_time_samples=throttled_time_samples,
-        max_time_samples=max_time_samples,
-    )
+    # result = PropulsionCurveFit(
+    #     throttled_thrust=throttled_thrust_fit,
+    #     max_thrust=max_thrust_fit,
+    #     throttled_time=throttled_time_fit,
+    #     max_time=max_time_fit,
+    #     sample_velocities_mps=velocities_mps,
+    #     throttled_thrust_samples=throttled_thrust_samples,
+    #     max_thrust_samples=max_thrust_samples,
+    #     throttled_time_samples=throttled_time_samples,
+    #     max_time_samples=max_time_samples,
+    # )
 
     if disp_res:
         plot_propulsion_result(result)
 
-    return result
+    return throttled_thrust_fit, max_thrust_fit
 
+# def prop_main_interp(
+#     design_vector: DesignVector,
+#     parameter_vector: ParameterVector = ParameterVector,
+#     mission: int = 1,
+#     prop_database: ContinuousPropDatabase | None = None,
+#     velocities_mps: np.ndarray | None = None,
+#     disp_res: bool = False,
+# ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+#     """
+#     MATLAB-style wrapper.
 
-def prop_main_interp(
-    design_vector: DesignVector,
-    parameter_vector: ParameterVector = ParameterVector,
-    mission: int = 1,
-    prop_database: ContinuousPropDatabase | None = None,
-    velocities_mps: np.ndarray | None = None,
-    disp_res: bool = False,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    MATLAB-style wrapper.
+#     Returns:
+#         p_throttled_thrust, p_max_thrust, p_throttled_t, p_max_t
+#     """
 
-    Returns:
-        p_throttled_thrust, p_max_thrust, p_throttled_t, p_max_t
-    """
+#     result = prop_main(
+#         design_vector=design_vector,
+#         parameter_vector=parameter_vector,
+#         mission=mission,
+#         prop_database=prop_database,
+#         velocities_mps=velocities_mps,
+#         disp_res=disp_res,
+#     )
 
-    result = prop_main(
-        design_vector=design_vector,
-        parameter_vector=parameter_vector,
-        mission=mission,
-        prop_database=prop_database,
-        velocities_mps=velocities_mps,
-        disp_res=disp_res,
-    )
-
-    return (
-        result.throttled_thrust,
-        result.max_thrust,
-        result.throttled_time,
-        result.max_time,
-    )
+#     return (
+#         result.throttled_thrust,
+#         result.max_thrust,
+#         result.throttled_time,
+#         result.max_time,
+#     )
 
 
 def evaluate_curve(coefficients: np.ndarray, velocity_mps):
