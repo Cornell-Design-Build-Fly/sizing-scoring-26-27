@@ -6,7 +6,7 @@ from time import perf_counter
 import aerosandbox as asb
 import numpy as np
 
-from src.aero.custom_classes import AeroOutput, StabilityResult, CruiseCondition, AirplaneAnalysisResult
+from src.aero.custom_classes import AeroOutput, StabilityResult, CruiseCondition, AirplaneAnalysisResult, AeroScore
 from src.vectors import ASBDesignVector, DesignVector
 from src.aero.vlm import require_scalar
 from src.aero.cruise_analysis import cruise_analysis
@@ -17,7 +17,7 @@ def aero_main(
         design_vector: DesignVector,
         thrust_velocity: tuple[float, float, float],
         cg: tuple[float, float, float],
-        inertia_matrix: list[float, float, float],
+        inertia_matrix: np.ndarray,
         mass: float,
 ) -> AeroScore:
 
