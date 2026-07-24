@@ -89,7 +89,7 @@ def cruise_analysis(
     
     # Define weight and thrust
     thrust = eval_thrust(velocity, thrust_velocity)
-    weight = mass * 9.81  # N
+    weight = mass * parameter_vector.gravity  # N
 
     # ------------------- Initial approach: 2 variables 3 equations ----------------
 
@@ -183,8 +183,9 @@ def cruise_analysis(
     RHO = parameter_vector.rho
     S_REF = design_vector.wing_area
     WEIGHT  = mass * parameter_vector.gravity
+    CL = 0.5 # TODO - TEMPORARY, NEED TO FIX
     # TODO - fix stall speed- needs to use CL max instead of cruise CL
-    stall_speed = (2 * WEIGHT / (RHO * S_REF * aero_result.CL)) ** 0.5
+    stall_speed = (2 * WEIGHT / (RHO * S_REF * CL)) ** 0.5
 
     # Return solved values and whether converged within defined tolerances.
     return CruiseCondition(
