@@ -37,7 +37,7 @@ def main(
     ):
         properties = mech_result.for_mission(mission)
         outputs.append(
-            aero_main(
+            main_aero(
                 design_vector=aero_design,
                 thrust_velocity=thrust_velocity,
                 cg=tuple(float(value) for value in properties.cg_m),
