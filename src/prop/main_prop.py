@@ -45,6 +45,7 @@ def cruise_values(
     min_rpm: int = 3000,
     max_rpm: int = 16000,
     rpm_step: int = 100,
+    knockdown: bool = False,
 ) -> tuple[float, float]:
     """
     Finds the highest valid thrust at a given airspeed and throttle limit.
@@ -157,7 +158,8 @@ def cruise_values(
 
     if best_thrust_n == -math.inf:
         return 0.0, 0.0
-
+    if knockdown == True:
+        best_thrust_n = best_thrust_n*0.9
     return float(best_thrust_n), float(best_flight_time_s)
 
 '''PROP MAIN BLOCK'''
@@ -172,7 +174,8 @@ def prop_main(
     prop_database: ContinuousPropDatabase | None = None,
     velocities_mps: np.ndarray | None = None,
     disp_res: bool = False,
-) -> PropulsionCurveFit:
+    knockdown: bool = False,
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Main propulsion model.
 
@@ -230,6 +233,7 @@ def prop_main(
             max_current_a=motor.max_current,
             cruise_throttle=1.0,
             prop_database=prop_database,
+            knockdown=knockdown,
         )
 
         throttled_thrust, throttled_time = cruise_values(
@@ -241,6 +245,7 @@ def prop_main(
             max_current_a=motor.max_current,
             cruise_throttle=cruise_throttle,
             prop_database=prop_database,
+            knockdown=knockdown,
         )
 
         # Match old MATLAB behavior:
