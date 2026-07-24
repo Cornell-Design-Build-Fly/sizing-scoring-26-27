@@ -39,6 +39,7 @@ def main(
         outputs.append(
             main_aero(
                 design_vector=aero_design,
+                parameter_vector=pv,
                 thrust_velocity=thrust_velocity,
                 cg=tuple(float(value) for value in properties.cg_m),
                 inertia_matrix=properties.inertia_tensor_kg_m2,
