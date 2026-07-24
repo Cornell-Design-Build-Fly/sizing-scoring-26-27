@@ -55,11 +55,20 @@ def stability_analysis(
         aero=stability_dict
     )
 
+    # Calculate static margin
+    x_np = require_scalar(stability_dict["x_np"]) # neutral point
+    x_cg = require_scalar(mass_props.x_cg) # cg
+    c_ref = require_scalar(airplane.c_ref) 
+
+    static_margin = (x_np - x_cg) / c_ref
+
     return StabilityResult(
         phugoid=dict_to_mode_result(stability_modes["phugoid"]),
         short_period=dict_to_mode_result(stability_modes["short_period"]),
         dutch_roll=dict_to_mode_result(stability_modes["dutch_roll"]),
         spiral=dict_to_mode_result(stability_modes["spiral"]),
         roll_subsidence=dict_to_mode_result(stability_modes["roll_subsidence"]),
-        static_margin=static_margin,
+        Cma=require_scalar(stability_dict["Cma"]),
+        Cnb=require_scalar(stability_dict["Cnb"]),
+        static_margin=calc_static_margin(design_vector,mass_props),
     )
