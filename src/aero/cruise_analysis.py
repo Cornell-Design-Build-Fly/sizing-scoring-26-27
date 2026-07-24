@@ -26,6 +26,7 @@ def eval_thrust(
 
 def cruise_analysis(
         design_vector: DesignVector,
+        parameter_vector: ParameterVector,
         thrust_velocity: tuple[float, float, float], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
         cg: tuple[float, float, float],
         mass: float,
@@ -166,9 +167,9 @@ def cruise_analysis(
     )
 
     # Calculate and set stall speed
-    RHO = 1.225
+    RHO = parameter_vector.rho
     S_REF = design_vector.wing_area
-    WEIGHT  = mass * 9.81
+    WEIGHT  = mass * parameter_vector.gravity
     # TODO - fix stall speed- needs to use CL max instead of cruise CL
     stall_speed = (2 * WEIGHT / (RHO * S_REF * aero_result.CL)) ** 0.5
     cruise_condition.stall_speed = stall_speed

@@ -48,11 +48,12 @@ def aero_main(
     )
 
     # Main trim solver. Contains ASB optimization methods and calls to aero_analysis to perform force/moment balance.
-    cruise_condition = cruise_analysis(design_vector, thrust_velocity, cg, mass)
+    cruise_condition = cruise_analysis(design_vector, parameter_vector, thrust_velocity, cg, mass)
 
-    if cruise_condition.converged == False:
-        return AeroOutput(
-            converged = False
+    # If cruise condition doesn't converge for this design, exit early with flagged AeroScore result.
+    if not cruise_condition.converged:
+        return AeroScore(
+            can_fly = False;
         )
 
     # Final call to stability_analysis to get final stability results for design vector at trim.
