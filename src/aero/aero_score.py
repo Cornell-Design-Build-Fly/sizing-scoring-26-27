@@ -118,15 +118,15 @@ class AeroScore:
         Component penalty from spiral-mode violation (before weighting).
         0 if spiral doubling time ≥ 4 s (or spiral is stable).
     """
-    lap_time:                float
     can_fly:                 bool
-    penalty:                 float
+    lap_time:                float | None = None
+    penalty:                 float | None = None
 
     # Per-constraint breakdown (useful for debugging and grad-free optimizers)
-    penalty_static_margin:   float
-    penalty_longitudinal:    float
-    penalty_directional:     float
-    penalty_spiral:          float
+    penalty_static_margin:   float | None = None
+    penalty_longitudinal:    float | None = None
+    penalty_directional:     float | None = None
+    penalty_spiral:          float | None = None
 
 
 # ──────────────────────────────────────────────────────────────────────────
