@@ -35,7 +35,7 @@ def mech_main(
     result = evaluate_mechanical_module(design_vector, config, parameter_vector)
     mission_result = result.for_mission(mission)
     return (
-        tuple(float(value) for value in mission_result.cg_m),
+        mission_result.cg_m,
         mission_result.inertia_tensor_kg_m2.copy(),
         mission_result.weight_n,
     )

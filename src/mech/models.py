@@ -762,7 +762,7 @@ class MissionMassProperties:
     items: tuple[MassItem, ...]
     total_mass_kg: float
     weight_n: float
-    cg_m: np.ndarray
+    cg_m: tuple[float, float, float]
     inertia_tensor_kg_m2: np.ndarray
     static_margin: float
     static_margin_feasible: bool

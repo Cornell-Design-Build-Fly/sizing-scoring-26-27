@@ -1,14 +1,7 @@
 # and here I am, catching you slacking, looking at the codebase for the first time...
 from __future__ import annotations
-from pathlib import Path
-import re
-import json
 import math
-from functools import lru_cache
-
-
 import numpy as np
-from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 
 from src.vectors import DesignVector, ParameterVector
 from src.prop.prop_classes import (
@@ -169,13 +162,13 @@ def cruise_values(
 
 def prop_main(
     design_vector: DesignVector,
-    parameter_vector: ParameterVector = ParameterVector,
-    mission: int = 1,
+    parameter_vector: ParameterVector,
+    mission: int,
     prop_database: ContinuousPropDatabase | None = None,
     velocities_mps: np.ndarray | None = None,
     disp_res: bool = False,
     knockdown: bool = False,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
     """
     Main propulsion model.
 
@@ -296,10 +289,21 @@ def prop_main(
     #     max_time_samples=max_time_samples,
     # )
 
-    if disp_res:
-        plot_propulsion_result(result)
+    # if disp_res:
+    #     plot_propulsion_result(result)
 
-    return throttled_thrust_fit, max_thrust_fit
+    return (
+        (
+            float(throttled_thrust_fit[0]),
+            float(throttled_thrust_fit[1]),
+            float(throttled_thrust_fit[2]),
+        ),
+        (
+            float(max_thrust_fit[0]),
+            float(max_thrust_fit[1]),
+            float(max_thrust_fit[2]),
+        ),
+    )
 
 # def prop_main_interp(
 #     design_vector: DesignVector,

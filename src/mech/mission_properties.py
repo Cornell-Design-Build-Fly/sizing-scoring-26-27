@@ -26,6 +26,7 @@ def calculate_mission_properties(
     cg, inertia = inertia_tensor_about_cg(items)
     mass = float(sum(item.mass_kg for item in items))
     margin = static_margin(neutral_point_x_m, cg[0], design_vector.wing_chord)
+    cg_tuple = (float(cg[0]), float(cg[1]), float(cg[2]))
     margin_config = config.static_margin
     tolerance = 1e-12
     return MissionMassProperties(
@@ -33,7 +34,7 @@ def calculate_mission_properties(
         items=items,
         total_mass_kg=mass,
         weight_n=mass * ParameterVector.gravity,
-        cg_m=cg,
+        cg_m=cg_tuple,
         inertia_tensor_kg_m2=inertia,
         static_margin=margin,
         static_margin_feasible=(

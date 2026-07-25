@@ -119,9 +119,8 @@ class AeroScore:
         0 if spiral doubling time ≥ 4 s (or spiral is stable).
     """
     can_fly:                 bool
-    lap_time:                float | None = None
-    penalty:                 float | None = None
-
+    lap_time:                float = np.inf
+    penalty:                 float = 0
     # Per-constraint breakdown (useful for debugging and grad-free optimizers)
     penalty_static_margin:   float | None = None
     penalty_longitudinal:    float | None = None

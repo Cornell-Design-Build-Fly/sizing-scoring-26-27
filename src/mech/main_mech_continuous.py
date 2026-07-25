@@ -92,7 +92,7 @@ def evaluate_mechanical_module(
         return result
 
     floor_m2 = result.for_mission("M2")
-    floor_cg = floor_m2.cg_m.copy()
+    floor_cg = np.array(floor_m2.cg_m, dtype=float)
     residual_items = tuple(
         item
         for item in (
@@ -143,7 +143,7 @@ def evaluate_mechanical_module(
         items=m2_items,
         total_mass_kg=m2_mass,
         weight_n=m2_mass * ParameterVector.gravity,
-        cg_m=m2_cg,
+        cg_m=(float(m2_cg[0]), float(m2_cg[1]), float(m2_cg[2])),
         inertia_tensor_kg_m2=m2_inertia,
         static_margin=m2_static_margin,
         static_margin_feasible=(
@@ -174,7 +174,7 @@ def mech_main(
     result = evaluate_mechanical_module(design_vector, config, parameter_vector)
     mission_result = result.for_mission(mission)
     return (
-        tuple(float(value) for value in mission_result.cg_m),
+        mission_result.cg_m,
         mission_result.inertia_tensor_kg_m2.copy(),
         mission_result.weight_n,
     )
