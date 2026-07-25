@@ -10,7 +10,7 @@ from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 
 
 DEFAULT_PROP_DATA_PATH = Path(__file__).resolve().parent / "data" / "prop_data.json"
-DEFAULT_PROP_CACHE_PATH = Path(__file__).resolve().parent / "data" / "prop_data_continuous.pkl"
+DEFAULT_PROP_PICKLE_PATH = Path(__file__).resolve().parent / "data" / "prop_data_continuous.pkl"
 
 PROP_CACHE_VERSION = 1
 
@@ -292,7 +292,7 @@ def load_default_prop_database() -> ContinuousPropDatabase:
     If not available/outdated, rebuild from JSON and save a new .pkl.
     """
     json_path = DEFAULT_PROP_DATA_PATH
-    cache_path = DEFAULT_PROP_CACHE_PATH
+    cache_path = DEFAULT_PROP_PICKLE_PATH
 
     if cache_path.exists():
         with cache_path.open("rb") as file:
@@ -322,7 +322,7 @@ def load_default_prop_database() -> ContinuousPropDatabase:
 #     import time
 
 #     json_path = DEFAULT_PROP_DATA_PATH
-#     cache_path = DEFAULT_PROP_CACHE_PATH
+#     cache_path = DEFAULT_PROP_PICKLE_PATH
 
 #     print("load_default_prop_database() called")
 
