@@ -23,7 +23,7 @@ def run_aerobuildup_on_design_vector(
 ) -> AirplaneAnalysisResult:
     """Builds an AeroSandbox airplane from a design vector and runs AeroBuildup."""
     asb_design_vector = ASBDesignVector.from_design_vector(design_vector)
-    airplane, _, _, _ = asb_design_vector.make_airplane(name=airplane_name)
+    airplane = asb_design_vector.make_airplane(name=airplane_name)
 
     op_point = asb.OperatingPoint(
         velocity=velocity,
@@ -34,10 +34,12 @@ def run_aerobuildup_on_design_vector(
         r=r,
     )
 
+    xyz_ref = list(cg)
+
     analysis = asb.AeroBuildup(
         airplane=airplane,
         op_point=op_point,
-        xyz_ref = cg,
+        xyz_ref=xyz_ref,
         model_size=model_size,
         include_wave_drag=include_wave_drag,
     )

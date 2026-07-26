@@ -36,6 +36,7 @@ def calc_stall_speed(
         cl_max
         alpha_at_cl_max_deg
         """
+        return 0.0
 
 def cruise_analysis(
         design_vector: DesignVector,
@@ -79,7 +80,7 @@ def cruise_analysis(
     aero = asb.AeroBuildup(
         airplane=airplane,
         op_point=op_point,
-        xyz_ref=cg,
+        xyz_ref=np.array(cg),
     ).run()
     
     # Define lift, drag, and pitching moment from AeroBuildup
@@ -141,8 +142,6 @@ def cruise_analysis(
     DRAG_RESIDUAL_TOL = 1e-1
     MOMENT_RESIDUAL_TOL = 1e-1
 
-    print("Trim residual: " + float(solution.value(trim_error)))
-
     try:
         solution = opti.solve()
 
@@ -178,6 +177,8 @@ def cruise_analysis(
         stall_speed=None,
         converged=False,
     )
+
+    print("Trim residual: " + str(float(solution.value(trim_error))))
 
     # Calculate and set stall speed
     RHO = parameter_vector.rho
