@@ -2,6 +2,8 @@ import aerosandbox as asb
 from aerosandbox import OperatingPoint
 from dataclasses import dataclass
 
+from src.aero.vlm import require_scalar
+
 # The purpose of this file is to define custom classes for use in the aero module. There is essentially
 # one class for each of the three aero analysis functions/files - cruise, stability, and aerodynamics. 
 
@@ -74,6 +76,10 @@ class AeroOutput:
     cruise_condition: CruiseCondition | None = None
     stability_result: StabilityResult | None = None
 
+def optional_scalar(value) -> float | None:
+    if value is None:
+        return None
+    return require_scalar(value)
 
 def dict_to_mode_result(mode_dict: dict) -> ModeResult:
     """Converts a dictionary of mode results to a ModeResult object."""
@@ -81,6 +87,6 @@ def dict_to_mode_result(mode_dict: dict) -> ModeResult:
         eigenvalue_real=require_scalar(mode_dict["eigenvalue_real"]),
         eigenvalue_imag=require_scalar(mode_dict["eigenvalue_imag"]),
         damping_ratio=require_scalar(mode_dict["damping_ratio"]),
-        eigenvalue_imag_approx=require_scalar(mode_dict.get("eigenvalue_imag_approx")),
-        damping_ratio_approx=require_scalar(mode_dict.get("damping_ratio_approx")),
+        eigenvalue_imag_approx=optional_scalar(mode_dict.get("eigenvalue_imag_approx")),
+        damping_ratio_approx=optional_scalar(mode_dict.get("damping_ratio_approx")),
     )

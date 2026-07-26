@@ -1,6 +1,6 @@
 import aerosandbox as asb
 from src.aero.custom_classes import CruiseCondition, StabilityResult, dict_to_mode_result
-from src.vectors import DesignVector
+from src.vectors import ASBDesignVector, DesignVector
 from aerosandbox.dynamics.flight_dynamics.airplane import get_modes
 from aerosandbox.weights.mass_properties import MassProperties
 
@@ -34,7 +34,9 @@ def stability_analysis(
         mass_props: The mass properties of the airplane.
     """
     # Define an Airplane object from design vector.
-    airplane = design_vector.to_asb_airplane()
+    airplane = ASBDesignVector.from_design_vector(
+    design_vector
+    ).make_airplane()
 
     # Run AeroBuildup to get stability derivatives
     stability_dict = asb.AeroBuildup(

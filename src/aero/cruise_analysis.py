@@ -80,7 +80,7 @@ def cruise_analysis(
     aero = asb.AeroBuildup(
         airplane=airplane,
         op_point=op_point,
-        xyz_ref=np.array(cg),
+        xyz_ref=np.array(cg), # match data type of cg
     ).run()
     
     # Define lift, drag, and pitching moment from AeroBuildup
@@ -123,11 +123,11 @@ def cruise_analysis(
     # --------------------------------------------------------------------------------
 
     # ---------------------- New approach: residual solver ---------------------------
-    lift_residual = (lift - weight) / weight
-    drag_residual = (drag - thrust) / weight
+    lift_residual = (lift - weight) / weight # type: ignore
+    drag_residual = (drag - thrust) / weight # type: ignore
     moment_residual = pitching_moment / (
         weight * airplane.c_ref
-    )
+    ) # type: ignore
 
     trim_error = (
         lift_residual**2
@@ -135,7 +135,7 @@ def cruise_analysis(
         + moment_residual**2
     )
 
-    opti.minimize(trim_error)
+    opti.minimize(trim_error) # type: ignore
 
    # Tolerances used to decide whether the resulting point is truly trimmed.
     LIFT_RESIDUAL_TOL = 1e-1
@@ -164,19 +164,21 @@ def cruise_analysis(
             and solved_moment_residual <= MOMENT_RESIDUAL_TOL
         )
 
-    except RuntimeError:
+    except RuntimeError as exc:
+        print(f"Cruise optimization failed: {exc}")
+
         return CruiseCondition(
-        operating_point=OperatingPoint(
-            velocity=-1.0,
-            alpha=-999.0,
-            beta=0.0,  
-            p=0.0,     
-            q=0.0,     
-            r=0.0     
-        ),
-        stall_speed=None,
-        converged=False,
-    )
+            operating_point=OperatingPoint(
+                velocity=-1.0,
+                alpha=-999.0,
+                beta=0.0,
+                p=0.0,
+                q=0.0,
+                r=0.0,
+            ),
+            stall_speed=None,
+            converged=False,
+        )
 
     print("Trim residual: " + str(float(solution.value(trim_error))))
 

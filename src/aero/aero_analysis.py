@@ -31,8 +31,8 @@ def aero_analysis (
     aero_buildup_result = run_aerobuildup_on_design_vector(
         design_vector=design_vector,
         cg=cg,
-        velocity=cruise_condition.operating_point.velocity,
-        alpha=cruise_condition.operating_point.alpha,
+        velocity=cruise_condition.operating_point.velocity, # type: ignore
+        alpha=cruise_condition.operating_point.alpha, # type: ignore
         beta=0.0,  
         p=0.0,  
         q=0.0,  
