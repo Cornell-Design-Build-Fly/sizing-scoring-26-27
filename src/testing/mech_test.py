@@ -437,6 +437,11 @@ def main() -> None:
 
     # Mission 3 still uses the prior fixed-distance process after M1/M2 finish.
     m3_items = {item.name: item for item in result.for_mission("M3").items}
+    expected_banner_area_m2 = design.banner_length * (design.banner_length / 5.0)
+    assert np.isclose(
+        m3_items["M3 banner"].mass_kg,
+        config.mission3.banner_areal_density_kg_m2 * expected_banner_area_m2,
+    )
     banner_x = m3_items["M3 banner"].position_m[0]
     assert np.isclose(
         banner_x - m3_items["M3 forward mechanism"].position_m[0],

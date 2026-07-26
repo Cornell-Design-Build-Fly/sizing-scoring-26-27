@@ -658,10 +658,11 @@ class Mission3Config:
     """Mission-3 three-mass banner-system model.
 
     The current-year defaults include two 100 g mechanisms and a banner areal
-    density based on a 0.233 kg, 2.9 m^2 reference banner. Banner area is
-    ``banner_length_m * banner_height_m``. A fixed ``banner_mass_kg`` overrides
-    all density models. ``banner_linear_density_kg_m`` is retained as a legacy
-    override for callers that already have a measured mass per unit length.
+    density based on a 0.233 kg, 2.9 m^2 reference banner. Banner height is
+    one fifth of its length, so area is ``banner_length_m**2 / 5``. A fixed
+    ``banner_mass_kg`` overrides all density models.
+    ``banner_linear_density_kg_m`` is retained as a legacy override for callers
+    that already have a measured mass per unit length.
 
     A value of ``None`` for ``banner_center_x_m`` lets the module solve for the
     best longitudinal location; otherwise the supplied position is used
@@ -675,7 +676,6 @@ class Mission3Config:
     banner_mass_kg: float | None = None
     banner_areal_density_kg_m2: float = 0.233 / 2.9
     banner_linear_density_kg_m: float | None = None
-    banner_height_m: float = 0.10
     banner_center_x_m: float | None = None
     banner_center_y_m: float = 0.0
     banner_center_z_m: float = 0.0
@@ -699,12 +699,11 @@ class Mission3Config:
         if not np.all(np.isfinite(masses)) or np.any(np.asarray(masses) < 0):
             raise ValueError("Mission-3 masses and mass density must be finite and nonnegative.")
         distances = (
-            self.banner_height_m,
             self.forward_mechanism_distance_m,
             self.aft_mechanism_distance_m,
         )
         if not np.all(np.isfinite(distances)) or np.any(np.asarray(distances) <= 0):
-            raise ValueError("Mission-3 banner height and fixed distances must be positive.")
+            raise ValueError("Mission-3 fixed distances must be positive.")
         for value_name, value in {
             "banner_center_x_m": self.banner_center_x_m,
             "banner_center_y_m": self.banner_center_y_m,
@@ -732,7 +731,8 @@ class Mission3Config:
             return float(self.banner_mass_kg)
         if self.banner_linear_density_kg_m is not None:
             return float(self.banner_linear_density_kg_m * banner_length_m)
-        banner_area_m2 = banner_length_m * self.banner_height_m
+        banner_height_m = banner_length_m / 5.0
+        banner_area_m2 = banner_length_m * banner_height_m
         return float(self.banner_areal_density_kg_m2 * banner_area_m2)
 
 

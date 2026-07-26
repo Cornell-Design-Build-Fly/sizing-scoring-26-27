@@ -194,7 +194,9 @@ Mission 3 starts from the accepted M1 airplane, not from Mission 2. It retains
 the prior banner and two-mechanism model with explicit fixed distances from the
 banner center. Unless an absolute center is configured, the group translates
 together toward the configured static-margin target while preserving those
-distances. Its physical electronics/tail bounds are unchanged.
+distances. Banner height is modeled as one fifth of banner length, making its
+area `banner_length^2 / 5` for the areal-density mass calculation. Its physical
+electronics/tail bounds are unchanged.
 
 ## Validation
 
