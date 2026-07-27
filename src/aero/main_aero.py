@@ -34,6 +34,9 @@ def aero_main(
         mass: The mass of the airplane.
     """
 
+    analysis_start = perf_counter()
+    print("[aero] Starting aerodynamic evaluation...", flush=True)
+
     # Define "mass properties" object for stability analysis.
     mass_props = asb.MassProperties(
     mass=mass,
@@ -50,15 +53,29 @@ def aero_main(
 
     # Main trim solver. Contains ASB optimization methods and calls to aero_analysis to perform force/moment balance.
     cruise_condition = cruise_analysis(design_vector, parameter_vector, thrust_velocity, cg, mass)
+    print(
+        f"[aero] Cruise analysis complete (converged={cruise_condition.converged}).",
+        flush=True,
+    )
 
     # If cruise condition doesn't converge for this design, exit early with flagged AeroScore result.
     if not cruise_condition.converged:
+        print("[aero] Stopping evaluation because cruise trim did not converge.", flush=True)
         return AeroScore(
             can_fly = False,
         )
 
     # Final call to stability_analysis to get final stability results for design vector at trim.
+    print("[aero] Running static and dynamic stability analysis...", flush=True)
     stability_result = stability_analysis(design_vector, cruise_condition, mass_props)
 
     # Return final score for design vector based on cruise speed, stall speed, and stability numbers.
-    return aero_score(cruise_condition, stability_result, parameter_vector)
+    score = aero_score(cruise_condition, stability_result, parameter_vector)
+    print(
+        f"[aero] Aerodynamic evaluation finished in "
+        f"{perf_counter() - analysis_start:.2f} s "
+        f"(can_fly={score.can_fly}, lap_time={score.lap_time:.2f} s, "
+        f"penalty={score.penalty:.2f}).",
+        flush=True,
+    )
+    return score

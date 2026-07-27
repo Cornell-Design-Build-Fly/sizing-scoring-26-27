@@ -1,6 +1,8 @@
 import aerosandbox as asb
 from aerosandbox import OperatingPoint
 from aerosandbox import optimization as opti 
+from time import perf_counter
+
 from src.aero.aero_analysis import aero_analysis
 from src.aero.custom_classes import CruiseCondition
 from src.vectors import DesignVector, ASBDesignVector, ParameterVector
@@ -57,6 +59,7 @@ def cruise_analysis(
     """
 
     # Create an optimization problem
+    print("[aero] Preparing cruise trim optimization...", flush=True)
     opti = asb.Opti()  
 
     # Twp optimization variables 
@@ -142,6 +145,8 @@ def cruise_analysis(
     DRAG_RESIDUAL_TOL = 1e-1
     MOMENT_RESIDUAL_TOL = 1e-1
 
+    optimization_start = perf_counter()
+    print("[aero] Solving cruise trim optimization (this may take a while)...", flush=True)
     try:
         solution = opti.solve()
 
@@ -165,7 +170,11 @@ def cruise_analysis(
         )
 
     except RuntimeError as exc:
-        print(f"Cruise optimization failed: {exc}")
+        print(
+            f"[aero] Cruise trim optimization failed after "
+            f"{perf_counter() - optimization_start:.2f} s: {exc}",
+            flush=True,
+        )
 
         return CruiseCondition(
             operating_point=OperatingPoint(
@@ -180,7 +189,14 @@ def cruise_analysis(
             converged=False,
         )
 
-    print("Trim residual: " + str(float(solution.value(trim_error))))
+    print(
+        f"[aero] Cruise trim optimization finished in "
+        f"{perf_counter() - optimization_start:.2f} s "
+        f"(converged={converged}, velocity={solved_velocity:.2f} m/s, "
+        f"alpha={solved_alpha:.2f} deg, "
+        f"trim residual={float(solution.value(trim_error)):.3e}).",
+        flush=True,
+    )
 
     # Calculate and set stall speed
     RHO = parameter_vector.rho

@@ -44,6 +44,11 @@ def stability_analysis(
     stability_dict = asb.AeroBuildup(
         airplane=airplane,
         op_point=cruise_condition.operating_point,
+        xyz_ref=(
+            require_scalar(mass_props.x_cg),
+            require_scalar(mass_props.y_cg),
+            require_scalar(mass_props.z_cg),
+        ),
     ).run_with_stability_derivatives()
 
     # Handle missing keys
