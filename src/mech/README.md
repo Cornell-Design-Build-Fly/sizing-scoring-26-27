@@ -30,11 +30,21 @@ from src.mech import evaluate_mechanical_module
 from src.vectors import DesignVector
 
 result = evaluate_mechanical_module(DesignVector())
-print(result.fuselage_width_m)
+print(result.input_fuselage_width_m)
+print(result.resolved_fuselage_width_m)
+print(result.input_fuselage_height_m)
+print(result.resolved_fuselage_height_m)
 print(result.fuselage_width_increases)
 print(result.for_mission("M2").static_margin)
 print(result.penalty)
 ```
+
+The result distinguishes the starting fuselage width supplied by the design
+from the resolved width selected by placement retries. Downstream geometry
+should use `resolved_fuselage_width_m`. The older `fuselage_width_m` attribute
+remains as a compatibility alias for the resolved value.
+Fuselage height is reported with the same input/resolved naming even though
+the current placement process does not resize it.
 
 `result.penalty` and `result.penalty_static_margin` are finite values in
 `[0, 10]`. The integrated scoring path subtracts `result.penalty` alongside
@@ -105,8 +115,9 @@ four inches below the wing plane; its placement does not depend on CG.
 `DesignVector.fuselage_width` is the starting width and defaults to `0.0762 m`,
 which fits the `0.0762 m` puck exactly. The default duck width is `0.053 m`, so
 the attempted widths are `0.0762`, `0.1292`, `0.1822`, `0.2352`, and
-`0.2882 m`. The selected values are returned as
-`result.fuselage_width_m` and `result.fuselage_width_increases`.
+`0.2882 m`. The starting and selected values are returned as
+`result.input_fuselage_width_m` and `result.resolved_fuselage_width_m`;
+`result.fuselage_width_increases` reports the number of increments.
 
 `Mission2Config.maximum_width_increases` changes the retry count. Every step is
 exactly one configured duck width.

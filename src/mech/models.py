@@ -788,6 +788,8 @@ class MissionMassProperties:
 
 @dataclass(frozen=True)
 class MechanicalResult:
+    """Mechanical outputs with explicit starting and resolved geometry."""
+
     neutral_point_x_m: float
     wing_aerodynamic_center_x_m: float
     horizontal_tail_aerodynamic_center_x_m: float
@@ -795,14 +797,28 @@ class MechanicalResult:
     acceptable_cg_x_range_m: tuple[float, float]
     electronics_position_m: np.ndarray
     electronics_layout: ElectronicsLayout
-    fuselage_width_m: float
-    fuselage_height_m: float
+    input_fuselage_width_m: float
+    input_fuselage_height_m: float
+    resolved_fuselage_width_m: float
+    resolved_fuselage_height_m: float
     fuselage_width_increases: int
     all_items: tuple[MassItem, ...]
     missions: dict[str, MissionMassProperties]
     warnings: tuple[str, ...] = ()
     penalty: float = 0.0
     penalty_static_margin: float = 0.0
+
+    @property
+    def fuselage_width_m(self) -> float:
+        """Backward-compatible alias for the resolved fuselage width."""
+
+        return self.resolved_fuselage_width_m
+
+    @property
+    def fuselage_height_m(self) -> float:
+        """Backward-compatible alias for the resolved fuselage height."""
+
+        return self.resolved_fuselage_height_m
 
     def for_mission(self, mission: str) -> MissionMassProperties:
         key = mission.upper()
