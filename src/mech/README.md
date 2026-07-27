@@ -13,8 +13,8 @@ center of gravity, static margin, and inertia for Missions 1, 2, and 3.
 
 Static margin is `(neutral_point_x - cg_x) / wing_chord`. The completed loaded
 fuselage is placed to make Mission 2 exactly 12% MAC. Mission 1 is then accepted
-whenever its static margin is at or below 20%; falling slightly below 10% does
-not trigger a width increase.
+whenever its static margin is at or below the configured maximum (23% by
+default); falling slightly below 10% does not trigger a width increase.
 
 The longitudinal neutral point is the aircraft aerodynamic center from the
 MAE 4070 formula-sheet method. It area- and lift-slope-weights the wing and
@@ -33,7 +33,12 @@ result = evaluate_mechanical_module(DesignVector())
 print(result.fuselage_width_m)
 print(result.fuselage_width_increases)
 print(result.for_mission("M2").static_margin)
+print(result.penalty)
 ```
+
+`result.penalty` and `result.penalty_static_margin` are finite values in
+`[0, 10]`. The integrated scoring path subtracts `result.penalty` alongside
+the three aerodynamic penalties.
 
 The aero-compatible adapter remains:
 
@@ -81,11 +86,16 @@ The module performs these operations in order:
 4. Check that the back of the installed fuselage is strictly ahead of the front
    of both tails, then remove the M2 payload mathematically and calculate
    Mission 1 static margin.
-5. When the fuselage reaches the tail or Mission 1 is above 20%, increase
+5. When the fuselage reaches the tail or Mission 1 is above its configured
+   maximum, increase
    fuselage width by one duck width and repeat from step 2.
 6. Accept the first feasible width. The initial width plus at most four width
-   increases are tested. If none works, `PayloadPlacementError` is raised with
-   every attempted width and failure reason.
+   increases are tested. If completed placements were rejected only by Mission
+   1 static margin, preserve the last such placement. It has no optimizer
+   penalty while its SM is within 15 percentage points of the configured
+   acceptable range; outside that buffer it receives a finite logarithmic
+   penalty from 0 to 10. If no physically valid placement was completed,
+   `PayloadPlacementError` is raised.
 7. Build Mission 3 using the same fixed-distance process as before, after the
    M1/M2 fuselage has been accepted.
 

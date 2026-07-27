@@ -79,6 +79,11 @@ def main(
 
     start = perf_counter()
     tot_score, breakdown = total_score(dv, aero_m1.lap_time, aero_m2.lap_time, aero_m3.lap_time)
-    tot_penalty = aero_m1.penalty + aero_m2.penalty + aero_m3.penalty
+    tot_penalty = (
+        mech_result.penalty
+        + aero_m1.penalty
+        + aero_m2.penalty
+        + aero_m3.penalty
+    )
     timings["scoring"] += perf_counter() - start
     return (tot_score - tot_penalty, breakdown)

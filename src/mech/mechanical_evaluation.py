@@ -102,6 +102,8 @@ def evaluate_mechanical_design(
         all_items=all_items,
         missions={"M1": mission1, "M2": mission2, "M3": mission3},
         warnings=tuple(dict.fromkeys(warnings)),
+        penalty=selection.static_margin_penalty,
+        penalty_static_margin=selection.static_margin_penalty,
     )
 
 

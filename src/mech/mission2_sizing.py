@@ -35,6 +35,25 @@ class Mission2Selection:
     fuselage_width_m: float
     width_increases: int
     target_cg_x_m: float
+    static_margin_penalty: float = 0.0
+
+
+def _buffered_static_margin_penalty(
+    static_margin: float,
+    config: MechanicalModuleConfig,
+) -> float:
+    """Return a finite 0-10 penalty outside the buffered acceptable SM range."""
+
+    margin_config = config.static_margin
+    lower = margin_config.minimum - margin_config.optimizer_penalty_buffer
+    upper = margin_config.maximum + margin_config.optimizer_penalty_buffer
+    violation = max(lower - static_margin, static_margin - upper, 0.0)
+    if violation == 0.0:
+        return 0.0
+    return min(
+        10.0,
+        10.0 * np.log2(1.0 + violation / margin_config.optimizer_penalty_scale),
+    )
 
 
 def resolve_payload_count(value: float, name: str, warnings: list[str]) -> int:
@@ -78,6 +97,7 @@ def select_mission2_fuselage(
     mission2_config = config.mission2
     width_increment = mission2_config.duck.dimensions_m[1]
     attempt_failures: list[str] = []
+    last_sm_rejected_selection: Mission2Selection | None = None
 
     for width_increases in range(mission2_config.maximum_width_increases + 1):
         fuselage_width = float(
@@ -181,6 +201,16 @@ def select_mission2_fuselage(
             mission1, static_margin_feasible=mission1_is_acceptable
         )
         if not mission1_is_acceptable:
+            last_sm_rejected_selection = Mission2Selection(
+                base_items=base_items,
+                payload_items=payload_items,
+                electronics_layout=electronics_layout,
+                mission1=mission1,
+                mission2=mission2,
+                fuselage_width_m=fuselage_width,
+                width_increases=width_increases,
+                target_cg_x_m=target_cg_x,
+            )
             attempt_failures.append(
                 f"width {fuselage_width:.4f} m gives M1 static margin "
                 f"{100 * mission1.static_margin:.2f}%"
@@ -196,6 +226,32 @@ def select_mission2_fuselage(
             fuselage_width_m=fuselage_width,
             width_increases=width_increases,
             target_cg_x_m=target_cg_x,
+        )
+
+    if last_sm_rejected_selection is not None:
+        penalty = _buffered_static_margin_penalty(
+            last_sm_rejected_selection.mission1.static_margin,
+            config,
+        )
+        buffered_lower = (
+            config.static_margin.minimum
+            - config.static_margin.optimizer_penalty_buffer
+        )
+        buffered_upper = (
+            config.static_margin.maximum
+            + config.static_margin.optimizer_penalty_buffer
+        )
+        warnings.append(
+            "No fuselage-width attempt met the ordinary M1 static-margin "
+            f"limit; using the last completed placement at "
+            f"{100 * last_sm_rejected_selection.mission1.static_margin:.2f}% "
+            f"with optimizer penalty {penalty:.4f}. The penalty-free buffered "
+            f"range is {100 * buffered_lower:.2f}% to "
+            f"{100 * buffered_upper:.2f}%."
+        )
+        return replace(
+            last_sm_rejected_selection,
+            static_margin_penalty=penalty,
         )
 
     detail = "; ".join(attempt_failures)

@@ -124,9 +124,21 @@ class StaticMarginConfig:
     minimum: float = 0.10
     target: float = 0.20
     maximum: float = 0.23
+    optimizer_penalty_buffer: float = 0.15
+    optimizer_penalty_scale: float = 0.15
 
     def __post_init__(self) -> None:
-        if not np.all(np.isfinite([self.minimum, self.target, self.maximum])):
+        if not np.all(
+            np.isfinite(
+                [
+                    self.minimum,
+                    self.target,
+                    self.maximum,
+                    self.optimizer_penalty_buffer,
+                    self.optimizer_penalty_scale,
+                ]
+            )
+        ):
             raise ValueError("Static margins must be finite.")
         if not (0 <= self.minimum <= self.target <= self.maximum):
             raise ValueError(
@@ -134,6 +146,10 @@ class StaticMarginConfig:
             )
         if not np.isclose(self.target, 0.20, rtol=0.0, atol=1e-12):
             raise ValueError("Mission-1 target static margin is fixed at exactly 0.20.")
+        if self.optimizer_penalty_buffer < 0:
+            raise ValueError("Static-margin optimizer penalty buffer cannot be negative.")
+        if self.optimizer_penalty_scale <= 0:
+            raise ValueError("Static-margin optimizer penalty scale must be positive.")
 
 
 @dataclass(frozen=True)
@@ -785,6 +801,8 @@ class MechanicalResult:
     all_items: tuple[MassItem, ...]
     missions: dict[str, MissionMassProperties]
     warnings: tuple[str, ...] = ()
+    penalty: float = 0.0
+    penalty_static_margin: float = 0.0
 
     def for_mission(self, mission: str) -> MissionMassProperties:
         key = mission.upper()
