@@ -1,5 +1,6 @@
 import aerosandbox as asb
-from src.aero.custom_classes import CruiseCondition, StabilityResult, dict_to_mode_result
+from src.aero.custom_classes import CruiseCondition, StabilityResult
+from src.aero.utils import dict_to_mode_result, require_scalar
 from src.vectors import ASBDesignVector, DesignVector
 from aerosandbox.dynamics.flight_dynamics.airplane import get_modes
 from aerosandbox.weights.mass_properties import MassProperties
@@ -16,6 +17,7 @@ _REQUIRED_MODE_AERO_KEYS = {
     "Clr",
     "Cnb",
     "Cnr",
+    "x_np",
 }
 
 def stability_analysis(
@@ -54,7 +56,7 @@ def stability_analysis(
         airplane=airplane,
         op_point=cruise_condition.operating_point,
         mass_props=mass_props,
-        aero=stability_dict
+        aero=stability_dict # type: ignore
     )
 
     # Calculate static margin
@@ -72,5 +74,5 @@ def stability_analysis(
         roll_subsidence=dict_to_mode_result(stability_modes["roll_subsidence"]),
         Cma=require_scalar(stability_dict["Cma"]),
         Cnb=require_scalar(stability_dict["Cnb"]),
-        static_margin=calc_static_margin(design_vector,mass_props),
+        static_margin=static_margin,
     )

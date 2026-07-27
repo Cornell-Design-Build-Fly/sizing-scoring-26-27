@@ -4,49 +4,12 @@ from dataclasses import dataclass
 from time import perf_counter
 
 import aerosandbox as asb
-import numpy as np
 
 from src.vectors import ASBDesignVector, DesignVector
 from src.aero.custom_classes import AirplaneAnalysisResult
-
-
-# Defined instead in custom_classes.py to make it easier to find.
-
-# @dataclass(frozen=True)
-# class AirplaneAnalysisResult:
-#     """Compact output for a whole-airplane aerodynamic analysis run."""
-
-#     CL: float
-#     CD: float
-#     CY: float
-#     Cl: float
-#     Cm: float
-#     Cn: float
-#     L: float
-#     D: float
-#     Y: float
-#     l_b: float
-#     m_b: float
-#     n_b: float
-#     runtime_seconds: float
-#     converged: bool = True
-#     CDi: float | None = None
-#     CDp: float | None = None
-#     D_induced: float | None = None
-#     D_profile: float | None = None
-
+from src.aero.utils import require_scalar
 
 VLMAnalysisResult = AirplaneAnalysisResult
-
-
-def require_scalar(value) -> float:
-    """Converts ASB scalar-like outputs into a plain float."""
-    array_value = np.asarray(value)
-    if array_value.ndim == 0:
-        return float(array_value)
-    if array_value.size == 1:
-        return float(array_value.reshape(-1)[0])
-    raise TypeError(f"Expected scalar-like output, got shape {array_value.shape}.")
 
 
 def run_vlm_on_design_vector(
@@ -67,7 +30,9 @@ def run_vlm_on_design_vector(
 ) -> AirplaneAnalysisResult:
     """Builds an AeroSandbox airplane from a design vector and runs a VLM case."""
     asb_design_vector = ASBDesignVector.from_design_vector(design_vector)
-    airplane, _, _, _ = asb_design_vector.make_airplane(name=airplane_name)
+    airplane = asb_design_vector.make_airplane(
+        name=airplane_name
+    )
 
     op_point = asb.OperatingPoint(
         velocity=velocity,

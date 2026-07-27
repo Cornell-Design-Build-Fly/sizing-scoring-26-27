@@ -8,7 +8,7 @@ import numpy as np
 
 from src.aero.custom_classes import AeroOutput, StabilityResult, CruiseCondition, AirplaneAnalysisResult
 from src.vectors import ASBDesignVector, DesignVector, ParameterVector
-from src.aero.vlm import require_scalar
+from src.aero.utils import require_scalar
 from src.aero.cruise_analysis import cruise_analysis
 from src.aero.aero_analysis import aero_analysis
 from src.aero.stability_analysis import stability_analysis

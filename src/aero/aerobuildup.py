@@ -4,7 +4,8 @@ from time import perf_counter
 
 import aerosandbox as asb
 
-from src.aero.vlm import AirplaneAnalysisResult, require_scalar
+from src.aero.vlm import AirplaneAnalysisResult
+from src.aero.utils import require_scalar
 from src.vectors import ASBDesignVector, DesignVector
 
 
