@@ -38,7 +38,10 @@ def stability_analysis(
     # Define an Airplane object from design vector.
     airplane = ASBDesignVector.from_design_vector(
     design_vector
-    ).make_airplane()
+    ).make_airplane(
+        elevator_deflection=cruise_condition.elevator_deflection,
+        tail_incidence=cruise_condition.tail_incidence,
+    )
 
     # Run AeroBuildup to get stability derivatives
     stability_dict = asb.AeroBuildup(

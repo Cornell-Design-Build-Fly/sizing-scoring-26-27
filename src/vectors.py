@@ -59,6 +59,7 @@ class DesignVector:
     # These inputs are not currently included in OPT_VARS.
     fuselage_width: float = FUSELAGE_START_WIDTH
     fuselage_height: float = FUSELAGE_BOX_SIZE
+    wing_airfoil: str = "naca2412"
 
     # Derived, do not set manually
     wing_area:        float = field(init=False)
@@ -183,16 +184,18 @@ class ASBDesignVector(DesignVector):
             batt_capacity=design_vector.batt_capacity,
             fuselage_width=design_vector.fuselage_width * unit_scale,
             fuselage_height=design_vector.fuselage_height * unit_scale,
+            wing_airfoil=design_vector.wing_airfoil,
         )
 
     def make_airplane(
         self,
         *,
         name: str = "Design Vector Plane",
-        wing_airfoil: str = "naca2412",
         tail_airfoil: str = "naca0012",
         wing_le: tuple[float, float, float] = (0.0, 0.0, 0.0),
         tail_waterline: float = 0.00,
+        elevator_deflection=0.0,
+        tail_incidence=0.0,
     ) -> asb.Airplane:
         """Builds a simple AeroSandbox airplane from the design-vector geometry."""
 
@@ -210,7 +213,7 @@ class ASBDesignVector(DesignVector):
             tail_te_x=tail_te_x,
         )
 
-        wing_airfoil_obj = asb.Airfoil(wing_airfoil)
+        wing_airfoil_obj = asb.Airfoil(self.wing_airfoil)
         tail_airfoil_obj = asb.Airfoil(tail_airfoil)
 
         main_wing = asb.Wing(
@@ -239,14 +242,28 @@ class ASBDesignVector(DesignVector):
                 asb.WingXSec(
                     xyz_le=[horizontal_tail_le_x, 0.0, tail_waterline],
                     chord=self.hstab_chord,
-                    twist=0.0,
+                    twist=tail_incidence,
                     airfoil=tail_airfoil_obj,
+                    control_surfaces=[
+                        asb.ControlSurface(
+                            name="Elevator",
+                            deflection=elevator_deflection,
+                            hinge_point=0.75,
+                        )
+                    ],
                 ),
                 asb.WingXSec(
                     xyz_le=[horizontal_tail_le_x, self.hstab_span / 2.0, tail_waterline],
                     chord=self.hstab_chord,
-                    twist=0.0,
+                    twist=tail_incidence,
                     airfoil=tail_airfoil_obj,
+                    control_surfaces=[
+                        asb.ControlSurface(
+                            name="Elevator",
+                            deflection=elevator_deflection,
+                            hinge_point=0.75,
+                        )
+                    ],
                 ),
             ],
         )

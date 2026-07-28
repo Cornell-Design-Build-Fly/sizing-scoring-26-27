@@ -5,6 +5,7 @@ from time import perf_counter
 
 from src.aero.aero_analysis import aero_analysis
 from src.aero.custom_classes import CruiseCondition
+from src.aero.utils import require_scalar
 from src.vectors import DesignVector, ASBDesignVector, ParameterVector
 import numpy as np
 
@@ -24,6 +25,36 @@ def eval_thrust(
         """
         a, b, c = thrust_velocity
         return a * velocity**2 + b * velocity + c
+
+
+def elevator_trim_setup(opti, design_vector, velocity, thrust_velocity):
+    control = opti.variable(
+        init_guess=0.0, scale=10.0, lower_bound=-20.0, upper_bound=20.0
+    )
+    airplane = ASBDesignVector.from_design_vector(design_vector).make_airplane(
+        elevator_deflection=control,
+    )
+    return "elevator", control, airplane, eval_thrust(velocity, thrust_velocity)
+
+
+def tail_incidence_trim_setup(opti, design_vector, velocity, thrust_velocity):
+    control = opti.variable(
+        init_guess=0.0, scale=5.0, lower_bound=-10.0, upper_bound=10.0
+    )
+    airplane = ASBDesignVector.from_design_vector(design_vector).make_airplane(
+        tail_incidence=control,
+    )
+    return "tail incidence", control, airplane, eval_thrust(velocity, thrust_velocity)
+
+
+def throttle_trim_setup(opti, design_vector, velocity, thrust_velocity):
+    control = opti.variable(
+        init_guess=0.9, scale=0.5, lower_bound=0.0, upper_bound=1.0
+    )
+    airplane = ASBDesignVector.from_design_vector(design_vector).make_airplane()
+    thrust = control * eval_thrust(velocity, thrust_velocity)
+    return "throttle", control, airplane, thrust
+
 
 # TODO
 def calc_stall_speed(
@@ -203,12 +234,19 @@ def cruise_analysis(
     print("[aero] Preparing cruise trim optimization...", flush=True)
     opti = asb.Opti()  
 
-    # Twp optimization variables 
+    # Flight-condition variables
     velocity = opti.variable(init_guess=18.0, scale=0.05, lower_bound=3.0, upper_bound=50.0) # m/s
     alpha = opti.variable(init_guess=4.0, scale=0.05, lower_bound=-4.0, upper_bound=15.0) # deg
 
-    # Build the airplane
-    airplane = ASBDesignVector.from_design_vector(design_vector).make_airplane()
+    control_name, trim_control, airplane, thrust = elevator_trim_setup(
+        opti, design_vector, velocity, thrust_velocity
+    )
+    # control_name, trim_control, airplane, thrust = tail_incidence_trim_setup(
+    #     opti, design_vector, velocity, thrust_velocity
+    # )
+    # control_name, trim_control, airplane, thrust = throttle_trim_setup(
+    #     opti, design_vector, velocity, thrust_velocity
+    # )
 
     # Operating point depends symbolically on velocity and alpha
     op_point = asb.OperatingPoint(
@@ -233,7 +271,6 @@ def cruise_analysis(
     pitching_moment = aero["m_b"]
     
     # Define weight and thrust
-    thrust = eval_thrust(velocity, thrust_velocity)
     weight = mass * parameter_vector.gravity  # N
 
     # ------------------- Initial approach: 2 variables 3 equations ----------------
@@ -293,6 +330,7 @@ def cruise_analysis(
 
         solved_velocity = float(solution.value(velocity))
         solved_alpha = float(solution.value(alpha))
+        solved_trim_control = float(solution.value(trim_control))
 
         solved_lift_residual = abs(
             float(solution.value(lift_residual))
@@ -335,7 +373,11 @@ def cruise_analysis(
         f"{perf_counter() - optimization_start:.2f} s "
         f"(converged={converged}, velocity={solved_velocity:.2f} m/s, "
         f"alpha={solved_alpha:.2f} deg, "
-        f"trim residual={float(solution.value(trim_error)):.3e}).",
+        f"{control_name}={solved_trim_control:.2f}, "
+        f"trim residual={float(solution.value(trim_error)):.3e}, "
+        f"lift residual={solved_lift_residual:.2%}, "
+        f"drag residual={solved_drag_residual:.2%}, "
+        f"moment residual={solved_moment_residual:.2%}).",
         flush=True,
     )
 
@@ -351,17 +393,33 @@ def cruise_analysis(
         ),
         stall_speed=None,
         converged=converged,
+        throttle=solved_trim_control if control_name == "throttle" else None,
+        elevator_deflection=(
+            solved_trim_control if control_name == "elevator" else 0.0
+        ),
+        tail_incidence=(
+            solved_trim_control if control_name == "tail incidence" else 0.0
+        ),
     )
 
-    # Calculate and set stall speed
-    stall_speed = stall_speed(
+    # Stall speed depends on a valid cruise condition. Let aero_main handle an
+    # unconverged trim result without attempting the NeuralFoil calculation.
+    if not cruise_condition.converged:
+        return cruise_condition
+
+    # Calculate and set stall speed.
+    calculated_stall_speed = calc_stall_speed(
         design_vector,
         cruise_condition,
         mass,
         parameter_vector,
     )
 
-    cruise_condition.stall_speed = stall_speed
-
-    # Return solved values and whether converged within defined tolerances.
-    return cruise_condition
+    return CruiseCondition(
+        operating_point=cruise_condition.operating_point,
+        stall_speed=calculated_stall_speed,
+        converged=True,
+        throttle=cruise_condition.throttle,
+        elevator_deflection=cruise_condition.elevator_deflection,
+        tail_incidence=cruise_condition.tail_incidence,
+    )

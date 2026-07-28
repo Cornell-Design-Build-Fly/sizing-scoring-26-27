@@ -40,6 +40,8 @@ class CruiseCondition:
     stall_speed: float | None
     converged: bool | None = None # False to indicate if trim solved failed to converge
     throttle: float | None = None # TODO - Figure out throttle situation 
+    elevator_deflection: float = 0.0
+    tail_incidence: float = 0.0
 
 @dataclass(frozen=True)
 class ModeResult:
