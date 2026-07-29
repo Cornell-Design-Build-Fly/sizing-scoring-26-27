@@ -165,8 +165,268 @@ def cruise_values(
         best_thrust_n = best_thrust_n*knockdown_factor
     return float(best_thrust_n), float(best_flight_time_s), total_fail, failed_velocity
 
+def cruise_samples_fast(
+    diameter_in: float,
+    pitch_in: float,
+    velocities_mph: np.ndarray,
+    motor: Motor,
+    battery: Battery,
+    max_current_a: float,
+    cruise_throttle: float,
+    prop_database: ContinuousPropDatabase,
+    min_rpm: int = 3000,
+    max_rpm: int = 16000,
+    rpm_step: int = 100,
+):
+    rpms = np.arange(min_rpm, max_rpm + rpm_step, rpm_step, dtype=float)
+
+    velocity_grid, rpm_grid = np.meshgrid(
+        velocities_mph,
+        rpms,
+        indexing="ij",
+    )
+
+    thrust_grid = prop_database.thrust_many(
+        diameter_in,
+        pitch_in,
+        velocity_grid,
+        rpm_grid,
+    )
+
+    torque_grid = prop_database.torque_many(
+        diameter_in,
+        pitch_in,
+        velocity_grid,
+        rpm_grid,
+    )
+
+    kt = motor.get_kt()
+
+    current = torque_grid / kt + motor.I0
+    voltage_sag = battery.vnom - current * battery.Rb
+    voltage_required = rpm_grid / motor.kv + current * motor.Rm
+
+    throttle = np.where(
+        voltage_sag > 1e-6,
+        voltage_required / voltage_sag,
+        np.inf,
+    )
+
+    power = current * voltage_sag
+
+    base_valid = (
+        np.isfinite(thrust_grid)
+        & np.isfinite(torque_grid)
+        & np.isfinite(current)
+        & (voltage_sag > 0.0)
+        & (voltage_required <= battery.vnom)
+        & (throttle <= 1.0)
+        & (power <= motor.max_power)
+        & (current <= max_current_a)
+    )
+
+    max_valid = base_valid
+    cruise_valid = base_valid & (throttle <= cruise_throttle)
+
+    def best_samples(valid_mask):
+        safe_thrust = np.where(valid_mask, thrust_grid, -np.inf)
+        any_valid = np.any(valid_mask, axis=1)
+
+        best_indices = np.argmax(safe_thrust, axis=1)
+        rows = np.arange(len(best_indices))
+
+        thrust_samples = np.where(
+            any_valid,
+            thrust_grid[rows, best_indices],
+            0.0,
+        )
+
+        selected_current = np.where(
+            any_valid,
+            current[rows, best_indices],
+            np.nan,
+        )
+
+        flight_time_samples = np.where(
+            any_valid & (selected_current > 1e-6),
+            battery.capacity / selected_current * 3600.0,
+            0.0,
+        )
+
+        return thrust_samples, flight_time_samples, any_valid
+
+    max_thrust, max_time, max_valid_mask = best_samples(max_valid)
+    cruise_thrust, cruise_time, cruise_valid_mask = best_samples(cruise_valid)
+
+    return max_thrust, max_time, max_valid_mask, cruise_thrust, cruise_time, cruise_valid_mask
+
 '''PROP MAIN BLOCK'''
 
+
+
+
+# def prop_main(
+#     design_vector: DesignVector,
+#     parameter_vector: ParameterVector,
+#     mission: int,
+#     prop_database: ContinuousPropDatabase | None = None,
+#     velocities_mps: np.ndarray | None = None,
+#     disp_res: bool = False,
+#     knockdown: bool = False,
+#     knockdown_factor: float = 0.9,
+# ) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+#     """
+#     Main propulsion model.
+
+#     Continuous diameter/pitch replacement for old MATLAB propMainInterp.m.
+#     """
+
+#     if mission not in (1, 2, 3):
+#         raise ValueError("mission must be 1, 2, or 3.")
+
+#     if prop_database is None:
+#         prop_database = load_default_prop_database()
+
+#     if velocities_mps is None:
+#         velocities_mps = DEFAULT_VELOCITIES_MPS.copy()
+#     else:
+#         velocities_mps = np.asarray(velocities_mps, dtype=float).reshape(-1)
+
+#     if len(velocities_mps) < 3:
+#         raise ValueError("Need at least 3 velocity samples for quadratic polyfit.")
+
+#     diameter_in = float(_get_value(design_vector, "prop_diameter_in", 14.0))
+#     pitch_in = float(_get_value(design_vector, "prop_pitch_in", 10.0))
+
+#     if mission in (1, 2):
+#         cruise_throttle = float(_get_value(design_vector, "cruise_throttle", 0.90))
+#     else:
+#         cruise_throttle = float(
+#             _get_value(design_vector, "mission3_cruise_throttle", 0.85)
+#         )
+
+#     motor = make_motor_from_design(
+#         design_vector=design_vector,
+#         parameter_vector=parameter_vector,
+#     )
+
+#     battery = make_battery_from_design(
+#         design_vector=design_vector,
+#         parameter_vector=parameter_vector,
+#     )
+
+#     max_thrust_samples = np.zeros_like(velocities_mps, dtype=float)
+#     throttled_thrust_samples = np.zeros_like(velocities_mps, dtype=float)
+#     max_time_samples = np.zeros_like(velocities_mps, dtype=float)
+#     throttled_time_samples = np.zeros_like(velocities_mps, dtype=float)
+
+#     failure = False
+
+#     highest_failed_velocity = 0.0
+
+#     for i, velocity_mps in enumerate(velocities_mps):
+#         velocity_mph = float(velocity_mps * MPS_TO_MPH)
+
+#         max_thrust, max_time, true_fail, filler = cruise_values(
+#             diameter_in=diameter_in,
+#             pitch_in=pitch_in,
+#             velocity_mph=velocity_mph,
+#             motor=motor,
+#             battery=battery,
+#             max_current_a=motor.max_current,
+#             cruise_throttle=1.0,
+#             prop_database=prop_database,
+#             knockdown=knockdown,
+#         )
+
+#         throttled_thrust, throttled_time, _, failed_velocity = cruise_values(
+#             diameter_in=diameter_in,
+#             pitch_in=pitch_in,
+#             velocity_mph=velocity_mph,
+#             motor=motor,
+#             battery=battery,
+#             max_current_a=motor.max_current,
+#             cruise_throttle=cruise_throttle,
+#             prop_database=prop_database,
+#             knockdown=knockdown,
+#         )
+#         if true_fail:
+#             failure = True
+#         if failed_velocity > highest_failed_velocity:
+#             highest_failed_velocity = failed_velocity
+
+#         # Match old MATLAB behavior:
+#         # once thrust becomes zero at a lower speed, keep later speeds at zero.
+#         if i > 0 and max_thrust_samples[i - 1] == 0.0:
+#             max_thrust_samples[i] = 0.0
+#             max_time_samples[i] = 0.0
+#         else:
+#             max_thrust_samples[i] = max_thrust
+#             max_time_samples[i] = max_time
+
+#         if i > 0 and throttled_thrust_samples[i - 1] == 0.0:
+#             throttled_thrust_samples[i] = 0.0
+#             throttled_time_samples[i] = 0.0
+#         else:
+#             throttled_thrust_samples[i] = throttled_thrust
+#             throttled_time_samples[i] = throttled_time
+
+#     penalty = highest_failed_velocity
+
+#     max_time_samples = np.nan_to_num(
+#         max_time_samples,
+#         nan=0.0,
+#         posinf=0.0,
+#         neginf=0.0,
+#     )
+
+#     throttled_time_samples = np.nan_to_num(
+#         throttled_time_samples,
+#         nan=0.0,
+#         posinf=0.0,
+#         neginf=0.0,
+#     )
+
+#     max_thrust_fit = np.polyfit(velocities_mps, max_thrust_samples, 2)
+#     throttled_thrust_fit = np.polyfit(velocities_mps, throttled_thrust_samples, 2)
+
+#     max_time_fit = np.polyfit(velocities_mps, max_time_samples, 2)
+#     throttled_time_fit = np.polyfit(velocities_mps, throttled_time_samples, 2)
+
+#     # result = PropulsionCurveFit(
+#     #     throttled_thrust=throttled_thrust_fit,
+#     #     max_thrust=max_thrust_fit,
+#     #     throttled_time=throttled_time_fit,
+#     #     max_time=max_time_fit,
+#     #     sample_velocities_mps=velocities_mps,
+#     #     throttled_thrust_samples=throttled_thrust_samples,
+#     #     max_thrust_samples=max_thrust_samples,
+#     #     throttled_time_samples=throttled_time_samples,
+#     #     max_time_samples=max_time_samples,
+#     # )
+
+#     # if disp_res:
+#     #     plot_propulsion_result(result)
+
+#     return (
+#         (
+#             float(throttled_thrust_fit[0]),
+#             float(throttled_thrust_fit[1]),
+#             float(throttled_thrust_fit[2]),
+#         ),
+#         (
+#             float(max_thrust_fit[0]),
+#             float(max_thrust_fit[1]),
+#             float(max_thrust_fit[2]),
+#         ),
+#         # (
+#         #     float(throttled_time_fit[0]),
+#         #     float(throttled_time_fit[1]),
+#         #     float(throttled_time_fit[2]),
+#         # ),
+#         # failure,
+#         # penalty,
+#     )
 
 
 
@@ -220,63 +480,56 @@ def prop_main(
         parameter_vector=parameter_vector,
     )
 
-    max_thrust_samples = np.zeros_like(velocities_mps, dtype=float)
-    throttled_thrust_samples = np.zeros_like(velocities_mps, dtype=float)
-    max_time_samples = np.zeros_like(velocities_mps, dtype=float)
-    throttled_time_samples = np.zeros_like(velocities_mps, dtype=float)
+    velocities_mph = velocities_mps * MPS_TO_MPH
 
-    failure = False
+    (
+        max_thrust_samples,
+        max_time_samples,
+        max_valid_mask,
+        throttled_thrust_samples,
+        throttled_time_samples,
+        throttled_valid_mask,
+    ) = cruise_samples_fast(
+        diameter_in=diameter_in,
+        pitch_in=pitch_in,
+        velocities_mph=velocities_mph,
+        motor=motor,
+        battery=battery,
+        max_current_a=motor.max_current,
+        cruise_throttle=cruise_throttle,
+        prop_database=prop_database,
+    )
 
-    highest_failed_velocity = 0.0
+    if knockdown:
+        max_thrust_samples = max_thrust_samples * knockdown_factor
+        throttled_thrust_samples = throttled_thrust_samples * knockdown_factor
 
-    for i, velocity_mps in enumerate(velocities_mps):
-        velocity_mph = float(velocity_mps * MPS_TO_MPH)
-
-        max_thrust, max_time, true_fail, filler = cruise_values(
-            diameter_in=diameter_in,
-            pitch_in=pitch_in,
-            velocity_mph=velocity_mph,
-            motor=motor,
-            battery=battery,
-            max_current_a=motor.max_current,
-            cruise_throttle=1.0,
-            prop_database=prop_database,
-            knockdown=knockdown,
-        )
-
-        throttled_thrust, throttled_time, _, failed_velocity = cruise_values(
-            diameter_in=diameter_in,
-            pitch_in=pitch_in,
-            velocity_mph=velocity_mph,
-            motor=motor,
-            battery=battery,
-            max_current_a=motor.max_current,
-            cruise_throttle=cruise_throttle,
-            prop_database=prop_database,
-            knockdown=knockdown,
-        )
-        if true_fail:
-            failure = True
-        if failed_velocity > highest_failed_velocity:
-            highest_failed_velocity = failed_velocity
-
-        # Match old MATLAB behavior:
-        # once thrust becomes zero at a lower speed, keep later speeds at zero.
-        if i > 0 and max_thrust_samples[i - 1] == 0.0:
+    # Match old MATLAB behavior:
+    # once thrust becomes invalid/zero at a lower speed, keep later speeds at zero.
+    for i in range(1, len(velocities_mps)):
+        if not max_valid_mask[i - 1] or max_thrust_samples[i - 1] == 0.0:
+            max_valid_mask[i] = False
             max_thrust_samples[i] = 0.0
             max_time_samples[i] = 0.0
-        else:
-            max_thrust_samples[i] = max_thrust
-            max_time_samples[i] = max_time
 
-        if i > 0 and throttled_thrust_samples[i - 1] == 0.0:
+        if not throttled_valid_mask[i - 1] or throttled_thrust_samples[i - 1] == 0.0:
+            throttled_valid_mask[i] = False
             throttled_thrust_samples[i] = 0.0
             throttled_time_samples[i] = 0.0
-        else:
-            throttled_thrust_samples[i] = throttled_thrust
-            throttled_time_samples[i] = throttled_time
 
-    penalty = highest_failed_velocity
+    failure = (
+        not np.all(max_valid_mask)
+        or not np.all(throttled_valid_mask)
+    )
+
+    failed_velocities_mph = velocities_mph[
+        ~max_valid_mask | ~throttled_valid_mask
+    ]
+
+    if len(failed_velocities_mph) > 0:
+        penalty = float(np.max(failed_velocities_mph))
+    else:
+        penalty = 0.0
 
     max_time_samples = np.nan_to_num(
         max_time_samples,
@@ -332,6 +585,7 @@ def prop_main(
         # failure,
         # penalty,
     )
+
 
 # def prop_main_interp(
 #     design_vector: DesignVector,

@@ -165,6 +165,114 @@ def deduplicate_prop_points(points: np.ndarray, thrust_n: np.ndarray, torque_nm:
     return unique_points, thrust_avg, torque_avg
 
 
+# class ContinuousPropDatabase:
+#     """
+#     Continuous propeller database.
+
+#     This lets us ask:
+
+#         thrust = f(diameter, pitch, velocity, rpm)
+#         torque = f(diameter, pitch, velocity, rpm)
+
+#     where:
+#         diameter is in inches
+#         pitch is in inches
+#         velocity is in mph
+#         rpm is in RPM
+#     """
+
+#     def __init__(self, data: dict):
+#         points = np.column_stack(
+#             [
+#                 data["diameter_in"],
+#                 data["pitch_in"],
+#                 data["velocity_mph"],
+#                 data["rpm"],
+#             ]
+#         )
+
+#         thrust_n = np.asarray(data["thrust_n"], dtype=float)
+#         torque_nm = np.asarray(data["torque_nm"], dtype=float)
+
+#         valid = (
+#             np.all(np.isfinite(points), axis=1)
+#             & np.isfinite(thrust_n)
+#             & np.isfinite(torque_nm)
+#         )
+
+#         points = points[valid]
+#         thrust_n = thrust_n[valid]
+#         torque_nm = torque_nm[valid]
+
+#         if len(points) == 0:
+#             raise ValueError("No valid prop data points found.")
+
+#         points, thrust_n, torque_nm = deduplicate_prop_points(
+#             points=points,
+#             thrust_n=thrust_n,
+#             torque_nm=torque_nm,
+#         )
+
+#         self.points = points
+#         self.thrust_n = thrust_n
+#         self.torque_nm = torque_nm
+
+#         self.diameter_bounds_in = (float(points[:, 0].min()), float(points[:, 0].max()))
+#         self.pitch_bounds_in = (float(points[:, 1].min()), float(points[:, 1].max()))
+#         self.velocity_bounds_mph = (float(points[:, 2].min()), float(points[:, 2].max()))
+#         self.rpm_bounds = (float(points[:, 3].min()), float(points[:, 3].max()))
+
+#         print("Building thrust interpolator...")
+#         self.thrust_linear = LinearNDInterpolator(
+#             points,
+#             thrust_n,
+#             fill_value=np.nan,
+#             rescale=True,
+#         )
+
+#         print("Building torque interpolator...")
+#         self.torque_linear = LinearNDInterpolator(
+#             points,
+#             torque_nm,
+#             fill_value=np.nan,
+#             rescale=True,
+#         )
+
+#         print("Building nearest-neighbor fallback...")
+#         self.thrust_nearest = NearestNDInterpolator(
+#             points,
+#             thrust_n,
+#             rescale=True,
+#         )
+
+#         self.torque_nearest = NearestNDInterpolator(
+#             points,
+#             torque_nm,
+#             rescale=True,
+#         )
+
+#         print("Prop interpolators built.")
+
+#     def thrust(self, diameter_in: float, pitch_in: float, velocity_mph: float, rpm: float) -> float:
+#         query = np.array([[diameter_in, pitch_in, velocity_mph, rpm]], dtype=float)
+
+#         value = self.thrust_linear(query)[0]
+
+#         if np.isnan(value):
+#             value = self.thrust_nearest(query)[0]
+
+#         return float(value)
+
+#     def torque(self, diameter_in: float, pitch_in: float, velocity_mph: float, rpm: float) -> float:
+#         query = np.array([[diameter_in, pitch_in, velocity_mph, rpm]], dtype=float)
+
+#         value = self.torque_linear(query)[0]
+
+#         if np.isnan(value):
+#             value = self.torque_nearest(query)[0]
+
+#         return float(value)
+
 class ContinuousPropDatabase:
     """
     Continuous propeller database.
@@ -272,7 +380,54 @@ class ContinuousPropDatabase:
             value = self.torque_nearest(query)[0]
 
         return float(value)
+    def _evaluate_many(self, linear_interp, nearest_interp, diameter_in, pitch_in, velocity_mph, rpm):
+        d, p, v, r = np.broadcast_arrays(
+            diameter_in,
+            pitch_in,
+            velocity_mph,
+            rpm,
+        )
 
+        original_shape = d.shape
+
+        query = np.column_stack(
+            [
+                d.ravel(),
+                p.ravel(),
+                v.ravel(),
+                r.ravel(),
+            ]
+        )
+
+        values = linear_interp(query)
+
+        bad = np.isnan(values)
+        if np.any(bad):
+            values[bad] = nearest_interp(query[bad])
+
+        return values.reshape(original_shape)
+
+
+    def thrust_many(self, diameter_in, pitch_in, velocity_mph, rpm):
+        return self._evaluate_many(
+            self.thrust_linear,
+            self.thrust_nearest,
+            diameter_in,
+            pitch_in,
+            velocity_mph,
+            rpm,
+        )
+
+
+    def torque_many(self, diameter_in, pitch_in, velocity_mph, rpm):
+        return self._evaluate_many(
+            self.torque_linear,
+            self.torque_nearest,
+            diameter_in,
+            pitch_in,
+            velocity_mph,
+            rpm,
+        )
 
 def load_continuous_prop_database(json_path=DEFAULT_PROP_DATA_PATH) -> ContinuousPropDatabase:
     """
