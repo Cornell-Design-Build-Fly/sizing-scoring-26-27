@@ -238,12 +238,12 @@ def cruise_analysis(
     velocity = opti.variable(init_guess=18.0, scale=0.05, lower_bound=3.0, upper_bound=50.0) # m/s
     alpha = opti.variable(init_guess=4.0, scale=0.05, lower_bound=-4.0, upper_bound=15.0) # deg
 
-    control_name, trim_control, airplane, thrust = elevator_trim_setup(
-        opti, design_vector, velocity, thrust_velocity
-    )
-    # control_name, trim_control, airplane, thrust = tail_incidence_trim_setup(
+    # control_name, trim_control, airplane, thrust = elevator_trim_setup(
     #     opti, design_vector, velocity, thrust_velocity
     # )
+    control_name, trim_control, airplane, thrust = tail_incidence_trim_setup(
+        opti, design_vector, velocity, thrust_velocity
+    )
     # control_name, trim_control, airplane, thrust = throttle_trim_setup(
     #     opti, design_vector, velocity, thrust_velocity
     # )
