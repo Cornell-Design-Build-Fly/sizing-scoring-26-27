@@ -56,7 +56,7 @@ def main(dv: DesignVector, pv: ParameterVector) -> tuple[float, list[float]]:
         cg=m3_properties.cg_m,
         inertia_matrix=m3_properties.inertia_tensor_kg_m2,
         mass=m3_properties.total_mass_kg,
-        disp_res=True,
+        disp_res=False,
     )
 
     tot_score, breakdown = total_score(
