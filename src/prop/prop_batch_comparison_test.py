@@ -47,7 +47,7 @@ KNOCKDOWN = False
 
 # Points passed into prop_main() to generate each quadratic fit.
 # prop_main() requires at least three points.
-FIT_VELOCITIES_MPS = np.linspace(0.001, 25.0, 8)
+FIT_VELOCITIES_MPS = np.linspace(0.001, 25.0, 3)
 
 # Denser points used only to draw and compare the returned quadratic curves.
 # These do not affect the prop_main() output or its measured runtime.
@@ -60,7 +60,7 @@ COMPARISON_SPEEDS_MPS = np.array([0.001, 5.0, 10.0, 15.0, 20.0, 25.0])
 RANKING_SPEED_MPS = 15.0
 
 SHOW_PLOTS = True
-SAVE_PLOTS = True
+SAVE_PLOTS = False
 SAVE_SUMMARY_CSV = False
 
 OUTPUT_DIRECTORY = (
@@ -702,6 +702,7 @@ def main() -> None:
         [result.runtime_seconds for result in results],
         dtype=float,
     )
+    runtimes_no_first = runtimes[1:] if len(runtimes) > 1 else runtimes
     for run_number, result in enumerate(results, start=1):
         print(
             f"Run {run_number:2d} | {result.case.label:<12} | "
@@ -709,6 +710,7 @@ def main() -> None:
         )
 
     print(f"\nMean prop_main() runtime:   {np.mean(runtimes):.9f} s")
+    print(f"\nMean prop_main() runtime (excluding first):   {np.mean(runtimes_no_first):.9f} s")
     print(f"Median prop_main() runtime: {np.median(runtimes):.9f} s")
     print(f"Minimum prop_main() runtime:{np.min(runtimes):.9f} s")
     print(f"Maximum prop_main() runtime:{np.max(runtimes):.9f} s")

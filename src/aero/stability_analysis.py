@@ -52,6 +52,7 @@ def stability_analysis(
             require_scalar(mass_props.y_cg),
             require_scalar(mass_props.z_cg),
         ),
+        include_wave_drag=False,
     ).run_with_stability_derivatives()
 
     # Handle missing keys

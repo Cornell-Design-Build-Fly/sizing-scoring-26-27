@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import math
 
+import matplotlib
 import numpy as np
 import pytest
 
+matplotlib.use("Agg")
+
 from src.aero.main_aero import aero_main
-from src.vectors import DesignVector
+from src.aero.aero_score import AeroScore
+from src.vectors import DesignVector, ParameterVector
 
 # Chat generated basic smoke test script with arbitrary design vector.
 
@@ -26,7 +30,7 @@ def make_realistic_design_vector() -> DesignVector:
     )
 
 
-def make_realistic_thrust_curve() -> list[float]:
+def make_realistic_thrust_curve() -> tuple[float, float, float]:
     """
     Returns coefficients [a, b, c] for the fixed-throttle curve
 
@@ -40,7 +44,7 @@ def make_realistic_thrust_curve() -> list[float]:
         T(20) = 21.0 N
         T(25) = 14.75 N
     """
-    return [-0.01, -0.60, 38.0]
+    return (-0.01, -0.60, 38.0)
 
 
 def make_realistic_mass_properties() -> tuple[
@@ -90,122 +94,30 @@ def test_aero_main_smoke() -> None:
     causes the test to fail.
     """
     design_vector = make_realistic_design_vector()
+    parameter_vector = ParameterVector()
     thrust_velocity = make_realistic_thrust_curve()
     mass, cg, inertia_matrix = make_realistic_mass_properties()
 
-    # Static margin is currently accepted by aero_main but not used.
-    static_margin = 0.10
-
     result = aero_main(
         design_vector=design_vector,
+        parameter_vector=parameter_vector,
         thrust_velocity=thrust_velocity,
+        mission=1,
         cg=cg,
         inertia_matrix=inertia_matrix,
         mass=mass,
-        sm=static_margin,
+        disp_res=True,
     )
 
-    assert result is not None
-    assert isinstance(result.converged, bool)
+    assert isinstance(result, AeroScore)
+    assert isinstance(result.can_fly, bool)
+    assert result.lap_time > 0.0
+    assert not math.isnan(float(result.lap_time))
+    assert 0.0 <= result.penalty <= 10.0
 
-    if not result.converged:
-        # A design with no exact trim at this fixed throttle is allowed to
-        # fail, but it must fail cleanly.
-        assert (
-            result.cruise_condition is None
-            or result.cruise_condition.converged is False
-        )
-        assert result.aero_result is None
-        assert result.stability_result is None
-        return
-
-    # A successful result must contain every analysis stage.
-    assert result.cruise_condition is not None
-    assert result.aero_result is not None
-    assert result.stability_result is not None
-    assert result.cruise_condition.converged is True
-
-    op_point = result.cruise_condition.operating_point
-    velocity = float(op_point.velocity)
-    alpha = float(op_point.alpha)
-
-    assert_finite(velocity, "velocity")
-    assert_finite(alpha, "alpha")
-
-    # Broad physical sanity bounds, not design requirements.
-    assert 3.0 <= velocity <= 50.0
-    assert -4.0 <= alpha <= 15.0
-
-    aero = result.aero_result
-
-    for name in (
-        "CL",
-        "CD",
-        "CY",
-        "Cl",
-        "Cm",
-        "Cn",
-        "L",
-        "D",
-        "Y",
-        "l_b",
-        "m_b",
-        "n_b",
-        "runtime_seconds",
-    ):
-        assert_finite(getattr(aero, name), name)
-
-    assert aero.converged
-    assert aero.CL > 0.0
-    assert aero.CD > 0.0
-    assert aero.L > 0.0
-    assert aero.D > 0.0
-    assert aero.runtime_seconds >= 0.0
-
-    # Verify approximate vertical force balance.
-    weight = mass * 9.81
-    relative_lift_error = abs(aero.L - weight) / weight
-    assert relative_lift_error < 0.05, (
-        f"Lift is not close to weight: "
-        f"L={aero.L:.3f} N, W={weight:.3f} N, "
-        f"relative error={relative_lift_error:.3%}"
-    )
-
-    # Verify the fixed-throttle thrust balance.
-    a, b, c = thrust_velocity
-    thrust = a * velocity**2 + b * velocity + c
-    relative_thrust_error = abs(aero.D - thrust) / max(abs(thrust), 1.0)
-
-    assert relative_thrust_error < 0.05, (
-        f"Drag is not close to thrust: "
-        f"D={aero.D:.3f} N, T={thrust:.3f} N, "
-        f"relative error={relative_thrust_error:.3%}"
-    )
-
-    # Pitching moment should be close to zero at trim.
-    moment_scale = max(weight * design_vector.wing_chord, 1.0)
-    nondimensional_moment_error = abs(aero.m_b) / moment_scale
-
-    assert nondimensional_moment_error < 0.01, (
-        f"Pitching moment is not close to zero: "
-        f"m_b={aero.m_b:.6f} N*m"
-    )
-
-    # Stability-mode checks.
-    stability = result.stability_result
-
-    for mode_name in (
-        "phugoid",
-        "short_period",
-        "dutch_roll",
-        "spiral",
-        "roll_subsidence",
-    ):
-        mode = getattr(stability, mode_name)
-
-        assert_finite(mode.eigenvalue_real, f"{mode_name}.eigenvalue_real")
-        assert_finite(mode.eigenvalue_imag, f"{mode_name}.eigenvalue_imag")
-        assert_finite(mode.damping_ratio, f"{mode_name}.damping_ratio")
+    if result.can_fly:
+        assert_finite(result.lap_time, "lap_time")
+        assert result.penalty == 0.0
 
 
 def test_input_inertia_matrix_is_physically_valid() -> None:

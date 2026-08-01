@@ -39,7 +39,8 @@ def cruise_values(
     max_rpm: int = 16000,
     rpm_step: int = 100,
     knockdown: bool = False,
-) -> tuple[float, float]:
+    knockdown_factor: float = 0.9,
+) -> tuple[float, float, bool]:
     """
     Finds the highest valid thrust at a given airspeed and throttle limit.
 
@@ -76,7 +77,14 @@ def cruise_values(
 
         best_flight_time_s:
             Estimated flight time at that operating point [s]
+        total_fail:
+            True if no valid thrust was found, False otherwise.
     """
+
+    total_fail = False
+
+    failed_velocity = 0.0
+
 
     if diameter_in <= 0:
         raise ValueError("Propeller diameter must be positive.")
@@ -91,7 +99,7 @@ def cruise_values(
         raise ValueError("Max current must be positive.")
 
     if cruise_throttle <= 0:
-        return 0.0, 0.0
+        raise ValueError("Cruise throttle must be positive.")
 
     # Do not allow throttle limit above 1.
     cruise_throttle = min(float(cruise_throttle), 1.0)
@@ -150,10 +158,12 @@ def cruise_values(
             rpm_high = rpm_mid - 1
 
     if best_thrust_n == -math.inf:
-        return 0.0, 0.0
+        total_fail = True
+        failed_velocity = velocity_mph
+        return 0.0, 0.0, total_fail, failed_velocity
     if knockdown == True:
-        best_thrust_n = best_thrust_n*0.9
-    return float(best_thrust_n), float(best_flight_time_s)
+        best_thrust_n = best_thrust_n*knockdown_factor
+    return float(best_thrust_n), float(best_flight_time_s), total_fail, failed_velocity
 
 '''PROP MAIN BLOCK'''
 
@@ -168,6 +178,7 @@ def prop_main(
     velocities_mps: np.ndarray | None = None,
     disp_res: bool = False,
     knockdown: bool = False,
+    knockdown_factor: float = 0.9,
 ) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
     """
     Main propulsion model.
@@ -214,10 +225,14 @@ def prop_main(
     max_time_samples = np.zeros_like(velocities_mps, dtype=float)
     throttled_time_samples = np.zeros_like(velocities_mps, dtype=float)
 
+    failure = False
+
+    highest_failed_velocity = 0.0
+
     for i, velocity_mps in enumerate(velocities_mps):
         velocity_mph = float(velocity_mps * MPS_TO_MPH)
 
-        max_thrust, max_time = cruise_values(
+        max_thrust, max_time, true_fail, filler = cruise_values(
             diameter_in=diameter_in,
             pitch_in=pitch_in,
             velocity_mph=velocity_mph,
@@ -229,7 +244,7 @@ def prop_main(
             knockdown=knockdown,
         )
 
-        throttled_thrust, throttled_time = cruise_values(
+        throttled_thrust, throttled_time, _, failed_velocity = cruise_values(
             diameter_in=diameter_in,
             pitch_in=pitch_in,
             velocity_mph=velocity_mph,
@@ -240,6 +255,10 @@ def prop_main(
             prop_database=prop_database,
             knockdown=knockdown,
         )
+        if true_fail:
+            failure = True
+        if failed_velocity > highest_failed_velocity:
+            highest_failed_velocity = failed_velocity
 
         # Match old MATLAB behavior:
         # once thrust becomes zero at a lower speed, keep later speeds at zero.
@@ -256,6 +275,8 @@ def prop_main(
         else:
             throttled_thrust_samples[i] = throttled_thrust
             throttled_time_samples[i] = throttled_time
+
+    penalty = highest_failed_velocity
 
     max_time_samples = np.nan_to_num(
         max_time_samples,
@@ -303,6 +324,13 @@ def prop_main(
             float(max_thrust_fit[1]),
             float(max_thrust_fit[2]),
         ),
+        # (
+        #     float(throttled_time_fit[0]),
+        #     float(throttled_time_fit[1]),
+        #     float(throttled_time_fit[2]),
+        # ),
+        # failure,
+        # penalty,
     )
 
 # def prop_main_interp(

@@ -39,7 +39,7 @@ def elevator_trim_setup(opti, design_vector, velocity, thrust_velocity):
 
 def tail_incidence_trim_setup(opti, design_vector, velocity, thrust_velocity):
     control = opti.variable(
-        init_guess=0.0, scale=5.0, lower_bound=-10.0, upper_bound=10.0
+        init_guess=0.0, scale=2.0, lower_bound=-4.0, upper_bound=4.0
     )
     airplane = ASBDesignVector.from_design_vector(design_vector).make_airplane(
         tail_incidence=control,
@@ -56,7 +56,6 @@ def throttle_trim_setup(opti, design_vector, velocity, thrust_velocity):
     return "throttle", control, airplane, thrust
 
 
-# TODO
 def calc_stall_speed(
     design_vector: DesignVector,
     cruise_condition: CruiseCondition,
@@ -211,6 +210,24 @@ def cl_max(
 
     return maximum_cl
 
+def m3_drag(
+        design_vector: DesignVector,
+        velocity: float,
+        mission: int,
+        parameter_vector: ParameterVector,
+) -> float:
+    """
+    Calculate additional drag from Mission 3-specific attachments.
+
+    For the 2025-2026 competition, this consists only of the towed
+    banner, modeled with an aspect ratio of 5 and a drag coefficient of 0.05.
+    """
+
+    if mission != 3:
+        return 0.0
+
+    return 0.005 * parameter_vector.rho * velocity**2 * design_vector.banner_length**2
+
 
 def cruise_analysis(
         design_vector: DesignVector,
@@ -218,10 +235,12 @@ def cruise_analysis(
         thrust_velocity: tuple[float, float, float], # list containing a, b, c coefficients of parabola for curve. for now assume throttled thrust curve only
         cg: tuple[float, float, float],
         mass: float,
+        mission: int,
 ) -> CruiseCondition:
     """
-    Perform cruise analysis for a given design vector. Includes ASB optimization methods and 
-    calls to aero_analysis to perform force/moment balance. 
+    Perform thorough and accurate cruise analysis for a given design vector. Includes ASB optimization methods and 
+    calls to aero_analysis to perform force/moment balance. Also incorporates thorough stall speed calculation 
+    using NeuralFoil data to find Clmax. 
 
     Args:
         design_vector: The design vector representing the airplane configuration.
@@ -235,8 +254,8 @@ def cruise_analysis(
     opti = asb.Opti()  
 
     # Flight-condition variables
-    velocity = opti.variable(init_guess=18.0, scale=0.05, lower_bound=3.0, upper_bound=50.0) # m/s
-    alpha = opti.variable(init_guess=4.0, scale=0.05, lower_bound=-4.0, upper_bound=15.0) # deg
+    velocity = opti.variable(init_guess=18.0, scale=20.0, lower_bound=3.0, upper_bound=50.0) # m/s
+    alpha = opti.variable(init_guess=4.0, scale=5.0, lower_bound=-4.0, upper_bound=15.0) # deg
 
     control_name, trim_control, airplane, thrust = elevator_trim_setup(
         opti, design_vector, velocity, thrust_velocity
@@ -263,52 +282,23 @@ def cruise_analysis(
         airplane=airplane,
         op_point=op_point,
         xyz_ref=np.array(cg), # match data type of cg
+        include_wave_drag=False, # speeds up calculation to set this as false
     ).run()
     
     # Define lift, drag, and pitching moment from AeroBuildup
     lift = aero["L"]
-    drag = aero["D"]
+    drag = aero["D"] + m3_drag(design_vector, velocity, mission, parameter_vector)
     pitching_moment = aero["m_b"]
     
     # Define weight and thrust
     weight = mass * parameter_vector.gravity  # N
 
-    # ------------------- Initial approach: 2 variables 3 equations ----------------
-
-    # # Constraints
-    # opti.subject_to(lift == weight)
-    # opti.subject_to(drag == thrust)
-    # opti.subject_to(pitching_moment == 0)
-
-    # # Solve
-    # try:
-    #     solution = opti.solve()
-
-    #     solved_velocity = float(solution.value(velocity))
-    #     solved_alpha = float(solution.value(alpha))
-
-    # except:
-    #     # If failed to converge, return with converged=False
-    #     return CruiseCondition(
-    #     operating_point=OperatingPoint(
-    #         velocity=-1,
-    #         alpha=-999,
-    #         beta=0.0,  
-    #         p=0.0,     
-    #         q=0.0,     
-    #         r=0.0     
-    #     ),
-    #     converged=False,
-    #     )
-    
-    # --------------------------------------------------------------------------------
-
-    # ---------------------- New approach: residual solver ---------------------------
-    lift_residual = (lift - weight) / weight # type: ignore
-    drag_residual = (drag - thrust) / weight # type: ignore
+    # Residual minimization approach
+    lift_residual = (lift - weight) / weight 
+    drag_residual = (drag - thrust) / weight 
     moment_residual = pitching_moment / (
         weight * airplane.c_ref
-    ) # type: ignore
+    ) 
 
     trim_error = (
         lift_residual**2
@@ -316,7 +306,7 @@ def cruise_analysis(
         + moment_residual**2
     )
 
-    opti.minimize(trim_error) # type: ignore
+    opti.minimize(trim_error) 
 
    # Tolerances used to decide whether the resulting point is truly trimmed.
     LIFT_RESIDUAL_TOL = 1e-2
@@ -381,7 +371,7 @@ def cruise_analysis(
         flush=True,
     )
 
-    # COnstruct cruise condition object, no stall speed for now
+    # Construct cruise condition object, no stall speed for now
     cruise_condition = CruiseCondition(
         operating_point=OperatingPoint(
             velocity=solved_velocity,
