@@ -1,6 +1,7 @@
 from scipy.optimize import differential_evolution, OptimizeResult
 from src.vectors import DesignVector
 from src.opt.score import total_score
+from src.main import main
 
 def fitness(x):
     dv = DesignVector.from_array(x)

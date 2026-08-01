@@ -6,7 +6,7 @@ pv = ParameterVector()
 
 print(dv.disp_vars())
 
-total_score, breakdown = main(dv, pv)
+total_score, breakdown = main(dv, pv, False, False)
 
 print(f"Total Score: {total_score}")
 print(f"Breakdown: {breakdown}")

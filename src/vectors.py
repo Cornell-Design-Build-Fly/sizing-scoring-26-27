@@ -16,14 +16,20 @@ FUSELAGE_SHAPE = 8.0
 FUSELAGE_TIP_SIZE = 0.01
 
 OPT_VARS = [
-    ("wing_span", (0.8, 1.8)),
-    ("wing_chord", (0.12, 0.35)),
+    ("wing_span", (0.914, 1.524)),
+    ("wing_chord", (0.12, 0.40)),
     ("tail_arm", (0.3, 0.9)),
     ("nose_length", (0.08, 0.3)),
-    ("ducks_num", (3, 10)),
-    ("pucks_num", (1, 10)),
+    ("ducks_num", (3, 100)),
+    ("pucks_num", (1, 40)),
     ("banner_length", (0.5, 5.0)),
-    ("batt_capacity", (1.0, 10.0)),
+    ("batt_capacity", (1.0, 4.5)),
+    ("prop_diameter_in", (10.0, 25.0)),
+    ("prop_pitch_in", (5.0, 18.0)),
+    ("motor_kv", (200.0, 500.0)),
+    ("motor_max_power", (1000.0, 3000.0)),
+    ("cruise_throttle", (0.5, 1.0)),
+    ("mission3_cruise_throttle", (0.5, 1.0)),
 ]
 
 @dataclass
@@ -106,7 +112,7 @@ class DesignVector:
         if len(x) != len(OPT_VARS):
             raise ValueError(f"Input array must have length {len(OPT_VARS)}, but got {len(x)}.")
         kwargs = {name: float(value) for value, (name, _) in zip(x, OPT_VARS)}
-        return DesignVector(**kwargs)
+        return DesignVector(**kwargs) # type: ignore
 
     @staticmethod
     def bounds() -> list[tuple[float, float]]:

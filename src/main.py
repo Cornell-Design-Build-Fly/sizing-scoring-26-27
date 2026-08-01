@@ -2,14 +2,30 @@ from dataclasses import replace
 
 from src.aero.main_aero import aero_main
 from src.mech.main_mech import evaluate_mechanical_module
+from src.mech.main_mech_continuous import evaluate_mechanical_module_continuous
 from src.prop.main_prop import prop_main
 from src.vectors import DesignVector, ParameterVector
 from src.opt.score import total_score
 
 
-def main(dv: DesignVector, pv: ParameterVector) -> tuple[float, list[float]]:
+def main(
+    dv: DesignVector,
+    pv: ParameterVector,
+    disp_res: bool = False,
+    round_payload: bool = True,
+) -> tuple[float, list[float]]:
     """Evaluate mechanics, propulsion, and aerodynamics for all missions."""
-    mech_result = evaluate_mechanical_module(dv, parameter_vector=pv)
+    if round_payload:
+        dv = replace(
+            dv,
+            ducks_num=round(dv.ducks_num),
+            pucks_num=round(dv.pucks_num),
+        )
+        evaluate_mech = evaluate_mechanical_module
+    else:
+        evaluate_mech = evaluate_mechanical_module_continuous
+
+    mech_result = evaluate_mech(dv, parameter_vector=pv)
 
     # Use mech's resolved geometry downstream without changing the caller's
     # design vector or its starting-width input.
@@ -20,7 +36,7 @@ def main(dv: DesignVector, pv: ParameterVector) -> tuple[float, list[float]]:
     )
 
     # M1 run
-    m1_thrust_curve, _ = prop_main(resolved_dv, pv, mission=1)
+    m1_thrust_curve, _ = prop_main(resolved_dv, pv, mission=1, disp_res=disp_res)
     m1_properties = mech_result.for_mission("M1")
     aero_m1 = aero_main(
         design_vector=resolved_dv,
@@ -32,7 +48,7 @@ def main(dv: DesignVector, pv: ParameterVector) -> tuple[float, list[float]]:
     )
 
     # M2 run
-    m2_thrust_curve, _ = prop_main(resolved_dv, pv, mission=2)
+    m2_thrust_curve, _ = prop_main(resolved_dv, pv, mission=2, disp_res=disp_res)
     m2_properties = mech_result.for_mission("M2")
     aero_m2 = aero_main(
         design_vector=resolved_dv,
@@ -44,7 +60,7 @@ def main(dv: DesignVector, pv: ParameterVector) -> tuple[float, list[float]]:
     )
 
     # M3 run
-    m3_thrust_curve, _ = prop_main(resolved_dv, pv, mission=3)
+    m3_thrust_curve, _ = prop_main(resolved_dv, pv, mission=3, disp_res=disp_res)
     m3_properties = mech_result.for_mission("M3")
     aero_m3 = aero_main(
         design_vector=resolved_dv,
