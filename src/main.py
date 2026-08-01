@@ -26,6 +26,7 @@ def main(dv: DesignVector, pv: ParameterVector) -> tuple[float, list[float]]:
         design_vector=resolved_dv,
         parameter_vector=pv,
         thrust_velocity=m1_thrust_curve,
+        mission=1,
         cg=m1_properties.cg_m,
         inertia_matrix=m1_properties.inertia_tensor_kg_m2,
         mass=m1_properties.total_mass_kg,
@@ -38,6 +39,7 @@ def main(dv: DesignVector, pv: ParameterVector) -> tuple[float, list[float]]:
         design_vector=resolved_dv,
         parameter_vector=pv,
         thrust_velocity=m2_thrust_curve,
+        mission=2,
         cg=m2_properties.cg_m,
         inertia_matrix=m2_properties.inertia_tensor_kg_m2,
         mass=m2_properties.total_mass_kg,
@@ -50,9 +52,11 @@ def main(dv: DesignVector, pv: ParameterVector) -> tuple[float, list[float]]:
         design_vector=resolved_dv,
         parameter_vector=pv,
         thrust_velocity=m3_thrust_curve,
+        mission=3,
         cg=m3_properties.cg_m,
         inertia_matrix=m3_properties.inertia_tensor_kg_m2,
         mass=m3_properties.total_mass_kg,
+        disp_res=True,
     )
 
     tot_score, breakdown = total_score(
