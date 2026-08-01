@@ -7,9 +7,17 @@ from src.vectors import DesignVector, ParameterVector
 from src.opt.score import total_score
 
 
-def main(dv: DesignVector, pv: ParameterVector) -> tuple[float, list[float]]:
-    """Evaluate mechanics, propulsion, and aerodynamics for all missions."""
-    mech_result = evaluate_mechanical_module(dv, parameter_vector=pv)
+def main(
+    dv: DesignVector,
+    pv: ParameterVector,
+    disp_res: bool = False,
+) -> tuple[float, list[float]]:
+    """Evaluate all missions and optionally save mechanical placement results."""
+    mech_result = evaluate_mechanical_module(
+        dv,
+        parameter_vector=pv,
+        disp_res=disp_res,
+    )
 
     # Use mech's resolved geometry downstream without changing the caller's
     # design vector or its starting-width input.

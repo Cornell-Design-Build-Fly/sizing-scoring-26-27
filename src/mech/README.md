@@ -39,6 +39,17 @@ print(result.for_mission("M2").static_margin)
 print(result.penalty)
 ```
 
+Set `disp_res=True` only for a design whose placements should be saved:
+
+```python
+result = evaluate_mechanical_module(DesignVector(), disp_res=True)
+```
+
+This writes `m2_mass_placements.csv`, `m2_mass_placements.png`,
+`m3_mass_placements.csv`, and `m3_mass_placements.png` under
+`data_dump/mech_results`. The PNGs contain top and side projections. The same
+flag is available on the repository-level `main(dv, pv, disp_res=True)` call.
+
 The result distinguishes the starting fuselage width supplied by the design
 from the resolved width selected by placement retries. Downstream geometry
 should use `resolved_fuselage_width_m`. The older `fuselage_width_m` attribute
@@ -70,17 +81,9 @@ by responsibility:
 - `mechanical_evaluation.py` coordinates those functions and assembles the
   result.
 
-Public imports and call signatures remain unchanged.
-
-For continuous optimizer payload values, import the alternate module directly:
-
-```python
-from src.mech.main_mech_continuous import evaluate_mechanical_module_continuous
-
-result = evaluate_mechanical_module_continuous(
-    DesignVector(ducks_num=3.75, pucks_num=1.25)
-)
-```
+Public imports and call signatures remain unchanged. The mechanical module has
+one discrete evaluation path; non-integer payload inputs are rounded to whole
+pieces as described above.
 
 ## Workflow
 
@@ -89,24 +92,24 @@ The module performs these operations in order:
 1. Build the fixed airframe: wing, wing controls and integration, wing spar,
    horizontal and vertical tails, tail controls and integration, boom spar,
    and landing gear. No fuselage or electronics are included yet.
-2. Build a separate fuselage in local coordinates. Put the electronics at its
-   front and pack all whole M2 payload pieces behind the electronics.
-3. Install the completed loaded fuselage at the location that makes Mission 2
-   static margin exactly 12%.
-4. Check that the back of the installed fuselage is strictly ahead of the front
-   of both tails, then remove the M2 payload mathematically and calculate
-   Mission 1 static margin.
-5. When the fuselage reaches the tail or Mission 1 is above its configured
+2. Screen the permitted fuselage widths using closed-form payload row counts,
+   aft extents, masses, and longitudinal moments. Geometrically impossible
+   widths are skipped without constructing their mass-item ledgers.
+3. For each geometrically plausible width, solve the loaded-fuselage
+   installation location that makes Mission 2 static margin exactly 12%, then
+   calculate Mission 1 static margin without calculating either inertia tensor.
+4. When the fuselage reaches the tail or Mission 1 is above its configured
    maximum, increase
    fuselage width by one duck width and repeat from step 2.
-6. Accept the first feasible width. The initial width plus at most four width
+5. Accept the first feasible width, then build its complete individual-item
+   ledger and calculate M1/M2 inertia once. The initial width plus at most four width
    increases are tested. If completed placements were rejected only by Mission
    1 static margin, preserve the last such placement. It has no optimizer
    penalty while its SM is within 15 percentage points of the configured
    acceptable range; outside that buffer it receives a finite logarithmic
    penalty from 0 to 10. If no physically valid placement was completed,
    `PayloadPlacementError` is raised.
-7. Build Mission 3 using the same fixed-distance process as before, after the
+6. Build Mission 3 using the same fixed-distance process as before, after the
    M1/M2 fuselage has been accepted.
 
 The landing-gear center is fixed directly under the main-wing leading edge and
@@ -155,17 +158,6 @@ M2 packing is deterministic and does not use the airplane CG or tail position:
 Ducks and pucks retain their configured vertical layers. The default places
 ducks three inches below the wing and pucks immediately below them. Whole
 payload pieces determine fuselage length; no item is silently dropped.
-
-## Continuous payload values
-
-`main_mech_continuous.py` uses the identical workflow for the whole portions of
-the requested payload amounts. It strictly floors each amount, physically packs
-those whole pieces, and uses them for fuselage length and width selection.
-
-Each fractional remainder is then added as an auditable zero-size point mass at
-the floor-count M2 CG. This preserves the prior continuous method: fractional
-mass changes total mass and weight, but does not change CG, static margin,
-inertia about the CG, fuselage envelope, or selected fuselage width.
 
 ## Fuselage and mass ledger
 
@@ -223,12 +215,12 @@ electronics/tail bounds are unchanged.
 
 ```powershell
 python -m src.testing.mech_test
-python -m src.testing.mech_test_design_sweep_continuous
+python -m src.testing.mech_test_design_sweep
 ```
 
 The regression coverage includes wing-leading-edge landing-gear placement,
 fixed-airframe separation, exact 12% M2
 placement, the one-sided 20% M1 check, M2 wall-to-wall row ordering, width
-retry and failure signaling, continuous
-fractional masses at CG, fuselage envelope sizing, M3 fixed distances, mass
+retry and failure signaling, discrete payload rounding, fuselage envelope
+sizing, M3 fixed distances, mass
 interpolation hooks, and positive-semidefinite inertia tensors.

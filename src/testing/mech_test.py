@@ -56,7 +56,7 @@ def _assert_mass_properties(result) -> None:
         properties = result.for_mission(mission)
         assert properties.total_mass_kg > 0
         assert properties.weight_n > 0
-        assert properties.cg_m.shape == (3,)
+        assert np.asarray(properties.cg_m).shape == (3,)
         assert np.isfinite(properties.static_margin)
         assert properties.inertia_tensor_kg_m2.shape == (3, 3)
         assert np.allclose(
@@ -394,19 +394,18 @@ def main() -> None:
         < tail_limited_design.tail_arm
     )
 
-    # If four duck-width increases still violate an acceptance condition, raise
-    # the flag and report every attempted width.
+    # If physical placements complete but all violate the ordinary M1 limit,
+    # retain the last width and apply the configured buffered penalty policy.
     oversized_design = DesignVector(ducks_num=20, pucks_num=20)
-    try:
-        evaluate_mechanical_module(oversized_design, config)
-    except PayloadPlacementError as exc:
-        message = str(exc)
-        assert "after 4 permitted width increases" in message
-        assert "width 0.2882 m" in message
-        assert "puts the fuselage back" in message
-        assert "gives M1 static margin" in message
-    else:
-        raise AssertionError("Expected width-retry exhaustion to raise a flag.")
+    oversized = evaluate_mechanical_module(oversized_design, config)
+    assert oversized.fuselage_width_increases == 4
+    assert np.isclose(oversized.fuselage_width_m, 0.2882)
+    assert oversized.for_mission("M1").static_margin > config.static_margin.maximum
+    assert any(
+        "No fuselage-width attempt met the ordinary M1 static-margin limit"
+        in warning
+        for warning in oversized.warnings
+    )
 
     # Propulsion and battery regressions use the design/parameter inputs.
     m1_items = {item.name: item for item in m1.items}
