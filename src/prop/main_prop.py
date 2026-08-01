@@ -19,6 +19,12 @@ from src.prop.prop_database import (
     load_default_prop_database,
 )
 
+from src.prop.fixed_velocity_prop_database import (
+    FIXED_FIT_VELOCITIES_MPS,
+    FixedVelocity3DPropDatabase,
+    load_fixed_velocity_3d_prop_database,
+)
+
 from src.prop.prop_helper_functions import battery_resistance, motor_properties, motor_check, _get_value, make_motor_from_design, make_battery_from_design
 
 
@@ -434,7 +440,7 @@ def prop_main(
     design_vector: DesignVector,
     parameter_vector: ParameterVector,
     mission: int,
-    prop_database: ContinuousPropDatabase | None = None,
+    prop_database: ContinuousPropDatabase | FixedVelocity3DPropDatabase | None = None,
     velocities_mps: np.ndarray | None = None,
     disp_res: bool = False,
     knockdown: bool = False,
@@ -450,12 +456,30 @@ def prop_main(
         raise ValueError("mission must be 1, 2, or 3.")
 
     if prop_database is None:
-        prop_database = load_default_prop_database()
+        prop_database = load_fixed_velocity_3d_prop_database()
 
     if velocities_mps is None:
-        velocities_mps = DEFAULT_VELOCITIES_MPS.copy()
+        velocities_mps = FIXED_FIT_VELOCITIES_MPS.copy()
     else:
         velocities_mps = np.asarray(velocities_mps, dtype=float).reshape(-1)
+
+    if isinstance(prop_database, FixedVelocity3DPropDatabase):
+        if velocities_mps.shape != prop_database.fixed_velocities_mps.shape:
+            raise ValueError(
+                "FixedVelocity3DPropDatabase requires the fixed velocity samples: "
+                f"{prop_database.fixed_velocities_mps}"
+            )
+
+        if not np.allclose(
+            velocities_mps,
+            prop_database.fixed_velocities_mps,
+            rtol=0.0,
+            atol=1e-9,
+        ):
+            raise ValueError(
+                "FixedVelocity3DPropDatabase requires the fixed velocity samples: "
+                f"{prop_database.fixed_velocities_mps}. Got: {velocities_mps}"
+            )
 
     if len(velocities_mps) < 3:
         raise ValueError("Need at least 3 velocity samples for quadratic polyfit.")
