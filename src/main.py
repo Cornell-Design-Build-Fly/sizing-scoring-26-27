@@ -2,7 +2,6 @@ from dataclasses import replace
 
 from src.aero.main_aero import aero_main
 from src.mech.main_mech import evaluate_mechanical_module
-from src.mech.main_mech_continuous import evaluate_mechanical_module_continuous
 from src.prop.main_prop import prop_main
 from src.vectors import DesignVector, ParameterVector
 from src.opt.score import total_score
@@ -14,28 +13,30 @@ def main(
     disp_res: bool = False,
     round_payload: bool = True,
 ) -> tuple[float, list[float]]:
-    """Evaluate mechanics, propulsion, and aerodynamics for all missions."""
+    """Evaluate mechanics, propulsion, and aerodynamics for all missions.
+
+    The mechanical module now has one discrete path. ``round_payload`` is kept
+    to preserve the old scoring behavior for callers that pass fractional
+    optimizer payload counts.
+    """
+    scoring_dv = dv
     if round_payload:
-        dv = replace(
+        scoring_dv = replace(
             dv,
             ducks_num=round(dv.ducks_num),
             pucks_num=round(dv.pucks_num),
         )
-        mech_result = evaluate_mechanical_module(
-            dv,
-            parameter_vector=pv,
-            disp_res=disp_res,
-        )
-    else:
-        mech_result = evaluate_mechanical_module_continuous(
-            dv,
-            parameter_vector=pv,
-        )
+
+    mech_result = evaluate_mechanical_module(
+        scoring_dv,
+        parameter_vector=pv,
+        disp_res=disp_res,
+    )
 
     # Use mech's resolved geometry downstream without changing the caller's
     # design vector or its starting-width input.
     resolved_dv = replace(
-        dv,
+        scoring_dv,
         fuselage_width=mech_result.resolved_fuselage_width_m,
         fuselage_height=mech_result.resolved_fuselage_height_m,
     )
