@@ -21,11 +21,16 @@ def main(
             ducks_num=round(dv.ducks_num),
             pucks_num=round(dv.pucks_num),
         )
-        evaluate_mech = evaluate_mechanical_module
+        mech_result = evaluate_mechanical_module(
+            dv,
+            parameter_vector=pv,
+            disp_res=disp_res,
+        )
     else:
-        evaluate_mech = evaluate_mechanical_module_continuous
-
-    mech_result = evaluate_mech(dv, parameter_vector=pv)
+        mech_result = evaluate_mechanical_module_continuous(
+            dv,
+            parameter_vector=pv,
+        )
 
     # Use mech's resolved geometry downstream without changing the caller's
     # design vector or its starting-width input.
