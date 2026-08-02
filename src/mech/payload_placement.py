@@ -1,9 +1,9 @@
 """Fast, deterministic Mission-2 payload placement inside a local fuselage.
 
-The fuselage is packed before it is installed on the airplane.  Each payload
-type starts immediately behind the electronics, with its first item against
-the negative-y sidewall.  Rows fill across the available width and then move
-aft.  Static margin is deliberately not part of this local packing step.
+The fuselage is packed before it is installed on the airplane. Each payload
+type starts immediately behind the electronics. Rows fill across the available
+width, are centered laterally in the fuselage, and then move aft. Static margin
+is deliberately not part of this local packing step.
 """
 
 from __future__ import annotations
@@ -118,15 +118,27 @@ def _front_to_back_locations(
         )
 
     first_x = electronics_back_x_m + clearance_m + 0.5 * length_x
-    first_y = y_bounds_m[0] + 0.5 * width_y
     pitch_x = length_x + clearance_m
     pitch_y = width_y + clearance_m
+    fuselage_center_y = 0.5 * (y_bounds_m[0] + y_bounds_m[1])
+    row_count = (count + columns - 1) // columns
+    first_y_by_row: list[float] = []
+    for row in range(row_count):
+        items_in_row = min(columns, count - row * columns)
+        occupied_width = (
+            items_in_row * width_y + (items_in_row - 1) * clearance_m
+        )
+        first_y_by_row.append(
+            fuselage_center_y - 0.5 * occupied_width + 0.5 * width_y
+        )
     return tuple(
         _FuselageLocation(
             row=index // columns,
             column=index % columns,
             x_m=float(first_x + (index // columns) * pitch_x),
-            y_m=float(first_y + (index % columns) * pitch_y),
+            y_m=float(
+                first_y_by_row[index // columns] + (index % columns) * pitch_y
+            ),
         )
         for index in range(count)
     )
@@ -158,8 +170,8 @@ def _payload_items(
             category="mission_2_payload",
             notes=(
                 "Fuselage-local front-to-back placement; "
-                f"row {location.row}, column {location.column}; first column "
-                "is against the negative-y fuselage sidewall."
+                f"centered lateral row {location.row}, "
+                f"column {location.column}."
             ),
         )
         for index, location in enumerate(locations, start=1)

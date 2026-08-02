@@ -268,9 +268,8 @@ def main() -> None:
     assert skinny.profile == "skinny"
     assert threshold.profile == "fat"
 
-    # Payload rows begin at the electronics back face and against a sidewall,
-    # fill laterally, then advance aft. The installed fuselage must end before
-    # the leading edge of both tails.
+    # Payload rows begin at the electronics back face, center laterally, then
+    # advance aft. The installed fuselage must end before both tail leading edges.
     payloads = _payloads(result)
     ducks = [item for item in payloads if item.name.startswith("Duck")]
     pucks = [item for item in payloads if item.name.startswith("Puck")]
@@ -282,10 +281,19 @@ def main() -> None:
             first.position_m[0] - 0.5 * first.dimensions_m[0],
             result.electronics_layout.back_edge_x_m,
         )
-        assert np.isclose(
-            first.position_m[1] - 0.5 * first.dimensions_m[1],
-            -half_width,
-        )
+    for payload_type in (ducks, pucks):
+        rows: dict[float, list] = {}
+        for payload in payload_type:
+            rows.setdefault(round(float(payload.position_m[0]), 12), []).append(payload)
+        for row in rows.values():
+            assert np.isclose(sum(item.position_m[1] for item in row), 0.0)
+            negative_edge = min(
+                item.position_m[1] - 0.5 * item.dimensions_m[1] for item in row
+            )
+            positive_edge = max(
+                item.position_m[1] + 0.5 * item.dimensions_m[1] for item in row
+            )
+            assert np.isclose(negative_edge, -positive_edge)
     assert np.isclose(ducks[0].position_m[1], ducks[1].position_m[1])
     assert np.isclose(
         ducks[1].position_m[0] - ducks[0].position_m[0],
