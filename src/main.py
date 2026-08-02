@@ -3,6 +3,7 @@ from dataclasses import replace
 from src.aero.main_aero import aero_main
 from src.mech.main_mech import evaluate_mechanical_module
 from src.prop.main_prop import prop_main
+from src.prop.prop_database import ContinuousPropDatabase
 from src.vectors import DesignVector, ParameterVector
 from src.opt.score import total_score
 
@@ -11,7 +12,9 @@ def main(
     dv: DesignVector,
     pv: ParameterVector,
     disp_res: bool = False,
-) -> tuple[float, list[float]]:
+    prop_database: ContinuousPropDatabase | None = None,
+    return_details: bool = False,
+) -> tuple[float, list[float]] | tuple[float, list[float], dict]:
     """Evaluate all missions and optionally save mechanical placement results."""
     mech_result = evaluate_mechanical_module(
         dv,
@@ -28,7 +31,7 @@ def main(
     )
 
     # M1 run
-    m1_thrust_curve, _ = prop_main(resolved_dv, pv, mission=1)
+    m1_thrust_curve, _ = prop_main(resolved_dv, pv, mission=1, prop_database=prop_database)
     m1_properties = mech_result.for_mission("M1")
     aero_m1 = aero_main(
         design_vector=resolved_dv,
@@ -41,7 +44,7 @@ def main(
     )
 
     # M2 run
-    m2_thrust_curve, _ = prop_main(resolved_dv, pv, mission=2)
+    m2_thrust_curve, _ = prop_main(resolved_dv, pv, mission=2, prop_database=prop_database)
     m2_properties = mech_result.for_mission("M2")
     aero_m2 = aero_main(
         design_vector=resolved_dv,
@@ -54,7 +57,7 @@ def main(
     )
 
     # M3 run
-    m3_thrust_curve, _ = prop_main(resolved_dv, pv, mission=3)
+    m3_thrust_curve, _ = prop_main(resolved_dv, pv, mission=3, prop_database=prop_database)
     m3_properties = mech_result.for_mission("M3")
     aero_m3 = aero_main(
         design_vector=resolved_dv,
@@ -79,4 +82,7 @@ def main(
         + aero_m2.penalty
         + aero_m3.penalty
     )
-    return (tot_score - tot_penalty, breakdown)
+    result = (tot_score - tot_penalty, breakdown)
+    if return_details:
+        return (*result, {"M1": aero_m1, "M2": aero_m2, "M3": aero_m3})
+    return result

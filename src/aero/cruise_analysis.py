@@ -316,7 +316,7 @@ def cruise_analysis(
     optimization_start = perf_counter()
     print("[aero] Solving cruise trim optimization (this may take a while)...", flush=True)
     try:
-        solution = opti.solve()
+        solution = opti.solve(verbose=False)
 
         solved_velocity = float(solution.value(velocity))
         solved_alpha = float(solution.value(alpha))
