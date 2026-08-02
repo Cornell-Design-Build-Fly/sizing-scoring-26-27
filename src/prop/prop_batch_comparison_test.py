@@ -47,7 +47,7 @@ KNOCKDOWN = False
 
 # Points passed into prop_main() to generate each quadratic fit.
 # prop_main() requires at least three points.
-FIT_VELOCITIES_MPS = np.linspace(0.001, 25.0, 3)
+FIT_VELOCITIES_MPS = np.array([0.01, 9.5, 19.0, 28.35])
 
 # Denser points used only to draw and compare the returned quadratic curves.
 # These do not affect the prop_main() output or its measured runtime.
