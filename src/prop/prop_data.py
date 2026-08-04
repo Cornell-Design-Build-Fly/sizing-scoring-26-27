@@ -24,6 +24,14 @@ _PROP_SIZE_PATTERN = re.compile(
 
 _NUMBER_PATTERN = re.compile(r"\d+(?:\.\d+)?")
 
+# For duplicate diameter/pitch groups that do not have a normal
+# key ending exactly in "E", explicitly choose which entry to keep.
+DUPLICATE_GEOMETRY_OVERRIDES: dict[
+    tuple[float, float],
+    str,
+] = {
+    (13.0, 4.5): "13x4.5EP",
+}
 
 @dataclass(frozen=True, slots=True)
 class PropRpmData:
@@ -146,6 +154,137 @@ def _read_float_array(values: Any, *, context: str) -> FloatArray:
     array.setflags(write=False)
 
     return array
+
+
+
+def resolve_duplicate_geometries(
+    propellers: list[PropellerData],
+) -> tuple[list[PropellerData], tuple[str, ...]]:
+    """
+    Resolve propellers that share the same diameter and pitch.
+
+    Rules:
+    1. Unique diameter/pitch entries are always kept.
+    2. A manually specified override is used when one exists.
+    3. Otherwise, the plain propeller key ending exactly in "E" is kept.
+    4. If no plain E propeller exists, every entry in that duplicate
+       group is removed.
+    """
+
+    geometry_groups: dict[
+        tuple[float, float],
+        list[PropellerData],
+    ] = defaultdict(list)
+
+    # Group propellers by diameter and pitch.
+    for propeller in propellers:
+        geometry = (
+            propeller.diameter_in,
+            propeller.pitch_in,
+        )
+        geometry_groups[geometry].append(propeller)
+
+    kept_propellers: list[PropellerData] = []
+    removed_keys: list[str] = []
+
+    # Matches plain keys such as 14x8E, but not 14x8WE,
+    # 14x8EP, 14x8E-3, or 14x8E(F2B).
+    plain_e_pattern = re.compile(
+        r"^\d+(?:\.\d+)?[xX]\d+(?:\.\d+)?E$"
+    )
+
+    for geometry, group in geometry_groups.items():
+        # Nothing needs to be resolved when the geometry is unique.
+        if len(group) == 1:
+            kept_propellers.append(group[0])
+            continue
+
+        # First check whether this geometry has a manual override.
+        override_key = DUPLICATE_GEOMETRY_OVERRIDES.get(geometry)
+
+        if override_key is not None:
+            override_matches = [
+                propeller
+                for propeller in group
+                if propeller.key == override_key
+            ]
+
+            if len(override_matches) != 1:
+                diameter, pitch = geometry
+                group_keys = [
+                    propeller.key
+                    for propeller in group
+                ]
+
+                raise ValueError(
+                    f"Duplicate geometry {diameter:g}x{pitch:g} "
+                    f'requires override key "{override_key}", '
+                    f"but it was not found exactly once. "
+                    f"Available keys: {group_keys}"
+                )
+
+            kept_propeller = override_matches[0]
+            kept_propellers.append(kept_propeller)
+
+            removed_keys.extend(
+                propeller.key
+                for propeller in group
+                if propeller is not kept_propeller
+            )
+
+            continue
+
+        # If there is no override, look for a normal key ending
+        # exactly in "E".
+        plain_e_propellers = [
+            propeller
+            for propeller in group
+            if plain_e_pattern.fullmatch(propeller.key)
+        ]
+
+        if len(plain_e_propellers) > 1:
+            diameter, pitch = geometry
+            plain_e_keys = [
+                propeller.key
+                for propeller in plain_e_propellers
+            ]
+
+            raise ValueError(
+                f"Duplicate geometry {diameter:g}x{pitch:g} "
+                "contains more than one plain E propeller: "
+                f"{plain_e_keys}"
+            )
+
+        if len(plain_e_propellers) == 1:
+            kept_propeller = plain_e_propellers[0]
+            kept_propellers.append(kept_propeller)
+
+            removed_keys.extend(
+                propeller.key
+                for propeller in group
+                if propeller is not kept_propeller
+            )
+
+            continue
+
+        # No override and no plain E entry exist.
+        removed_keys.extend(
+            propeller.key
+            for propeller in group
+        )
+
+    kept_propellers.sort(
+        key=lambda propeller: (
+            propeller.diameter_in,
+            propeller.pitch_in,
+            propeller.key,
+        )
+    )
+
+    removed_keys.sort()
+
+    return kept_propellers, tuple(removed_keys)
+
 
 
 def load_prop_data(
@@ -277,13 +416,15 @@ def load_prop_data(
             )
         )
 
-    propellers.sort(
-        key=lambda prop: (
-            prop.diameter_in,
-            prop.pitch_in,
-            prop.key,
-        )
+    propellers, removed_duplicate_keys = (
+        resolve_duplicate_geometries(propellers)
     )
+
+    if removed_duplicate_keys:
+        print("Removed duplicate-geometry propeller variants:")
+
+        for key in removed_duplicate_keys:
+            print(f"  {key}")
 
     return tuple(propellers)
 
