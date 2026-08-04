@@ -1,3 +1,32 @@
+from __future__ import annotations
+import math
+import numpy as np
+
+from src.vectors import DesignVector, ParameterVector
+from src.prop.prop_classes import (
+    Battery,
+    Motor,
+    MotorCheckResult,
+    PropInterpolants,
+    PropulsionCurveFit,
+    MPS_TO_MPH,
+    DEFAULT_VELOCITIES_MPS,
+)
+
+from src.prop.prop_database import (
+    ContinuousPropDatabase,
+    load_default_prop_database,
+)
+
+from src.prop.prop_cruise_values import cruise_values
+
+from src.prop.prop_helper_functions import motor_check, _get_value, make_motor_from_design, make_battery_from_design
+
+
+
+
+
+
 def prop_main(
     design_vector: DesignVector,
     parameter_vector: ParameterVector,
@@ -116,6 +145,6 @@ def prop_main(
             float(throttled_time_fit[1]),
             float(throttled_time_fit[2]),
         ),
-        failure,
+        # failure,
         penalty,
     )
