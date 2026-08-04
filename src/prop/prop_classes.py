@@ -33,12 +33,12 @@ class Motor:
         return 60/(2*math.pi*self.kv)  # Nm/A
     def get_rm(self) -> float:
         c_R = np.array([0.3517732388, -0.0005385476, -0.0001855504, 0.0000002999, 0.0000000776, 0.0000000380,])
-        Rm = c_R[0] + c_R[1]*self.kv + c_R[2]*self.max_power_w + c_R[3]*self.kv**2 + c_R[4]*self.kv*self.max_power_w + c_R[5]*self.max_power_w**2
+        Rm = c_R[0] + c_R[1]*self.kv + c_R[2]*self.max_power + c_R[3]*self.kv**2 + c_R[4]*self.kv*self.max_power + c_R[5]*self.max_power**2
         return Rm
     def get_I0(self) -> float:
         c_R = np.array([0.3517732388, -0.0005385476, -0.0001855504, 0.0000002999, 0.0000000776, 0.0000000380,])
         c_I = np.array([-0.5621009279, 0.0005335965, 0.0016292435, 0.0000005495, 0.0000006015, -0.0000004552])
-        I0 = c_I[0] + c_I[1]*self.kv + c_I[2]*self.max_power_w + c_I[3]*self.kv**2 + c_I[4]*self.kv*self.max_power_w + c_I[5]*self.max_power_w**2
+        I0 = c_I[0] + c_I[1]*self.kv + c_I[2]*self.max_power + c_I[3]*self.kv**2 + c_I[4]*self.kv*self.max_power + c_I[5]*self.max_power**2
         return I0
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +50,8 @@ class Battery:
     useable_fraction: float = DEFAULT_USABLE_BATTERY_FRACTION
     def get_Rb(self) -> float:
         return (0.013/self.capacity)*self.cells
+    def get_useable_capacity(self) -> float:
+        return self.capacity * self.useable_fraction
 
 
 @dataclass(frozen=True, slots=True)

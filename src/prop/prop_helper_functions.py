@@ -19,10 +19,10 @@ def motor_check(torque: float, rpm: float, motor: Motor, battery: Battery):
     if rpm <= 0:
         raise ValueError("RPM must be positive.")
     passed = True
-    current = (torque / motor.get_kt()) + motor.I0 #(A) Current needed to sustain torque
+    current = (torque / motor.get_kt()) + motor.get_I0() #(A) Current needed to sustain torque
 
-    V_sag = battery.vnom - current*(battery.Rb) #(V) Voltage drop in battery under load
-    V_req = rpm/motor.kv+current*motor.Rm #Voltage required due to EMF
+    V_sag = battery.vnom - current*(battery.get_Rb()) #(V) Voltage drop in battery under load
+    V_req = rpm/motor.kv+current*motor.get_rm() #Voltage required due to EMF
     power = current*V_sag #(W) Power consumed by motor
 
     #Battery flight time calculation
@@ -32,7 +32,7 @@ def motor_check(torque: float, rpm: float, motor: Motor, battery: Battery):
     else:
         #E_battery is in Wh. P is in W. (Wh / W) = hours.
         #Convert hours to seconds by multiplying by 3600.
-        t_flight = battery.capacity/current*3600.0
+        t_flight = battery.get_useable_capacity()/current*3600.0
 
     #Throttle Required
     if V_sag <= 1e-6:  # Avoid division by zero or negative V_sag
@@ -127,7 +127,7 @@ def make_battery_from_design(
         vnom=vnom,
         cells=cells,
         Crat=0.0,  # Placeholder until C-rating is actually modeled
-        capacity=capacity_ah * useable_fraction,
+        capacity=capacity_ah,
         useable_fraction=useable_fraction,
     )
 
