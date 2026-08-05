@@ -32,13 +32,20 @@ def check_raw_point_reproduction(
     velocity_mph = surface.points[:, 0]
     rpm = surface.points[:, 1]
 
+    interpolated_thrust, interpolated_torque = (
+        surface.evaluate(
+            velocity_mph,
+            rpm,
+        )
+    )
+
     interpolated_thrust = np.asarray(
-        surface.thrust(velocity_mph, rpm),
+        interpolated_thrust,
         dtype=float,
     )
 
     interpolated_torque = np.asarray(
-        surface.torque(velocity_mph, rpm),
+        interpolated_torque,
         dtype=float,
     )
 
@@ -93,6 +100,36 @@ def count_outside_solver_grid(
 
     return int(np.count_nonzero(~inside))
 
+def count_nonfinite_solver_outputs(
+    surface: CatalogPropSurface,
+) -> int:
+    """Count NaN or infinite outputs on the fixed solver grid."""
+
+    velocities_mph = (
+        FIXED_VELOCITIES_MPS * MPS_TO_MPH
+    )
+
+    velocity_grid, rpm_grid = np.meshgrid(
+        velocities_mph,
+        FIXED_RPMS,
+        indexing="ij",
+    )
+
+    thrust, torque = surface.evaluate(
+        velocity_grid,
+        rpm_grid,
+    )
+
+    thrust = np.asarray(thrust, dtype=float)
+    torque = np.asarray(torque, dtype=float)
+
+    invalid = (
+        ~np.isfinite(thrust)
+        | ~np.isfinite(torque)
+    )
+
+    return int(np.count_nonzero(invalid))
+
 
 def main() -> None:
     database = load_default_catalog_prop_database()
@@ -104,7 +141,10 @@ def main() -> None:
         tuple[str, int]
     ] = []
 
+    nonfinite_output_count = 0
+
     for surface in database.surfaces:
+
         thrust_error, torque_error = (
             check_raw_point_reproduction(surface)
         )
@@ -127,6 +167,8 @@ def main() -> None:
             surfaces_with_outside_points.append(
                 (surface.key, outside_count)
             )
+
+        nonfinite_output_count += (count_nonfinite_solver_outputs(surface))   
 
     total_fixed_queries_per_prop = (
         len(FIXED_VELOCITIES_MPS)
@@ -197,6 +239,13 @@ def main() -> None:
             print(
                 f"  ... and {remaining_count} more"
             )
+
+    print()
+    print("Extrapolated output validation:")
+    print(
+        f"  Non-finite thrust/torque outputs: "
+        f"{nonfinite_output_count}"
+    )
 
 
 if __name__ == "__main__":

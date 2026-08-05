@@ -1,30 +1,47 @@
 from __future__ import annotations
-import math
-import numpy as np
 
-from src.vectors import DesignVector, ParameterVector
+import numpy as np
+from numpy.typing import ArrayLike
+
+from src.vectors import (
+    DesignVector,
+    ParameterVector,
+)
 from src.prop.prop_classes import (
-    Battery,
-    Motor,
-    MotorCheckResult,
-    PropInterpolants,
-    PropulsionCurveFit,
-    MPS_TO_MPH,
     DEFAULT_VELOCITIES_MPS,
 )
-
-from src.prop.prop_database import (
+from src.prop.continuous_prop_database import (
     ContinuousPropDatabase,
-    load_default_prop_database,
+    load_default_continuous_prop_database,
+)
+from src.prop.prop_cruise_values import (
+    solve_cruise_samples,
+)
+from src.prop.prop_helper_functions import (
+    _get_value,
+    make_battery_from_design,
+    make_motor_from_design,
 )
 
-from src.prop.prop_cruise_values import cruise_values
 
-from src.prop.prop_helper_functions import motor_check, _get_value, make_motor_from_design, make_battery_from_design
-
+CurveFit = tuple[float, float, float]
 
 
+def _curve_fit_tuple(
+    coefficients: np.ndarray,
+) -> CurveFit:
+    """Convert NumPy coefficients into three plain floats."""
 
+    if coefficients.shape != (3,):
+        raise ValueError(
+            "Quadratic fit must contain three coefficients."
+        )
+
+    return (
+        float(coefficients[0]),
+        float(coefficients[1]),
+        float(coefficients[2]),
+    )
 
 
 def prop_main(
@@ -32,39 +49,94 @@ def prop_main(
     parameter_vector: ParameterVector,
     mission: int,
     prop_database: ContinuousPropDatabase | None = None,
-    velocities_mps: np.ndarray | None = None,
+    velocities_mps: ArrayLike | None = None,
     disp_res: bool = False,
     knockdown: bool = False,
     knockdown_factor: float = 0.9,
-) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+) -> tuple[CurveFit, CurveFit]:
     """
-    Main propulsion model.
+    Return the throttled thrust and flight-time quadratic fits.
 
-    Continuous diameter/pitch replacement for old MATLAB propMainInterp.m.
+    Each fit has the form:
+
+        (a, b, c)
+
+    where:
+
+        output(V) = a*V**2 + b*V + c
+
+    Velocity V is measured in m/s.
     """
 
     if mission not in (1, 2, 3):
-        raise ValueError("mission must be 1, 2, or 3.")
+        raise ValueError(
+            "mission must be 1, 2, or 3."
+        )
 
     if prop_database is None:
-        prop_database = load_default_prop_database()
+        prop_database = (
+            load_default_continuous_prop_database()
+        )
 
     if velocities_mps is None:
-        velocities_mps = DEFAULT_VELOCITIES_MPS.copy()
+        fit_velocities_mps = (
+            DEFAULT_VELOCITIES_MPS.copy()
+        )
     else:
-        velocities_mps = np.asarray(velocities_mps, dtype=float).reshape(-1)
+        fit_velocities_mps = np.asarray(
+            velocities_mps,
+            dtype=np.float64,
+        ).reshape(-1)
 
-    if len(velocities_mps) < 3:
-        raise ValueError("Need at least 3 velocity samples for quadratic polyfit.")
+    if fit_velocities_mps.size < 3:
+        raise ValueError(
+            "At least three velocity samples are required "
+            "for a quadratic fit."
+        )
 
-    diameter_in = float(_get_value(design_vector, "prop_diameter_in", 14.0))
-    pitch_in = float(_get_value(design_vector, "prop_pitch_in", 10.0))
+    if not np.all(
+        np.isfinite(fit_velocities_mps)
+    ):
+        raise ValueError(
+            "Fit velocities must all be finite."
+        )
+
+    if np.any(fit_velocities_mps < 0.0):
+        raise ValueError(
+            "Fit velocities cannot be negative."
+        )
+
+    diameter_in = float(
+        _get_value(
+            design_vector,
+            "prop_diameter_in",
+            14.0,
+        )
+    )
+
+    pitch_in = float(
+        _get_value(
+            design_vector,
+            "prop_pitch_in",
+            10.0,
+        )
+    )
 
     if mission in (1, 2):
-        cruise_throttle = float(_get_value(design_vector, "cruise_throttle", 0.90))
+        cruise_throttle = float(
+            _get_value(
+                design_vector,
+                "cruise_throttle",
+                0.90,
+            )
+        )
     else:
         cruise_throttle = float(
-            _get_value(design_vector, "mission3_cruise_throttle", 0.85)
+            _get_value(
+                design_vector,
+                "mission3_cruise_throttle",
+                0.85,
+            )
         )
 
     motor = make_motor_from_design(
@@ -77,74 +149,95 @@ def prop_main(
         parameter_vector=parameter_vector,
     )
 
-    max_thrust_samples = np.zeros_like(velocities_mps, dtype=float)
-    throttled_thrust_samples = np.zeros_like(velocities_mps, dtype=float)
-    max_time_samples = np.zeros_like(velocities_mps, dtype=float)
-    throttled_time_samples = np.zeros_like(velocities_mps, dtype=float)
-
-    # failure = False
-
-    highest_failed_velocity = 0.0
-
-    for i, velocity_mps in enumerate(velocities_mps):
-        velocity_mph = float(velocity_mps * MPS_TO_MPH)
-
-
-        throttled_thrust, throttled_time, _, failed_velocity = cruise_values(
-            diameter_in=diameter_in,
-            pitch_in=pitch_in,
-            velocity_mph=velocity_mph,
-            motor=motor,
-            battery=battery,
-            max_current_a=motor.max_current,
-            cruise_throttle=cruise_throttle,
-            prop_database=prop_database,
-            knockdown=knockdown,
-        )
-        # if true_fail:
-        #     failure = True
-        if failed_velocity > highest_failed_velocity:
-            highest_failed_velocity = failed_velocity
-
-        # Match old MATLAB behavior:
-        # once thrust becomes zero at a lower speed, keep later speeds at zero.
-
-        if i > 0 and throttled_thrust_samples[i - 1] == 0.0:
-            throttled_thrust_samples[i] = 0.0
-            throttled_time_samples[i] = 0.0
-        else:
-            throttled_thrust_samples[i] = throttled_thrust
-            throttled_time_samples[i] = throttled_time
-
-    penalty = highest_failed_velocity
-
-
-    throttled_time_samples = np.nan_to_num(
-        throttled_time_samples,
-        nan=0.0,
-        posinf=0.0,
-        neginf=0.0,
+    result = solve_cruise_samples(
+        diameter_in=diameter_in,
+        pitch_in=pitch_in,
+        velocities_mps=fit_velocities_mps,
+        motor=motor,
+        battery=battery,
+        max_current_a=motor.max_current,
+        cruise_throttle=cruise_throttle,
+        prop_database=prop_database,
+        min_rpm=3000,
+        max_rpm=16000,
+        rpm_step=100,
+        knockdown=knockdown,
+        knockdown_factor=knockdown_factor,
     )
 
-    throttled_thrust_fit = np.polyfit(velocities_mps, throttled_thrust_samples, 2)
+    thrust_samples_n = (
+        result.thrust_samples_n.copy()
+    )
 
-    throttled_time_fit = np.polyfit(velocities_mps, throttled_time_samples, 2)
+    flight_time_samples_s = (
+        result.flight_time_samples_s.copy()
+    )
 
+    # ---------------------------------------------------------
+    # OPTIONAL OLD MATLAB BEHAVIOR
+    # ---------------------------------------------------------
+    # Uncomment this block if the team later decides that once
+    # one velocity has zero thrust, every later velocity should
+    # also be forced to zero.
+    #
+    # for index in range(
+    #     1,
+    #     len(thrust_samples_n),
+    # ):
+    #     if thrust_samples_n[index - 1] == 0.0:
+    #         thrust_samples_n[index] = 0.0
+    #         flight_time_samples_s[index] = 0.0
+    # ---------------------------------------------------------
 
-    # if disp_res:
-    #     plot_propulsion_result(result)
+    thrust_fit = np.polyfit(
+        fit_velocities_mps,
+        thrust_samples_n,
+        2,
+    )
+
+    flight_time_fit = np.polyfit(
+        fit_velocities_mps,
+        flight_time_samples_s,
+        2,
+    )
+
+    if disp_res:
+        print()
+        print(
+            f"Propeller: "
+            f"{diameter_in:g}x{pitch_in:g}"
+        )
+
+        print(
+            f"Cruise throttle: "
+            f"{cruise_throttle:.3f}"
+        )
+
+        print()
+        print(
+            "Velocity [m/s] | RPM | Thrust [N] | "
+            "Current [A] | Throttle | Valid RPMs"
+        )
+
+        for index, velocity_mps in enumerate(
+            result.velocities_mps
+        ):
+            print(
+                f"{velocity_mps:14.4f} | "
+                f"{result.selected_rpm[index]:5.0f} | "
+                f"{thrust_samples_n[index]:10.4f} | "
+                f"{result.selected_current_a[index]:11.4f} | "
+                f"{result.selected_throttle[index]:8.4f} | "
+                f"{result.valid_rpm_count[index]:10d}"
+            )
+
+        print()
+        print(
+            f"Failed velocities: "
+            f"{np.count_nonzero(result.failed_mask)}"
+        )
 
     return (
-        (
-            float(throttled_thrust_fit[0]),
-            float(throttled_thrust_fit[1]),
-            float(throttled_thrust_fit[2]),
-        ),
-        (
-            float(throttled_time_fit[0]),
-            float(throttled_time_fit[1]),
-            float(throttled_time_fit[2]),
-        ),
-        # failure,
-        penalty,
+        _curve_fit_tuple(thrust_fit),
+        _curve_fit_tuple(flight_time_fit),
     )

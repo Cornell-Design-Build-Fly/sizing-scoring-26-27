@@ -1,26 +1,51 @@
 from __future__ import annotations
-import math
-import numpy as np
 
+from dataclasses import dataclass
+
+import numpy as np
+from numpy.typing import ArrayLike, NDArray
+
+from src.prop.continuous_prop_database import (
+    ContinuousPropDatabase,
+)
 from src.prop.prop_classes import (
     Battery,
     Motor,
+    MPS_TO_MPH,
 )
 
-from src.prop.prop_database import (
-    ContinuousPropDatabase,
-    load_default_prop_database,
-)
 
-from src.prop.prop_helper_functions import motor_check
+FloatArray = NDArray[np.float64]
+BoolArray = NDArray[np.bool_]
+IntArray = NDArray[np.int64]
+
+MIN_POSITIVE_CURRENT_A = 1.0e-6
+MIN_POSITIVE_VOLTAGE_V = 1.0e-6
 
 
+@dataclass(frozen=True, slots=True)
+class CruiseGridResult:
+    """Selected propulsion operating point at every airspeed."""
+
+    velocities_mps: FloatArray
+    rpm_values: FloatArray
+
+    thrust_samples_n: FloatArray
+    flight_time_samples_s: FloatArray
+
+    selected_rpm: FloatArray
+    selected_current_a: FloatArray
+    selected_throttle: FloatArray
+    selected_power_w: FloatArray
+
+    valid_rpm_count: IntArray
+    failed_mask: BoolArray
 
 
-def cruise_values(
+def solve_cruise_samples(
     diameter_in: float,
     pitch_in: float,
-    velocity_mph: float,
+    velocities_mps: ArrayLike,
     motor: Motor,
     battery: Battery,
     max_current_a: float,
@@ -31,127 +56,411 @@ def cruise_values(
     rpm_step: int = 100,
     knockdown: bool = False,
     knockdown_factor: float = 0.9,
-) -> tuple[float, float, bool]:
+) -> CruiseGridResult:
     """
-    Finds the highest valid thrust at a given airspeed and throttle limit.
+    Evaluate the full velocity x RPM grid and select the
+    maximum-thrust valid RPM independently at each velocity.
 
-    Inputs:
-        diameter_in:
-            Propeller diameter [in]
+    Propeller-database input units:
+        diameter: inches
+        pitch: inches
+        velocity: mph
+        RPM: revolutions per minute
 
-        pitch_in:
-            Propeller pitch [in]
-
-        velocity_mph:
-            Aircraft forward speed [mph]
-
-        motor:
-            Motor object
-
-        battery:
-            Battery object
-
-        max_current_a:
-            Current limit [A]
-
-        cruise_throttle:
-            Maximum allowed throttle for this condition.
-            Use 1.0 for max-throttle thrust.
-            Use something like 0.7 or 0.9 for cruise-throttle thrust.
-
-        prop_database:
-            ContinuousPropDatabase object with thrust/torque interpolation.
-
-    Returns:
-        best_thrust_n:
-            Highest valid thrust found [N]
-
-        best_flight_time_s:
-            Estimated flight time at that operating point [s]
-        total_fail:
-            True if no valid thrust was found, False otherwise.
+    Solver velocity input and output units:
+        velocity: m/s
     """
 
-    total_fail = False
+    velocities = np.asarray(
+        velocities_mps,
+        dtype=np.float64,
+    ).reshape(-1)
 
-    failed_velocity = 0.0
-
-
-    if diameter_in <= 0:
-        raise ValueError("Propeller diameter must be positive.")
-
-    if pitch_in <= 0:
-        raise ValueError("Propeller pitch must be positive.")
-
-    if velocity_mph < 0:
-        raise ValueError("Velocity cannot be negative.")
-
-    if max_current_a <= 0:
-        raise ValueError("Max current must be positive.")
-
-    if cruise_throttle <= 0:
-        raise ValueError("Cruise throttle must be positive.")
-
-    # Do not allow throttle limit above 1.
-    cruise_throttle = min(float(cruise_throttle), 1.0)
-
-    best_thrust_n = -math.inf
-    best_flight_time_s = math.inf
-
-    rpm_low = int(min_rpm)
-    rpm_high = int(max_rpm)
-
-    while (rpm_high - rpm_low) >= rpm_step:
-        rpm_mid = int(round((rpm_low + rpm_high) / 2))
-
-        thrust_n = prop_database.thrust(
-            diameter_in=diameter_in,
-            pitch_in=pitch_in,
-            velocity_mph=velocity_mph,
-            rpm=rpm_mid,
+    if velocities.size == 0:
+        raise ValueError(
+            "At least one velocity must be provided."
         )
 
-        torque_nm = prop_database.torque(
-            diameter_in=diameter_in,
-            pitch_in=pitch_in,
-            velocity_mph=velocity_mph,
-            rpm=rpm_mid,
+    if not np.all(np.isfinite(velocities)):
+        raise ValueError(
+            "Velocities must all be finite."
         )
 
-        if not math.isfinite(thrust_n) or not math.isfinite(torque_nm):
-            rpm_low = rpm_mid + 1
-            continue
-
-        check = motor_check(
-            torque=torque_nm,
-            rpm=rpm_mid,
-            motor=motor,
-            battery=battery,
+    if np.any(velocities < 0.0):
+        raise ValueError(
+            "Velocities cannot be negative."
         )
 
-        within_limits = (
-            check.passed
-            and check.throttle <= cruise_throttle
-            and check.power_w <= motor.max_power
-            and check.current_a <= max_current_a
+    if diameter_in <= 0.0:
+        raise ValueError(
+            "Propeller diameter must be positive."
         )
 
-        if within_limits:
-            if thrust_n > best_thrust_n:
-                best_thrust_n = thrust_n
-                best_flight_time_s = check.flight_time_s
+    if pitch_in <= 0.0:
+        raise ValueError(
+            "Propeller pitch must be positive."
+        )
 
-            # This RPM works, so try a higher RPM.
-            rpm_low = rpm_mid + 1
+    if min_rpm <= 0:
+        raise ValueError(
+            "Minimum RPM must be positive."
+        )
 
-        else:
-            # This RPM does not work, so try a lower RPM.
-            rpm_high = rpm_mid - 1
+    if max_rpm < min_rpm:
+        raise ValueError(
+            "Maximum RPM cannot be below minimum RPM."
+        )
 
-    if best_thrust_n == -math.inf:
-        total_fail = True
-        failed_velocity = velocity_mph
-        return 0.0, 0.0, total_fail, failed_velocity
-    if knockdown == True:
-        best_thrust_n = best_thrust_n*knockdown_factor
-    return float(best_thrust_n), float(best_flight_time_s), total_fail, failed_velocity
+    if rpm_step <= 0:
+        raise ValueError(
+            "RPM step must be positive."
+        )
+
+    if (max_rpm - min_rpm) % rpm_step != 0:
+        raise ValueError(
+            "The RPM range must be divisible by rpm_step."
+        )
+
+    if max_current_a <= 0.0:
+        raise ValueError(
+            "Maximum current must be positive."
+        )
+
+    if not 0.0 < cruise_throttle <= 1.0:
+        raise ValueError(
+            "Cruise throttle must be between 0 and 1."
+        )
+
+    if knockdown and not 0.0 < knockdown_factor <= 1.0:
+        raise ValueError(
+            "Knockdown factor must be between 0 and 1."
+        )
+
+    # Exact discrete RPM values that will be considered.
+    rpm_values = np.arange(
+        min_rpm,
+        max_rpm + rpm_step,
+        rpm_step,
+        dtype=np.float64,
+    )
+
+    # The prop database accepts velocity in mph.
+    velocities_mph = velocities * MPS_TO_MPH
+
+    # Every row is one airspeed.
+    # Every column is one RPM.
+    velocity_grid_mph, rpm_grid = np.meshgrid(
+        velocities_mph,
+        rpm_values,
+        indexing="ij",
+    )
+
+    # Query the complete propeller grid in one batch.
+    thrust_grid, torque_grid = prop_database.evaluate(
+        diameter_in=diameter_in,
+        pitch_in=pitch_in,
+        velocity_mph=velocity_grid_mph,
+        rpm=rpm_grid,
+    )
+
+    thrust_grid = np.asarray(
+        thrust_grid,
+        dtype=np.float64,
+    )
+
+    torque_grid = np.asarray(
+        torque_grid,
+        dtype=np.float64,
+    )
+
+    expected_shape = (
+        velocities.size,
+        rpm_values.size,
+    )
+
+    if thrust_grid.shape != expected_shape:
+        raise ValueError(
+            "Prop database returned thrust shape "
+            f"{thrust_grid.shape}; expected {expected_shape}."
+        )
+
+    if torque_grid.shape != expected_shape:
+        raise ValueError(
+            "Prop database returned torque shape "
+            f"{torque_grid.shape}; expected {expected_shape}."
+        )
+
+    # Calculate motor and battery constants only once.
+    kt_nm_per_a = float(motor.get_kt())
+    motor_resistance_ohm = float(motor.get_rm())
+    no_load_current_a = float(motor.get_I0())
+
+    battery_resistance_ohm = float(
+        battery.get_Rb()
+    )
+
+    usable_capacity_ah = float(
+        battery.get_useable_capacity()
+    )
+
+    if kt_nm_per_a <= 0.0:
+        raise ValueError(
+            "Motor torque constant must be positive."
+        )
+
+    if motor_resistance_ohm < 0.0:
+        raise ValueError(
+            "Motor resistance cannot be negative."
+        )
+
+    if battery_resistance_ohm < 0.0:
+        raise ValueError(
+            "Battery resistance cannot be negative."
+        )
+
+    if usable_capacity_ah <= 0.0:
+        raise ValueError(
+            "Usable battery capacity must be positive."
+        )
+
+    # ---------------------------------------------------------
+    # Motor and battery equations
+    # ---------------------------------------------------------
+
+    # Current needed to produce the requested propeller torque.
+    current_grid_a = (
+        torque_grid / kt_nm_per_a
+        + no_load_current_a
+    )
+
+    # Battery voltage after internal-resistance voltage drop.
+    voltage_sag_grid_v = (
+        battery.vnom
+        - current_grid_a
+        * battery_resistance_ohm
+    )
+
+    # Voltage required to reach the requested RPM and current.
+    voltage_required_grid_v = (
+        rpm_grid / motor.kv
+        + current_grid_a
+        * motor_resistance_ohm
+    )
+
+    # Electrical power drawn from the sagged battery voltage.
+    power_grid_w = (
+        current_grid_a
+        * voltage_sag_grid_v
+    )
+
+    # Start with infinity so invalid divisions stay invalid.
+    throttle_grid = np.full(
+        expected_shape,
+        np.inf,
+        dtype=np.float64,
+    )
+
+    np.divide(
+        voltage_required_grid_v,
+        voltage_sag_grid_v,
+        out=throttle_grid,
+        where=(
+            voltage_sag_grid_v
+            > MIN_POSITIVE_VOLTAGE_V
+        ),
+    )
+
+    flight_time_grid_s = np.full(
+        expected_shape,
+        np.inf,
+        dtype=np.float64,
+    )
+
+    np.divide(
+        usable_capacity_ah * 3600.0,
+        current_grid_a,
+        out=flight_time_grid_s,
+        where=(
+            current_grid_a
+            > MIN_POSITIVE_CURRENT_A
+        ),
+    )
+
+    # ---------------------------------------------------------
+    # Determine which operating points are valid
+    # ---------------------------------------------------------
+
+    finite_mask = (
+        np.isfinite(thrust_grid)
+        & np.isfinite(torque_grid)
+        & np.isfinite(current_grid_a)
+        & np.isfinite(voltage_sag_grid_v)
+        & np.isfinite(voltage_required_grid_v)
+        & np.isfinite(power_grid_w)
+        & np.isfinite(throttle_grid)
+        & np.isfinite(flight_time_grid_s)
+    )
+
+    valid_mask = (
+        finite_mask
+
+        # This model does not represent battery regeneration.
+        & (
+            current_grid_a
+            > MIN_POSITIVE_CURRENT_A
+        )
+
+        # Current limit.
+        & (
+            current_grid_a
+            <= max_current_a
+        )
+
+        # Battery voltage must remain positive.
+        & (
+            voltage_sag_grid_v
+            > MIN_POSITIVE_VOLTAGE_V
+        )
+
+        # Required motor voltage must be physically positive.
+        & (
+            voltage_required_grid_v
+            > 0.0
+        )
+
+        # Preserve the nominal-voltage check from the old model.
+        & (
+            voltage_required_grid_v
+            <= battery.vnom
+        )
+
+        # Cruise-throttle limit.
+        & (
+            throttle_grid
+            >= 0.0
+        )
+        & (
+            throttle_grid
+            <= cruise_throttle
+        )
+
+        # Electrical power limit.
+        & (
+            power_grid_w
+            > 0.0
+        )
+        & (
+            power_grid_w
+            <= motor.max_power
+        )
+    )
+
+    valid_rpm_count = np.count_nonzero(
+        valid_mask,
+        axis=1,
+    ).astype(np.int64)
+
+    failed_mask = valid_rpm_count == 0
+
+    # Give invalid points negative infinity so argmax ignores them.
+    selectable_thrust = np.where(
+        valid_mask,
+        thrust_grid,
+        -np.inf,
+    )
+
+    # Select the highest-thrust valid RPM in each velocity row.
+    best_rpm_indices = np.argmax(
+        selectable_thrust,
+        axis=1,
+    )
+
+    velocity_indices = np.arange(
+        velocities.size
+    )
+
+    selected_thrust_n = selectable_thrust[
+        velocity_indices,
+        best_rpm_indices,
+    ]
+
+    selected_flight_time_s = flight_time_grid_s[
+        velocity_indices,
+        best_rpm_indices,
+    ]
+
+    selected_rpm = rpm_grid[
+        velocity_indices,
+        best_rpm_indices,
+    ]
+
+    selected_current_a = current_grid_a[
+        velocity_indices,
+        best_rpm_indices,
+    ]
+
+    selected_throttle = throttle_grid[
+        velocity_indices,
+        best_rpm_indices,
+    ]
+
+    selected_power_w = power_grid_w[
+        velocity_indices,
+        best_rpm_indices,
+    ]
+
+    # A row with no valid RPM gets explicit zero outputs.
+    selected_thrust_n = np.where(
+        failed_mask,
+        0.0,
+        selected_thrust_n,
+    )
+
+    selected_flight_time_s = np.where(
+        failed_mask,
+        0.0,
+        selected_flight_time_s,
+    )
+
+    selected_rpm = np.where(
+        failed_mask,
+        0.0,
+        selected_rpm,
+    )
+
+    selected_current_a = np.where(
+        failed_mask,
+        0.0,
+        selected_current_a,
+    )
+
+    selected_throttle = np.where(
+        failed_mask,
+        0.0,
+        selected_throttle,
+    )
+
+    selected_power_w = np.where(
+        failed_mask,
+        0.0,
+        selected_power_w,
+    )
+
+    if knockdown:
+        selected_thrust_n = (
+            selected_thrust_n
+            * knockdown_factor
+        )
+
+    return CruiseGridResult(
+        velocities_mps=velocities.copy(),
+        rpm_values=rpm_values,
+        thrust_samples_n=selected_thrust_n,
+        flight_time_samples_s=selected_flight_time_s,
+        selected_rpm=selected_rpm,
+        selected_current_a=selected_current_a,
+        selected_throttle=selected_throttle,
+        selected_power_w=selected_power_w,
+        valid_rpm_count=valid_rpm_count,
+        failed_mask=failed_mask,
+    )

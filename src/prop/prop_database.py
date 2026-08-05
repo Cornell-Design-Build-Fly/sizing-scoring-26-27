@@ -16,6 +16,10 @@ from src.prop.prop_data import (
     load_prop_data,
 )
 
+from src.prop.prop_extrapolation import (
+    LocalLinearExtrapolator,
+)
+
 
 FloatArray = NDArray[np.float64]
 QueryResult: TypeAlias = float | FloatArray
@@ -77,35 +81,102 @@ class CatalogPropSurface:
     thrust_values: FloatArray
     torque_values: FloatArray
 
+    extrapolator: LocalLinearExtrapolator
     triangulation: Delaunay
     thrust_interpolator: LinearNDInterpolator
     torque_interpolator: LinearNDInterpolator
+
+    def evaluate(
+        self,
+        velocity_mph: ArrayLike,
+        rpm: ArrayLike,
+    ) -> tuple[QueryResult, QueryResult]:
+        """
+        Return thrust and torque.
+
+        LinearNDInterpolator is used inside the convex hull.
+        Local linear extrapolation is used outside it.
+        """
+
+        velocity_array, rpm_array = np.broadcast_arrays(
+            np.asarray(
+                velocity_mph,
+                dtype=np.float64,
+            ),
+            np.asarray(
+                rpm,
+                dtype=np.float64,
+            ),
+        )
+
+        output_shape = velocity_array.shape
+
+        query_points = np.column_stack(
+            (
+                velocity_array.reshape(-1),
+                rpm_array.reshape(-1),
+            )
+        )
+
+        thrust = np.asarray(
+            self.thrust_interpolator(query_points),
+            dtype=np.float64,
+        ).reshape(-1)
+
+        torque = np.asarray(
+            self.torque_interpolator(query_points),
+            dtype=np.float64,
+        ).reshape(-1)
+
+        outside_mask = np.isnan(thrust) | np.isnan(torque)
+
+        if np.any(outside_mask):
+            extrapolated_thrust, extrapolated_torque = (
+                self.extrapolator.evaluate(
+                    query_points[outside_mask]
+                )
+            )
+
+            thrust[outside_mask] = extrapolated_thrust
+            torque[outside_mask] = extrapolated_torque
+
+        thrust = thrust.reshape(output_shape)
+        torque = torque.reshape(output_shape)
+
+        if thrust.ndim == 0:
+            return float(thrust), float(torque)
+
+        return thrust, torque
+
 
     def thrust(
         self,
         velocity_mph: ArrayLike,
         rpm: ArrayLike,
     ) -> QueryResult:
-        """Return interpolated thrust in newtons."""
+        """Return thrust in newtons."""
 
-        return _evaluate_interpolator(
-            self.thrust_interpolator,
+        thrust, _ = self.evaluate(
             velocity_mph,
             rpm,
         )
+
+        return thrust
+
 
     def torque(
         self,
         velocity_mph: ArrayLike,
         rpm: ArrayLike,
     ) -> QueryResult:
-        """Return interpolated torque in newton-metres."""
+        """Return torque in newton-metres."""
 
-        return _evaluate_interpolator(
-            self.torque_interpolator,
+        _, torque = self.evaluate(
             velocity_mph,
             rpm,
         )
+
+        return torque
 
     def contains(
         self,
@@ -224,6 +295,12 @@ def build_catalog_surface(
         fill_value=np.nan,
     )
 
+    extrapolator = LocalLinearExtrapolator.build(
+        points=points,
+        thrust_values=thrust_n,
+        torque_values=torque_nm,
+    )
+
     points.setflags(write=False)
     thrust_n.setflags(write=False)
     torque_nm.setflags(write=False)
@@ -235,6 +312,7 @@ def build_catalog_surface(
         points=points,
         thrust_values=thrust_n,
         torque_values=torque_nm,
+        extrapolator=extrapolator,
         triangulation=triangulation,
         thrust_interpolator=thrust_interpolator,
         torque_interpolator=torque_interpolator,

@@ -6,7 +6,10 @@ import math
 
 MPS_TO_MPH = 2.2369
 
-EVAL_VELOCITIES_MPS = np.array()
+DEFAULT_VELOCITIES_MPS = np.array(
+    [0.01, 9.5, 19.0, 28.35],
+    dtype=float,
+)
 
 #DEFAULT_PROP_DATA_PATH = Path(__file__).resolve().parent / "data" / "prop_data.json"
 
