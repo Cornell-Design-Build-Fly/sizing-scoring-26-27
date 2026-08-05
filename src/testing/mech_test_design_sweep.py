@@ -231,7 +231,9 @@ def _print_report(case: DesignCase, result: MechanicalResult) -> None:
             f"\n{mission}: mass={properties.total_mass_kg:.6f} kg, "
             f"weight={properties.weight_n:.6f} N"
         )
-        print(f"    CG={np.array2string(properties.cg_m, precision=8)} m")
+        print(
+            f"    CG={np.array2string(np.asarray(properties.cg_m), precision=8)} m"
+        )
         print(
             f"    static margin={100 * properties.static_margin:.4f}% "
             f"(feasible={properties.static_margin_feasible}), "
@@ -449,7 +451,8 @@ def _save_m2_layout(
     )
     figure.suptitle(
         f"{case.label}: Mission 2 mass-element layout\n"
-        f"mass={m2.total_mass_kg:.4f} kg, CG={np.array2string(m2.cg_m, precision=4)}, "
+        f"mass={m2.total_mass_kg:.4f} kg, "
+        f"CG={np.array2string(np.asarray(m2.cg_m), precision=4)}, "
         f"static margin={100 * m2.static_margin:.2f}%",
         fontsize=12,
     )

@@ -146,9 +146,10 @@ translated onto the airplane, its absolute envelope is available through
 M2 packing is deterministic and does not use the airplane CG or tail position:
 
 1. The first item of each payload type touches the electronics back face.
-2. Its negative-y face touches the negative-y fuselage sidewall.
-3. A row fills laterally across the fuselage, using bounding-box width plus
-   configured clearance as pitch.
+2. Each row's occupied width is centered on the fuselage centerline, including
+   partial final rows and full rows with unused side clearance.
+3. A row fills from negative `y` toward positive `y`, using bounding-box width
+   plus configured clearance as pitch.
 4. When the row is full, the next row moves aft by bounding-box length plus
    clearance.
 5. Every complete payload bounding box must remain inside the fuselage width.
