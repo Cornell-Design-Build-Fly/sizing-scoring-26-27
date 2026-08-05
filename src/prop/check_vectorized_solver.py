@@ -29,10 +29,10 @@ def main() -> None:
         batt_capacity=4.5,
         prop_diameter_in=14.0,
         prop_pitch_in=10.0,
-        motor_kv=335.0,
-        motor_max_power=2200.0,
+        motor_kv=520.0,
+        motor_max_power=2000.0,
         cruise_throttle=0.90,
-        mission3_cruise_throttle=0.85,
+        mission3_cruise_throttle=0.90,
     )
 
     parameter_vector = ParameterVector()
