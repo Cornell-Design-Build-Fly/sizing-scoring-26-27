@@ -173,6 +173,7 @@ def prop_main(
         result.flight_time_samples_s.copy()
     )
 
+
     # ---------------------------------------------------------
     # OPTIONAL OLD MATLAB BEHAVIOR
     # ---------------------------------------------------------
@@ -189,17 +190,38 @@ def prop_main(
     #         flight_time_samples_s[index] = 0.0
     # ---------------------------------------------------------
 
-    thrust_fit = np.polyfit(
-        fit_velocities_mps,
-        thrust_samples_n,
-        2,
-    )
+    # Reject the entire propulsion curve if no valid RPM exists
+    # at any one of the required velocity points.
+    curve_failed = np.any(result.failed_mask)
 
-    flight_time_fit = np.polyfit(
-        fit_velocities_mps,
-        flight_time_samples_s,
-        2,
-    )
+    if curve_failed:
+        # Zero the displayed/stored sample values.
+        thrust_samples_n.fill(0.0)
+        flight_time_samples_s.fill(0.0)
+
+        # Return exact zero polynomial coefficients.
+        thrust_fit = np.zeros(
+            3,
+            dtype=np.float64,
+        )
+
+        flight_time_fit = np.zeros(
+            3,
+            dtype=np.float64,
+        )
+
+    else:
+        thrust_fit = np.polyfit(
+            fit_velocities_mps,
+            thrust_samples_n,
+            2,
+        )
+
+        flight_time_fit = np.polyfit(
+            fit_velocities_mps,
+            flight_time_samples_s,
+            2,
+        )
 
     if disp_res:
         print()

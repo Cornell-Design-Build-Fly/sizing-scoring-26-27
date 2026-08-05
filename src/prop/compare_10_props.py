@@ -10,15 +10,18 @@ import numpy as np
 from src.prop.continuous_prop_database import (
     load_default_continuous_prop_database,
 )
-from src.prop.prop_classes import Battery, Motor
-from src.prop.prop_cruise_values import solve_cruise_samples
+from src.prop.main_prop import prop_main
+from src.vectors import DesignVector, ParameterVector
 
 
 # ============================================================
 # EDITABLE INPUTS
-# Keep these values matched with the MATLAB script.
 # ============================================================
 
+# Label, diameter [in], pitch [in]
+#
+# The label is only used for printing and graph legends.
+# Diameter and pitch are the actual values passed into prop_main().
 PROPELLERS = [
     ("8x6E", 8.0, 6.0),
     ("10.22x6.93E", 10.0, 6.0),
@@ -26,74 +29,128 @@ PROPELLERS = [
     ("13x4.5EP", 13.0, 4.5),
     ("13x8E", 13.0, 8.0),
     ("14.4x10.2E", 14.4, 10.2),
+    ("15x8E", 15.0, 8.0),
+    ("15x8.9E", 15.0, 8.9),
     ("15x10E", 15.0, 10.0),
-    ("17.4x10.5E", 17.4, 10.5),
-    ("18x10E", 18.0, 10.0),
     ("26x15E", 26.0, 15.0),
 ]
 
-FIT_VELOCITIES_MPS = np.linspace(
-    0.001,
-    25.0,
-    4,
+
+# These are the actual velocities used by prop_main
+# to calculate and fit the thrust and time curves.
+
+FIT_VELOCITIES_MPS = np.linspace(0.001, 25.0, 4)
+# FIT_VELOCITIES_MPS = np.array(
+#     [0.01, 9.5, 19.0, 28.35],
+#     dtype=float,
+# )
+
+
+# These velocities are only used to draw smooth curves.
+# They do not affect prop_main's calculations.
+PLOT_VELOCITIES_MPS = np.linspace(
+    FIT_VELOCITIES_MPS.min(),
+    FIT_VELOCITIES_MPS.max(),
+    300,
 )
 
-MIN_RPM = 3000
-MAX_RPM = 16000
-RPM_STEP = 100
 
+# Mission 1 and 2 use CRUISE_THROTTLE.
+# Mission 3 uses MISSION_3_CRUISE_THROTTLE.
+MISSION = 1
+
+
+# Motor inputs.
 MOTOR_KV = 520.0
 MOTOR_MAX_POWER_W = 2000.0
 MAX_CURRENT_A = 100.0
 
+
+# Battery inputs.
 BATTERY_CAPACITY_AH = 4.5
-BATTERY_CELLS = 6
 BATTERY_NOMINAL_V = 22.2
+BATTERY_CELLS = 6
 USABLE_BATTERY_FRACTION = 0.85
 
-CRUISE_THROTTLE = 0.90
-MAX_THROTTLE = 1.00
 
+# Throttle inputs.
+CRUISE_THROTTLE = 0.90
+MISSION_3_CRUISE_THROTTLE = 0.85
+
+
+# Optional thrust knockdown.
 APPLY_KNOCKDOWN = False
 KNOCKDOWN_FACTOR = 0.90
 
-PLOT_VELOCITIES_MPS = np.linspace(
-    0.0,
-    25.0,
-    201,
-)
 
-OUTPUT_FOLDER_NAME = "python_prop_comparison_output"
+# When True, prop_main prints its selected RPM, thrust,
+# current, throttle, valid RPM count, and failure count.
+PRINT_OPERATING_POINTS = True
+
+
+# Graph options.
+SHOW_INDIVIDUAL_THRUST_GRAPHS = True
+SHOW_COMBINED_TIME_GRAPH = True
+
+
+# Results are saved in this folder inside src/prop.
+SAVE_RESULTS = False
+OUTPUT_FOLDER_NAME = "prop_main_10_prop_results"
 
 
 # ============================================================
-# HELPERS
+# HELPER FUNCTIONS
 # ============================================================
 
-def fit_tuple(values: np.ndarray) -> tuple[float, float, float]:
-    coefficients = np.polyfit(
-        FIT_VELOCITIES_MPS,
-        values,
-        2,
+def evaluate_curve(
+    fit: tuple[float, float, float],
+    velocities_mps: np.ndarray,
+) -> np.ndarray:
+    """
+    Evaluate:
+
+        y = a*V^2 + b*V + c
+    """
+
+    return np.polyval(
+        np.asarray(
+            fit,
+            dtype=float,
+        ),
+        velocities_mps,
     )
 
-    return (
-        float(coefficients[0]),
-        float(coefficients[1]),
-        float(coefficients[2]),
+
+def fit_is_exactly_zero(
+    fit: tuple[float, float, float],
+) -> bool:
+    """
+    Check whether prop_main rejected the propulsion curve
+    and returned exactly (0, 0, 0).
+    """
+
+    return bool(
+        np.all(
+            np.asarray(
+                fit,
+                dtype=float,
+            ) == 0.0
+        )
     )
 
 
-def write_csv(
-    path: Path,
+def save_summary_csv(
+    output_path: Path,
     rows: list[dict[str, object]],
 ) -> None:
+    """Save all coefficients and runtimes to one CSV."""
+
     if not rows:
         raise ValueError(
-            f"No rows were generated for {path.name}."
+            "No propeller results were generated."
         )
 
-    with path.open(
+    with output_path.open(
         "w",
         newline="",
         encoding="utf-8",
@@ -107,89 +164,92 @@ def write_csv(
         writer.writerows(rows)
 
 
-def plot_fit_comparison(
-    summaries: list[dict[str, object]],
-    prefix: str,
-    title: str,
-    ylabel: str,
-    output_path: Path,
-) -> None:
-    plt.figure(figsize=(9, 6))
-
-    for summary in summaries:
-        coefficients = np.array(
-            [
-                summary[f"{prefix}_a"],
-                summary[f"{prefix}_b"],
-                summary[f"{prefix}_c"],
-            ],
-            dtype=float,
-        )
-
-        values = np.polyval(
-            coefficients,
-            PLOT_VELOCITIES_MPS,
-        )
-
-        plt.plot(
-            PLOT_VELOCITIES_MPS,
-            values,
-            label=str(summary["prop_name"]),
-        )
-
-    plt.xlabel("Velocity [m/s]")
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(
-        output_path,
-        dpi=160,
-    )
-    plt.close()
-
-
 # ============================================================
 # MAIN TEST
 # ============================================================
 
 def main() -> None:
-    repo_root = Path(__file__).resolve().parents[2]
+    script_dir = Path(__file__).resolve().parent
 
     output_dir = (
-        repo_root / OUTPUT_FOLDER_NAME
+        script_dir
+        / OUTPUT_FOLDER_NAME
     )
 
-    output_dir.mkdir(
-        parents=True,
-        exist_ok=True,
+    if SAVE_RESULTS:
+        output_dir.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+
+    # --------------------------------------------------------
+    # Basic input checks
+    # --------------------------------------------------------
+
+    if len(PROPELLERS) != 10:
+        raise ValueError(
+            "PROPELLERS must contain exactly 10 entries."
+        )
+
+    if MISSION not in (1, 2, 3):
+        raise ValueError(
+            "MISSION must be 1, 2, or 3."
+        )
+
+    if FIT_VELOCITIES_MPS.size < 3:
+        raise ValueError(
+            "At least three fit velocities are required."
+        )
+
+
+    # --------------------------------------------------------
+    # Create the ParameterVector
+    # --------------------------------------------------------
+
+    # ParameterVector currently defines voltage as a class
+    # attribute, so set the class value before constructing
+    # the DesignVectors.
+    ParameterVector.voltage = BATTERY_NOMINAL_V
+
+    parameter_vector = ParameterVector()
+
+    # These are the explicit parameter values used by the
+    # prop helper functions.
+    parameter_vector.voltage = (
+        BATTERY_NOMINAL_V
     )
 
-    motor = Motor(
-        kv=MOTOR_KV,
-        max_power=MOTOR_MAX_POWER_W,
-        max_current=MAX_CURRENT_A,
+    parameter_vector.max_current = (
+        MAX_CURRENT_A
     )
 
-    battery = Battery(
-        vnom=BATTERY_NOMINAL_V,
-        cells=BATTERY_CELLS,
-        Crat=0.0,
-        capacity=BATTERY_CAPACITY_AH,
-        useable_fraction=USABLE_BATTERY_FRACTION,
+    parameter_vector.num_battery_cells = (
+        BATTERY_CELLS
     )
 
-    print("Loading continuous propeller database...")
+    parameter_vector.usable_battery_fraction = (
+        USABLE_BATTERY_FRACTION
+    )
+
+
+    # --------------------------------------------------------
+    # Load the database once
+    # --------------------------------------------------------
+
+    print(
+        "Loading continuous propeller database..."
+    )
 
     database_start = perf_counter()
 
-    database = (
+    prop_database = (
         load_default_continuous_prop_database()
     )
 
     database_startup_s = (
-        perf_counter() - database_start
+        perf_counter()
+        - database_start
     )
 
     print(
@@ -197,20 +257,35 @@ def main() -> None:
         f"{database_startup_s:.6f} s"
     )
 
-    summaries: list[dict[str, object]] = []
-    sample_rows: list[dict[str, object]] = []
 
-    rpm_plot_results: list[
-        tuple[str, np.ndarray, np.ndarray]
+    # --------------------------------------------------------
+    # Result storage
+    # --------------------------------------------------------
+
+    summary_rows: list[
+        dict[str, object]
     ] = []
 
-    kt_nm_per_a = float(motor.get_kt())
-    no_load_current_a = float(motor.get_I0())
-    battery_resistance_ohm = float(
-        battery.get_Rb()
-    )
+    thrust_results: list[
+        tuple[
+            str,
+            tuple[float, float, float],
+        ]
+    ] = []
 
-    for prop_index, (
+    time_results: list[
+        tuple[
+            str,
+            tuple[float, float, float],
+        ]
+    ] = []
+
+
+    # --------------------------------------------------------
+    # Run prop_main for all 10 propellers
+    # --------------------------------------------------------
+
+    for index, (
         prop_name,
         diameter_in,
         pitch_in,
@@ -218,371 +293,372 @@ def main() -> None:
         PROPELLERS,
         start=1,
     ):
-        solver_start = perf_counter()
 
-        cruise_result = solve_cruise_samples(
-            diameter_in=diameter_in,
-            pitch_in=pitch_in,
-            velocities_mps=FIT_VELOCITIES_MPS,
-            motor=motor,
-            battery=battery,
-            max_current_a=MAX_CURRENT_A,
+        # Create a real DesignVector for this propeller.
+        #
+        # The unrelated aero fields retain their normal values,
+        # but they are not used by prop_main.
+        design_vector = DesignVector(
+            batt_capacity=BATTERY_CAPACITY_AH,
+            prop_diameter_in=diameter_in,
+            prop_pitch_in=pitch_in,
+            motor_kv=MOTOR_KV,
+            motor_max_power=MOTOR_MAX_POWER_W,
             cruise_throttle=CRUISE_THROTTLE,
-            prop_database=database,
-            min_rpm=MIN_RPM,
-            max_rpm=MAX_RPM,
-            rpm_step=RPM_STEP,
-            knockdown=APPLY_KNOCKDOWN,
-            knockdown_factor=KNOCKDOWN_FACTOR,
+            mission3_cruise_throttle=(
+                MISSION_3_CRUISE_THROTTLE
+            ),
         )
 
-        max_result = solve_cruise_samples(
-            diameter_in=diameter_in,
-            pitch_in=pitch_in,
+        print()
+        print("=" * 72)
+
+        print(
+            f"PROP {index}/10: "
+            f"{prop_name} "
+            f"({diameter_in:g} x "
+            f"{pitch_in:g} in)"
+        )
+
+        print("=" * 72)
+
+
+        # Time prop_main only.
+        #
+        # Database startup and graph generation are not included.
+        run_start = perf_counter()
+
+        thrust_fit, time_fit = prop_main(
+            design_vector=design_vector,
+            parameter_vector=parameter_vector,
+            mission=MISSION,
+            prop_database=prop_database,
             velocities_mps=FIT_VELOCITIES_MPS,
-            motor=motor,
-            battery=battery,
-            max_current_a=MAX_CURRENT_A,
-            cruise_throttle=MAX_THROTTLE,
-            prop_database=database,
-            min_rpm=MIN_RPM,
-            max_rpm=MAX_RPM,
-            rpm_step=RPM_STEP,
+            disp_res=PRINT_OPERATING_POINTS,
             knockdown=APPLY_KNOCKDOWN,
             knockdown_factor=KNOCKDOWN_FACTOR,
         )
 
-        solver_runtime_s = (
-            perf_counter() - solver_start
+        runtime_s = (
+            perf_counter()
+            - run_start
         )
 
-        cruise_thrust_fit = fit_tuple(
-            cruise_result.thrust_samples_n
+
+        # A zero thrust fit means your production failure rule
+        # rejected the whole propulsion curve.
+        curve_rejected = (
+            fit_is_exactly_zero(
+                thrust_fit
+            )
         )
 
-        max_thrust_fit = fit_tuple(
-            max_result.thrust_samples_n
+        thrust_results.append(
+            (
+                prop_name,
+                thrust_fit,
+            )
         )
 
-        cruise_time_fit = fit_tuple(
-            cruise_result.flight_time_samples_s
+        time_results.append(
+            (
+                prop_name,
+                time_fit,
+            )
         )
 
-        max_time_fit = fit_tuple(
-            max_result.flight_time_samples_s
-        )
 
-        summaries.append(
+        # Store one summary row.
+        summary_rows.append(
             {
                 "prop_name": prop_name,
                 "diameter_in": diameter_in,
                 "pitch_in": pitch_in,
-                "solver_runtime_s": solver_runtime_s,
-                "cruise_thrust_a": cruise_thrust_fit[0],
-                "cruise_thrust_b": cruise_thrust_fit[1],
-                "cruise_thrust_c": cruise_thrust_fit[2],
-                "max_thrust_a": max_thrust_fit[0],
-                "max_thrust_b": max_thrust_fit[1],
-                "max_thrust_c": max_thrust_fit[2],
-                "cruise_time_a": cruise_time_fit[0],
-                "cruise_time_b": cruise_time_fit[1],
-                "cruise_time_c": cruise_time_fit[2],
-                "max_time_a": max_time_fit[0],
-                "max_time_b": max_time_fit[1],
-                "max_time_c": max_time_fit[2],
+                "runtime_s": runtime_s,
+                "curve_rejected": (
+                    curve_rejected
+                ),
+                "thrust_a": thrust_fit[0],
+                "thrust_b": thrust_fit[1],
+                "thrust_c": thrust_fit[2],
+                "time_a": time_fit[0],
+                "time_b": time_fit[1],
+                "time_c": time_fit[2],
             }
         )
 
-        rpm_plot_results.append(
-            (
-                prop_name,
-                FIT_VELOCITIES_MPS.copy(),
-                cruise_result.selected_rpm.copy(),
-            )
-        )
 
-        for velocity_index, velocity_mps in enumerate(
-            FIT_VELOCITIES_MPS
-        ):
-            cruise_current_a = float(
-                cruise_result.selected_current_a[
-                    velocity_index
-                ]
-            )
-
-            max_current_a = float(
-                max_result.selected_current_a[
-                    velocity_index
-                ]
-            )
-
-            cruise_torque_nm = (
-                cruise_current_a - no_load_current_a
-            ) * kt_nm_per_a
-
-            max_torque_nm = (
-                max_current_a - no_load_current_a
-            ) * kt_nm_per_a
-
-            cruise_voltage_sag_v = (
-                BATTERY_NOMINAL_V
-                - cruise_current_a
-                * battery_resistance_ohm
-            )
-
-            max_voltage_sag_v = (
-                BATTERY_NOMINAL_V
-                - max_current_a
-                * battery_resistance_ohm
-            )
-
-            cruise_voltage_required_v = (
-                cruise_result.selected_throttle[
-                    velocity_index
-                ]
-                * cruise_voltage_sag_v
-            )
-
-            max_voltage_required_v = (
-                max_result.selected_throttle[
-                    velocity_index
-                ]
-                * max_voltage_sag_v
-            )
-
-            sample_rows.append(
-                {
-                    "prop_name": prop_name,
-                    "diameter_in": diameter_in,
-                    "pitch_in": pitch_in,
-                    "velocity_mps": float(velocity_mps),
-                    "cruise_selected_rpm": float(
-                        cruise_result.selected_rpm[
-                            velocity_index
-                        ]
-                    ),
-                    "cruise_thrust_n": float(
-                        cruise_result.thrust_samples_n[
-                            velocity_index
-                        ]
-                    ),
-                    "cruise_torque_nm": float(
-                        cruise_torque_nm
-                    ),
-                    "cruise_current_a": cruise_current_a,
-                    "cruise_voltage_sag_v": float(
-                        cruise_voltage_sag_v
-                    ),
-                    "cruise_voltage_required_v": float(
-                        cruise_voltage_required_v
-                    ),
-                    "cruise_throttle": float(
-                        cruise_result.selected_throttle[
-                            velocity_index
-                        ]
-                    ),
-                    "cruise_power_w": float(
-                        cruise_result.selected_power_w[
-                            velocity_index
-                        ]
-                    ),
-                    "cruise_flight_time_s": float(
-                        cruise_result.flight_time_samples_s[
-                            velocity_index
-                        ]
-                    ),
-                    "cruise_valid_rpm_count": int(
-                        cruise_result.valid_rpm_count[
-                            velocity_index
-                        ]
-                    ),
-                    "cruise_failed": bool(
-                        cruise_result.failed_mask[
-                            velocity_index
-                        ]
-                    ),
-                    "max_selected_rpm": float(
-                        max_result.selected_rpm[
-                            velocity_index
-                        ]
-                    ),
-                    "max_thrust_n": float(
-                        max_result.thrust_samples_n[
-                            velocity_index
-                        ]
-                    ),
-                    "max_torque_nm": float(
-                        max_torque_nm
-                    ),
-                    "max_current_a": max_current_a,
-                    "max_voltage_sag_v": float(
-                        max_voltage_sag_v
-                    ),
-                    "max_voltage_required_v": float(
-                        max_voltage_required_v
-                    ),
-                    "max_throttle": float(
-                        max_result.selected_throttle[
-                            velocity_index
-                        ]
-                    ),
-                    "max_power_w": float(
-                        max_result.selected_power_w[
-                            velocity_index
-                        ]
-                    ),
-                    "max_flight_time_s": float(
-                        max_result.flight_time_samples_s[
-                            velocity_index
-                        ]
-                    ),
-                    "max_valid_rpm_count": int(
-                        max_result.valid_rpm_count[
-                            velocity_index
-                        ]
-                    ),
-                    "max_failed": bool(
-                        max_result.failed_mask[
-                            velocity_index
-                        ]
-                    ),
-                }
-            )
+        # ----------------------------------------------------
+        # Print this propeller's direct outputs
+        # ----------------------------------------------------
 
         print()
-        print("=" * 65)
+
         print(
-            f"PROP {prop_index}/{len(PROPELLERS)}: "
-            f"{prop_name}"
-        )
-        print(
-            f"Geometry: {diameter_in:g} x "
-            f"{pitch_in:g} in"
-        )
-        print(
-            f"Solver runtime: "
-            f"{solver_runtime_s:.6f} s"
-        )
-        print(
-            "Cruise thrust fit: "
-            f"[{cruise_thrust_fit[0]: .10e}, "
-            f"{cruise_thrust_fit[1]: .10e}, "
-            f"{cruise_thrust_fit[2]: .10e}]"
-        )
-        print(
-            "Max thrust fit:    "
-            f"[{max_thrust_fit[0]: .10e}, "
-            f"{max_thrust_fit[1]: .10e}, "
-            f"{max_thrust_fit[2]: .10e}]"
+            "Thrust fit [a, b, c]: "
+            f"[{thrust_fit[0]: .10e}, "
+            f"{thrust_fit[1]: .10e}, "
+            f"{thrust_fit[2]: .10e}]"
         )
 
-        print()
         print(
-            "Velocity | Cruise RPM | Cruise T | "
-            "Max RPM | Max T"
+            "Time fit   [a, b, c]: "
+            f"[{time_fit[0]: .10e}, "
+            f"{time_fit[1]: .10e}, "
+            f"{time_fit[2]: .10e}]"
         )
 
-        for velocity_index, velocity_mps in enumerate(
-            FIT_VELOCITIES_MPS
-        ):
+        print(
+            f"prop_main runtime: "
+            f"{runtime_s:.6f} s"
+        )
+
+        if curve_rejected:
             print(
-                f"{velocity_mps:8.3f} | "
-                f"{cruise_result.selected_rpm[velocity_index]:10.0f} | "
-                f"{cruise_result.thrust_samples_n[velocity_index]:8.3f} | "
-                f"{max_result.selected_rpm[velocity_index]:7.0f} | "
-                f"{max_result.thrust_samples_n[velocity_index]:8.3f}"
+                "Status: REJECTED / ZERO CURVE"
+            )
+        else:
+            print(
+                "Status: VALID CURVE"
             )
 
-    write_csv(
-        output_dir / "python_prop_summary.csv",
-        summaries,
+
+        # ----------------------------------------------------
+        # Create this propeller's individual thrust graph
+        # ----------------------------------------------------
+
+        if SHOW_INDIVIDUAL_THRUST_GRAPHS:
+
+            fitted_thrust_n = evaluate_curve(
+                thrust_fit,
+                PLOT_VELOCITIES_MPS,
+            )
+
+            plt.figure(
+                num=f"{prop_name} thrust",
+                figsize=(8, 5),
+            )
+
+            plt.plot(
+                PLOT_VELOCITIES_MPS,
+                fitted_thrust_n,
+                label=f"{prop_name} thrust fit",
+            )
+
+            plt.axhline(
+                0.0,
+                linewidth=1.0,
+            )
+
+            plt.xlabel(
+                "Velocity [m/s]"
+            )
+
+            plt.ylabel(
+                "Throttled thrust [N]"
+            )
+
+            plt.title(
+                f"{prop_name}: "
+                f"throttled thrust curve"
+            )
+
+            plt.grid(True)
+            plt.legend()
+            plt.tight_layout()
+
+
+            # Save the same graph as a PNG.
+            safe_name = (
+                prop_name
+                .replace("/", "_")
+                .replace("\\", "_")
+            )
+
+            if SAVE_RESULTS:
+                plt.savefig(
+                    output_dir
+                    / f"{safe_name}_thrust_curve.png",
+                    dpi=160,
+                )
+
+
+    # ========================================================
+    # SAVE THE NUMERICAL SUMMARY
+    # ========================================================
+
+    if SAVE_RESULTS:
+        save_summary_csv(
+            output_dir
+            / "prop_main_summary.csv",
+            summary_rows,
+        )
+
+
+    # ========================================================
+    # FINAL GRAPH: ALL THRUST CURVES
+    # ========================================================
+
+    plt.figure(
+        num="All propeller thrust curves",
+        figsize=(10, 7),
     )
 
-    write_csv(
-        output_dir / "python_prop_samples.csv",
-        sample_rows,
-    )
+    for prop_name, thrust_fit in thrust_results:
 
-    plot_fit_comparison(
-        summaries=summaries,
-        prefix="cruise_thrust",
-        title="Cruise Thrust Comparison",
-        ylabel="Thrust [N]",
-        output_path=(
-            output_dir / "python_cruise_thrust.png"
-        ),
-    )
+        fitted_thrust_n = evaluate_curve(
+            thrust_fit,
+            PLOT_VELOCITIES_MPS,
+        )
 
-    plot_fit_comparison(
-        summaries=summaries,
-        prefix="max_thrust",
-        title="Maximum Thrust Comparison",
-        ylabel="Thrust [N]",
-        output_path=(
-            output_dir / "python_max_thrust.png"
-        ),
-    )
-
-    plot_fit_comparison(
-        summaries=summaries,
-        prefix="cruise_time",
-        title="Cruise Flight-Time Comparison",
-        ylabel="Flight time [s]",
-        output_path=(
-            output_dir / "python_cruise_time.png"
-        ),
-    )
-
-    plt.figure(figsize=(9, 6))
-
-    for (
-        prop_name,
-        velocities_mps,
-        selected_rpm,
-    ) in rpm_plot_results:
         plt.plot(
-            velocities_mps,
-            selected_rpm,
-            marker="o",
+            PLOT_VELOCITIES_MPS,
+            fitted_thrust_n,
             label=prop_name,
         )
 
-    plt.xlabel("Velocity [m/s]")
-    plt.ylabel("Selected cruise RPM")
-    plt.title("Selected Cruise RPM Comparison")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(
-        output_dir / "python_cruise_rpm.png",
-        dpi=160,
+    plt.axhline(
+        0.0,
+        linewidth=1.0,
     )
-    plt.close()
+
+    plt.xlabel(
+        "Velocity [m/s]"
+    )
+
+    plt.ylabel(
+        "Throttled thrust [N]"
+    )
+
+    plt.title(
+        "All throttled thrust curves"
+    )
+
+    plt.grid(True)
+
+    plt.legend(
+        loc="best",
+    )
+
+    plt.tight_layout()
+
+
+    if SAVE_RESULTS:
+        plt.savefig(
+            output_dir
+            / "all_thrust_curves.png",
+            dpi=180,
+        )
+
+
+    # ========================================================
+    # OPTIONAL FINAL GRAPH: ALL FLIGHT-TIME CURVES
+    # ========================================================
+
+    if SHOW_COMBINED_TIME_GRAPH:
+
+        plt.figure(
+            num="All propeller flight-time curves",
+            figsize=(10, 7),
+        )
+
+        for prop_name, time_fit in time_results:
+
+            fitted_time_s = evaluate_curve(
+                time_fit,
+                PLOT_VELOCITIES_MPS,
+            )
+
+            plt.plot(
+                PLOT_VELOCITIES_MPS,
+                fitted_time_s,
+                label=prop_name,
+            )
+
+        plt.axhline(
+            0.0,
+            linewidth=1.0,
+        )
+
+        plt.xlabel(
+            "Velocity [m/s]"
+        )
+
+        plt.ylabel(
+            "Throttled flight time [s]"
+        )
+
+        plt.title(
+            "All throttled flight-time curves"
+        )
+
+        plt.grid(True)
+
+        plt.legend(
+            loc="best",
+        )
+
+        plt.tight_layout()
+
+        if SAVE_RESULTS:
+            plt.savefig(
+                output_dir
+                / "all_time_curves.png",
+                dpi=180,
+            )
+
+
+
+    # ========================================================
+    # PRINT FINAL SUMMARY TABLE
+    # ========================================================
 
     print()
-    print("=" * 65)
-    print("SUMMARY")
-    print("=" * 65)
+    print("=" * 96)
+    print("FINAL SUMMARY")
+    print("=" * 96)
 
     print(
-        f"{'Prop':<12}"
+        f"{'Prop':<18}"
         f"{'Runtime [s]':>14}"
-        f"{'Cruise a':>16}"
-        f"{'Cruise b':>16}"
-        f"{'Cruise c':>16}"
+        f"{'Rejected':>12}"
+        f"{'Thrust a':>16}"
+        f"{'Thrust b':>16}"
+        f"{'Thrust c':>16}"
     )
 
-    for summary in summaries:
+    for row in summary_rows:
+
         print(
-            f"{str(summary['prop_name']):<12}"
-            f"{float(summary['solver_runtime_s']):>14.6f}"
-            f"{float(summary['cruise_thrust_a']):>16.6e}"
-            f"{float(summary['cruise_thrust_b']):>16.6e}"
-            f"{float(summary['cruise_thrust_c']):>16.6e}"
+            f"{str(row['prop_name']):<18}"
+            f"{float(row['runtime_s']):>14.6f}"
+            f"{str(row['curve_rejected']):>12}"
+            f"{float(row['thrust_a']):>16.6e}"
+            f"{float(row['thrust_b']):>16.6e}"
+            f"{float(row['thrust_c']):>16.6e}"
+        )
+
+
+    print()
+    if SAVE_RESULTS:
+        print(
+            f"Results saved to:\n"
+            f"{output_dir}"
+        )
+    else:
+        print(
+            "Results were not saved."
         )
 
     print()
-    print(f"Files written to:\n{output_dir}")
+    print(
+        "Close the graph windows when you are finished."
+    )
+
+
+    # This opens all individual graphs and the final
+    # combined graphs automatically.
+    plt.show()
 
 
 if __name__ == "__main__":
