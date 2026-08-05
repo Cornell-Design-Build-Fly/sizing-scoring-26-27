@@ -107,6 +107,7 @@ def test_aero_main_smoke() -> None:
         inertia_matrix=inertia_matrix,
         mass=mass,
         disp_res=True,
+        debug=False,
     )
 
     assert isinstance(result, AeroScore)

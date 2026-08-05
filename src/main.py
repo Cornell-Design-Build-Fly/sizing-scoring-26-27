@@ -41,6 +41,7 @@ def main(
         cg=m1_properties.cg_m,
         inertia_matrix=m1_properties.inertia_tensor_kg_m2,
         mass=m1_properties.total_mass_kg,
+        debug=False,
     )
 
     # M2 run
@@ -54,6 +55,7 @@ def main(
         cg=m2_properties.cg_m,
         inertia_matrix=m2_properties.inertia_tensor_kg_m2,
         mass=m2_properties.total_mass_kg,
+        debug=False,
     )
 
     # M3 run
@@ -68,6 +70,7 @@ def main(
         inertia_matrix=m3_properties.inertia_tensor_kg_m2,
         mass=m3_properties.total_mass_kg,
         disp_res=False,
+        debug=False,
     )
 
     tot_score, breakdown = total_score(

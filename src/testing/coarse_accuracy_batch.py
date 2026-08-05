@@ -75,6 +75,7 @@ def _result(
             inertia_matrix=np.asarray(aero_inputs["inertia_matrix"], dtype=float),
             mass=float(aero_inputs["mass"]),
             disp_res=False,
+            debug=False,
         )
         return asdict(score)
     raise ValueError("RUN_TARGET must be 'main' or 'aero_main'.")

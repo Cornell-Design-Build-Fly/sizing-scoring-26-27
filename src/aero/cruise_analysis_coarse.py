@@ -15,6 +15,7 @@ def cruise_analysis_coarse(
     cg: tuple[float, float, float],
     mass: float,
     mission: int,
+    debug: bool = False,
 ) -> CruiseCondition:
     """
     Trim cruise with a fast algebraic aerodynamic model.
@@ -39,30 +40,40 @@ def cruise_analysis_coarse(
     wing_slope = 2 * np.pi / (1 + 2 / wing_ar)
     tail_slope = 2 * np.pi / (1 + 2 / tail_ar)
     alpha_rad, elevator_rad = np.radians(alpha), np.radians(elevator)
-    wing_cl = wing_slope * (alpha_rad - np.radians(-2.0))  # Estimated zero-lift angle.
-    tail_cl = tail_slope * (0.65 * alpha_rad + 0.60 * elevator_rad)  # Downwash and elevator estimates.
+    wing_cl_est = wing_slope * (alpha_rad - np.radians(-2.0))
+    wing_cl = 0.064247 + wing_cl_est * (0.910703 + 0.443763 / wing_ar)
+    tail_cl = tail_slope * (0.929043 * alpha_rad + 0.815490 * elevator_rad)
     tail_ratio = design_vector.hstab_area / design_vector.wing_area
-    total_cl = wing_cl + 0.90 * tail_ratio * tail_cl  # Assumed tail dynamic-pressure ratio.
+    total_cl = wing_cl + tail_ratio * tail_cl
 
     # Quarter-chord forces; assumes wing Cm_ac = -0.05.
     wing_ac = 0.25 * design_vector.wing_chord
     tail_ac = design_vector.tail_arm + 0.25 * design_vector.hstab_chord
+    wing_cm_ac = -0.047069 - 0.021599 * alpha_rad + 0.067132 / wing_ar - 0.044650 * design_vector.wing_chord
+    fuselage_length = design_vector.nose_length + design_vector.tail_arm + max(design_vector.hstab_chord, design_vector.vstab_chord)
+    body_cm = design_vector.fuselage_height * fuselage_length**2 / (design_vector.wing_area * design_vector.wing_chord) * (
+        0.002201 + 0.059479 * alpha_rad + 0.000757 * design_vector.nose_length / fuselage_length
+        - 0.057975 * cg[0] / fuselage_length
+    )
     cm = (
-        -0.05
+        wing_cm_ac
         + wing_cl * (cg[0] - wing_ac) / design_vector.wing_chord
-        - 0.90 * tail_ratio * tail_cl * (tail_ac - cg[0]) / design_vector.wing_chord
+        - tail_ratio * tail_cl * (tail_ac - cg[0]) / design_vector.wing_chord
+        + body_cm
     )
 
-    # Empirical parasite drag plus Oswald induced drag.
-    cd0 = (
-        0.018
-        + 0.012 * (design_vector.hstab_area + design_vector.vstab_area) / design_vector.wing_area
-        + 0.08 * design_vector.fuselage_width * design_vector.fuselage_height / design_vector.wing_area
+    # Reynolds-aware profile drag plus induced and component drag.
+    reynolds = parameter_vector.rho * velocity * design_vector.wing_chord / 1.81e-5
+    wing_profile_cd = 0.001870 + 3.66232 / np.sqrt(reynolds)
+    tail_cd = 0.68 * (
+        0.012 * (design_vector.hstab_area + design_vector.vstab_area) / design_vector.wing_area
+        + tail_ratio * tail_cl**2 / (np.pi * 0.80 * tail_ar)
     )
     cd = (
-        cd0
-        + wing_cl**2 / (np.pi * 0.85 * wing_ar)
-        + 0.90 * tail_ratio * tail_cl**2 / (np.pi * 0.80 * tail_ar)
+        wing_profile_cd
+        + wing_cl**2 / (np.pi * wing_ar)
+        + tail_cd
+        + 0.126 * design_vector.fuselage_width * design_vector.fuselage_height / design_vector.wing_area
     )
 
     dynamic_pressure = 0.5 * parameter_vector.rho * velocity**2
@@ -94,7 +105,8 @@ def cruise_analysis_coarse(
     # Assumes section CL_max = 1.45 with a finite-wing correction.
     cl_max = 1.45 * wing_ar / (wing_ar + 2.0)
     stall_speed = np.sqrt(2 * weight / (parameter_vector.rho * design_vector.wing_area * cl_max))
-    print(f"[aero] Coarse trim finished in {perf_counter() - start:.4f} s (converged={converged}).", flush=True)
+    if debug:
+        print(f"[aero] Coarse trim finished in {perf_counter() - start:.4f} s (converged={converged}).", flush=True)
     return CruiseCondition(
         operating_point=OperatingPoint(velocity=solved_velocity, alpha=solved_alpha),
         stall_speed=float(stall_speed) if converged else None,

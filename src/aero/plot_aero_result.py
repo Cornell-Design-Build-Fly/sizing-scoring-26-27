@@ -21,6 +21,7 @@ def plot_aero_result(
     num_samples: int = 31,
     mission: int | None = None,
     output_directory: str | Path = "data_dump/aero_plots",
+    debug: bool = False,
 ) -> tuple[Path, ...]:
     """
     Plot aircraft geometry and aerodynamic sweeps about the trim point.
@@ -309,6 +310,7 @@ def plot_aero_result(
         mark_stall_speed=True,
     )
 
-    print(f"[aero] Saved plots to {output_path.resolve()}", flush=True)
+    if debug:
+        print(f"[aero] Saved plots to {output_path.resolve()}", flush=True)
     plt.show()
     return tuple(saved_paths)
