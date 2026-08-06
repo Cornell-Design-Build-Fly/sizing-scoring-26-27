@@ -13,7 +13,9 @@ def main(
     pv: ParameterVector,
     disp_res: bool = False,
     round_payload: bool = True,
-) -> tuple[float, list[float]]:
+    prop_database: ContinuousPropDatabase | None = None,
+    return_details: bool = False,
+) -> tuple[float, list[float]] | tuple[float, list[float], dict]:
     """Evaluate mechanics, propulsion, and aerodynamics for all missions.
 
     The mechanical module now has one discrete path. ``round_payload`` is kept
@@ -43,7 +45,13 @@ def main(
     )
 
     # M1 run
-    m1_thrust_curve, _ = prop_main(resolved_dv, pv, mission=1, disp_res=disp_res)
+    m1_thrust_curve, _ = prop_main(
+        resolved_dv,
+        pv,
+        mission=1,
+        prop_database=prop_database,
+        disp_res=disp_res,
+    )
     m1_properties = mech_result.for_mission("M1")
     aero_m1 = aero_main(
         design_vector=resolved_dv,
@@ -57,7 +65,13 @@ def main(
     )
 
     # M2 run
-    m2_thrust_curve, _ = prop_main(resolved_dv, pv, mission=2, disp_res=disp_res)
+    m2_thrust_curve, _ = prop_main(
+        resolved_dv,
+        pv,
+        mission=2,
+        prop_database=prop_database,
+        disp_res=disp_res,
+    )
     m2_properties = mech_result.for_mission("M2")
     aero_m2 = aero_main(
         design_vector=resolved_dv,
@@ -71,7 +85,13 @@ def main(
     )
 
     # M3 run
-    m3_thrust_curve, _ = prop_main(resolved_dv, pv, mission=3, disp_res=disp_res)
+    m3_thrust_curve, _ = prop_main(
+        resolved_dv,
+        pv,
+        mission=3,
+        prop_database=prop_database,
+        disp_res=disp_res,
+    )
     m3_properties = mech_result.for_mission("M3")
     aero_m3 = aero_main(
         design_vector=resolved_dv,
@@ -81,7 +101,7 @@ def main(
         cg=m3_properties.cg_m,
         inertia_matrix=m3_properties.inertia_tensor_kg_m2,
         mass=m3_properties.total_mass_kg,
-        disp_res=False,
+        disp_res=disp_res,
         debug=False,
     )
 

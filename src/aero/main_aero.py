@@ -15,7 +15,6 @@ from src.aero.aero_analysis import aero_analysis
 from src.aero.stability_analysis_coarse import stability_analysis_coarse
 from src.aero.stability_analysis import stability_analysis
 from src.aero.aero_score import AeroScore, aero_score
-from src.aero.plot_aero_result import plot_aero_result
 
 def aero_main(
         design_vector: DesignVector,
@@ -93,6 +92,7 @@ def aero_main(
         )
 
     if disp_res:
+        from src.aero.plot_aero_result import plot_aero_result
         plot_aero_result(
             design_vector,
             cruise_condition,
