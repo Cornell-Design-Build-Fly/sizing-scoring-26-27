@@ -27,22 +27,6 @@ from src.prop.prop_helper_functions import (
 CurveFit = tuple[float, float, float]
 
 
-def _curve_fit_tuple(
-    coefficients: np.ndarray,
-) -> CurveFit:
-    """Convert NumPy coefficients into three plain floats."""
-
-    if coefficients.shape != (3,):
-        raise ValueError(
-            "Quadratic fit must contain three coefficients."
-        )
-
-    return (
-        float(coefficients[0]),
-        float(coefficients[1]),
-        float(coefficients[2]),
-    )
-
 
 def prop_main(
     design_vector: DesignVector,
@@ -259,7 +243,4 @@ def prop_main(
             f"{np.count_nonzero(result.failed_mask)}"
         )
 
-    return (
-        _curve_fit_tuple(thrust_fit),
-        _curve_fit_tuple(flight_time_fit),
-    )
+    return (thrust_fit, flight_time_fit)
