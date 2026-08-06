@@ -78,8 +78,8 @@ PARAMETER_VECTOR.usable_battery_fraction = 0.85
 
 # Propulsion settings held constant so differences are caused by the propellers.
 COMMON_BATTERY_CAPACITY_AH = 4.5
-COMMON_MOTOR_KV = 335.0
-COMMON_MOTOR_MAX_POWER_W = 2200.0
+COMMON_MOTOR_KV = 520.0
+COMMON_MOTOR_MAX_POWER_W = 2000.0
 COMMON_CRUISE_THROTTLE = 0.85
 COMMON_MISSION3_CRUISE_THROTTLE = 0.75
 
@@ -103,16 +103,16 @@ class DesignCase:
 # Ten default propeller cases.
 # Edit, replace, add, or remove rows freely; the rest of the script adapts.
 DESIGN_CASES = [
-    DesignCase("13x8", 13.0, 8.0),
-    DesignCase("13.5x10.2", 13.5, 10.2),
-    DesignCase("14x8", 14.0, 8.0),
-    DesignCase("14.9x10.6", 14.9, 10.6),
-    DesignCase("14x12", 14.0, 12.0),
-    DesignCase("15.7x8.3", 15.7, 8.3),
-    DesignCase("15x10", 15.0, 10.0),
-    DesignCase("15.6x12.3", 15.6, 12.3),
-    DesignCase("16x10", 16.0, 10.0),
-    DesignCase("16x12", 16.0, 12.0),
+    # DesignCase("13x8", 13.0, 8.0),
+    # DesignCase("13.5x10.2", 13.5, 10.2),
+    DesignCase("14x10", 14.0, 10.0),
+    # DesignCase("14.9x10.6", 14.9, 10.6),
+    # DesignCase("14x12", 14.0, 12.0),
+    # DesignCase("15.7x8.3", 15.7, 8.3),
+    # DesignCase("15x10", 15.0, 10.0),
+    # DesignCase("15.6x12.3", 15.6, 12.3),
+    # DesignCase("16x10", 16.0, 10.0),
+    # DesignCase("16x12", 16.0, 12.0),
 ]
 
 
