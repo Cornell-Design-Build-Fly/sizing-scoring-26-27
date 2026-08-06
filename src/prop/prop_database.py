@@ -1,371 +1,439 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-import hashlib
-import json
-import pickle
-import re
+from typing import TypeAlias
 
 import numpy as np
-from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
+from numpy.typing import ArrayLike, NDArray
+from scipy.interpolate import LinearNDInterpolator
+from scipy.spatial import Delaunay, QhullError
+
+from src.prop.prop_data import (
+    DEFAULT_PROP_DATA_PATH,
+    PropellerData,
+    load_prop_data,
+)
+
+from src.prop.prop_extrapolation import (
+    LocalLinearExtrapolator,
+)
 
 
-DEFAULT_PROP_DATA_PATH = Path(__file__).resolve().parent / "data" / "prop_data.json"
-DEFAULT_PROP_PICKLE_PATH = Path(__file__).resolve().parent / "data" / "prop_data_continuous.pkl"
-
-PROP_CACHE_VERSION = 1
+FloatArray = NDArray[np.float64]
+QueryResult: TypeAlias = float | FloatArray
 
 
-def parse_prop_key(key: str) -> tuple[float, float]:
+def _evaluate_interpolator(
+    interpolator: LinearNDInterpolator,
+    velocity_mph: ArrayLike,
+    rpm: ArrayLike,
+) -> QueryResult:
     """
-    Parses prop names like:
-        x14x10E
-        14x10
-        14.5x10
+    Evaluate an interpolator with scalar or array inputs.
 
-    Returns:
-        diameter_in, pitch_in
-    """
-
-    match = re.search(r"(\d+(?:\.\d+)?)\s*[xX]\s*(\d+(?:\.\d+)?)", key)
-
-    if match is None:
-        raise ValueError(f"Could not parse prop diameter/pitch from key: {key}")
-
-    diameter_in = float(match.group(1))
-    pitch_in = float(match.group(2))
-
-    return diameter_in, pitch_in
-
-
-def parse_rpm_key(key: str) -> float | None:
-    """
-    Extracts RPM from keys like:
-        RPM_10000
-        10000
-        rpm10000
+    Velocity and RPM inputs are broadcast to a common shape.
     """
 
-    match = re.search(r"(\d+(?:\.\d+)?)", key)
+    velocity_array, rpm_array = np.broadcast_arrays(
+        np.asarray(velocity_mph, dtype=np.float64),
+        np.asarray(rpm, dtype=np.float64),
+    )
 
-    if match is None:
-        return None
+    query_points = np.column_stack(
+        (
+            velocity_array.reshape(-1),
+            rpm_array.reshape(-1),
+        )
+    )
 
-    return float(match.group(1))
+    result = np.asarray(
+        interpolator(query_points),
+        dtype=np.float64,
+    ).reshape(velocity_array.shape)
+
+    if result.ndim == 0:
+        return float(result)
+
+    return result
 
 
-def as_1d_float_array(values) -> np.ndarray:
+@dataclass(frozen=True, slots=True)
+class CatalogPropSurface:
     """
-    Converts JSON list data to a 1D NumPy float array.
+    MATLAB-style velocity/RPM surfaces for one catalog propeller.
+
+    The inputs are:
+        velocity_mph
+        rpm
+
+    The outputs are:
+        thrust_n
+        torque_nm
     """
 
-    return np.asarray(values, dtype=float).reshape(-1)
+    key: str
+    diameter_in: float
+    pitch_in: float
 
+    points: FloatArray
+    thrust_values: FloatArray
+    torque_values: FloatArray
 
-def load_prop_data_points(json_path: str | Path):
-    """
-    Temporary/simple prop data loader.
+    extrapolator: LocalLinearExtrapolator
+    triangulation: Delaunay
+    thrust_interpolator: LinearNDInterpolator
+    torque_interpolator: LinearNDInterpolator
 
-    This does NOT build interpolation yet.
-    It only loads the raw prop data into arrays:
-        diameter, pitch, velocity, rpm, thrust, torque
-    """
+    def evaluate(
+        self,
+        velocity_mph: ArrayLike,
+        rpm: ArrayLike,
+    ) -> tuple[QueryResult, QueryResult]:
+        """
+        Return thrust and torque.
 
-    json_path = Path(json_path)
+        LinearNDInterpolator is used inside the convex hull.
+        Local linear extrapolation is used outside it.
+        """
 
-    if not json_path.exists():
-        raise FileNotFoundError(f"Could not find prop data file: {json_path}")
+        velocity_array, rpm_array = np.broadcast_arrays(
+            np.asarray(
+                velocity_mph,
+                dtype=np.float64,
+            ),
+            np.asarray(
+                rpm,
+                dtype=np.float64,
+            ),
+        )
 
-    with json_path.open("r", encoding="utf-8") as file:
-        raw_data = json.load(file)
+        output_shape = velocity_array.shape
 
-    diameter_list = []
-    pitch_list = []
-    velocity_list = []
-    rpm_list = []
-    thrust_list = []
-    torque_list = []
+        query_points = np.column_stack(
+            (
+                velocity_array.reshape(-1),
+                rpm_array.reshape(-1),
+            )
+        )
 
-    for prop_key, prop_entry in raw_data.items():
-        try:
-            diameter_in, pitch_in = parse_prop_key(prop_key)
-        except ValueError:
-            continue
+        thrust = np.asarray(
+            self.thrust_interpolator(query_points),
+            dtype=np.float64,
+        ).reshape(-1)
 
-        if not isinstance(prop_entry, dict):
-            continue
+        torque = np.asarray(
+            self.torque_interpolator(query_points),
+            dtype=np.float64,
+        ).reshape(-1)
 
-        for rpm_key, rpm_entry in prop_entry.items():
-            rpm = parse_rpm_key(rpm_key)
+        outside_mask = np.isnan(thrust) | np.isnan(torque)
 
-            if rpm is None:
-                continue
-
-            if not isinstance(rpm_entry, dict):
-                continue
-
-            if "V" not in rpm_entry:
-                continue
-
-            if "Thrust_2" not in rpm_entry:
-                continue
-
-            if "Torque_2" not in rpm_entry:
-                continue
-
-            velocity = as_1d_float_array(rpm_entry["V"])
-            thrust = as_1d_float_array(rpm_entry["Thrust_2"])
-            torque = as_1d_float_array(rpm_entry["Torque_2"])
-
-            n = min(len(velocity), len(thrust), len(torque))
-
-            velocity = velocity[:n]
-            thrust = thrust[:n]
-            torque = torque[:n]
-
-            valid = (
-                np.isfinite(velocity)
-                & np.isfinite(thrust)
-                & np.isfinite(torque)
+        if np.any(outside_mask):
+            extrapolated_thrust, extrapolated_torque = (
+                self.extrapolator.evaluate(
+                    query_points[outside_mask]
+                )
             )
 
-            for v, t, q in zip(velocity[valid], thrust[valid], torque[valid]):
-                diameter_list.append(diameter_in)
-                pitch_list.append(pitch_in)
-                velocity_list.append(v)
-                rpm_list.append(rpm)
-                thrust_list.append(t)
-                torque_list.append(q)
+            thrust[outside_mask] = extrapolated_thrust
+            torque[outside_mask] = extrapolated_torque
 
-    return {
-        "diameter_in": np.array(diameter_list),
-        "pitch_in": np.array(pitch_list),
-        "velocity_mph": np.array(velocity_list),
-        "rpm": np.array(rpm_list),
-        "thrust_n": np.array(thrust_list),
-        "torque_nm": np.array(torque_list),
-    }
+        thrust = thrust.reshape(output_shape)
+        torque = torque.reshape(output_shape)
 
-'''INTERPOLATION FOR DIAMETER, PITCH, ASPD, RPM'''
+        if thrust.ndim == 0:
+            return float(thrust), float(torque)
 
-def deduplicate_prop_points(points: np.ndarray, thrust_n: np.ndarray, torque_nm: np.ndarray):
+        return thrust, torque
+
+
+    def thrust(
+        self,
+        velocity_mph: ArrayLike,
+        rpm: ArrayLike,
+    ) -> QueryResult:
+        """Return thrust in newtons."""
+
+        thrust, _ = self.evaluate(
+            velocity_mph,
+            rpm,
+        )
+
+        return thrust
+
+
+    def torque(
+        self,
+        velocity_mph: ArrayLike,
+        rpm: ArrayLike,
+    ) -> QueryResult:
+        """Return torque in newton-metres."""
+
+        _, torque = self.evaluate(
+            velocity_mph,
+            rpm,
+        )
+
+        return torque
+
+    def contains(
+        self,
+        velocity_mph: ArrayLike,
+        rpm: ArrayLike,
+    ) -> bool | NDArray[np.bool_]:
+        """
+        Return whether query points are inside the data convex hull.
+
+        No extrapolation is performed here.
+        """
+
+        velocity_array, rpm_array = np.broadcast_arrays(
+            np.asarray(velocity_mph, dtype=np.float64),
+            np.asarray(rpm, dtype=np.float64),
+        )
+
+        query_points = np.column_stack(
+            (
+                velocity_array.reshape(-1),
+                rpm_array.reshape(-1),
+            )
+        )
+
+        inside = (
+            self.triangulation.find_simplex(query_points) >= 0
+        ).reshape(velocity_array.shape)
+
+        if inside.ndim == 0:
+            return bool(inside)
+
+        return inside
+
+
+def build_catalog_surface(
+    propeller: PropellerData,
+) -> CatalogPropSurface:
     """
-    Removes duplicate interpolation points by averaging their thrust/torque values.
-    This helps scipy avoid errors from repeated points.
-    """
+    Build thrust and torque surfaces for one catalog propeller.
 
-    unique_points, inverse = np.unique(points, axis=0, return_inverse=True)
-    counts = np.bincount(inverse)
-
-    thrust_sum = np.bincount(inverse, weights=thrust_n)
-    torque_sum = np.bincount(inverse, weights=torque_nm)
-
-    thrust_avg = thrust_sum / counts
-    torque_avg = torque_sum / counts
-
-    return unique_points, thrust_avg, torque_avg
-
-
-class ContinuousPropDatabase:
-    """
-    Continuous propeller database.
-
-    This lets us ask:
-
-        thrust = f(diameter, pitch, velocity, rpm)
-        torque = f(diameter, pitch, velocity, rpm)
-
-    where:
-        diameter is in inches
-        pitch is in inches
-        velocity is in mph
-        rpm is in RPM
-    """
-
-    def __init__(self, data: dict):
-        points = np.column_stack(
-            [
-                data["diameter_in"],
-                data["pitch_in"],
-                data["velocity_mph"],
-                data["rpm"],
-            ]
-        )
-
-        thrust_n = np.asarray(data["thrust_n"], dtype=float)
-        torque_nm = np.asarray(data["torque_nm"], dtype=float)
-
-        valid = (
-            np.all(np.isfinite(points), axis=1)
-            & np.isfinite(thrust_n)
-            & np.isfinite(torque_nm)
-        )
-
-        points = points[valid]
-        thrust_n = thrust_n[valid]
-        torque_nm = torque_nm[valid]
-
-        if len(points) == 0:
-            raise ValueError("No valid prop data points found.")
-
-        points, thrust_n, torque_nm = deduplicate_prop_points(
-            points=points,
-            thrust_n=thrust_n,
-            torque_nm=torque_nm,
-        )
-
-        self.points = points
-        self.thrust_n = thrust_n
-        self.torque_nm = torque_nm
-
-        self.diameter_bounds_in = (float(points[:, 0].min()), float(points[:, 0].max()))
-        self.pitch_bounds_in = (float(points[:, 1].min()), float(points[:, 1].max()))
-        self.velocity_bounds_mph = (float(points[:, 2].min()), float(points[:, 2].max()))
-        self.rpm_bounds = (float(points[:, 3].min()), float(points[:, 3].max()))
-
-        print("Building thrust interpolator...")
-        self.thrust_linear = LinearNDInterpolator(
-            points,
-            thrust_n,
-            fill_value=np.nan,
-            rescale=True,
-        )
-
-        print("Building torque interpolator...")
-        self.torque_linear = LinearNDInterpolator(
-            points,
-            torque_nm,
-            fill_value=np.nan,
-            rescale=True,
-        )
-
-        print("Building nearest-neighbor fallback...")
-        self.thrust_nearest = NearestNDInterpolator(
-            points,
-            thrust_n,
-            rescale=True,
-        )
-
-        self.torque_nearest = NearestNDInterpolator(
-            points,
-            torque_nm,
-            rescale=True,
-        )
-
-        print("Prop interpolators built.")
-
-    def thrust(self, diameter_in: float, pitch_in: float, velocity_mph: float, rpm: float) -> float:
-        query = np.array([[diameter_in, pitch_in, velocity_mph, rpm]], dtype=float)
-
-        value = self.thrust_linear(query)[0]
-
-        if np.isnan(value):
-            value = self.thrust_nearest(query)[0]
-
-        return float(value)
-
-    def torque(self, diameter_in: float, pitch_in: float, velocity_mph: float, rpm: float) -> float:
-        query = np.array([[diameter_in, pitch_in, velocity_mph, rpm]], dtype=float)
-
-        value = self.torque_linear(query)[0]
-
-        if np.isnan(value):
-            value = self.torque_nearest(query)[0]
-
-        return float(value)
-
-
-def load_continuous_prop_database(json_path=DEFAULT_PROP_DATA_PATH) -> ContinuousPropDatabase:
-    """
-    Loads prop_data.json and builds the continuous interpolation database.
+    No diameter/pitch interpolation occurs in this function.
     """
 
-    data = load_prop_data_points(json_path)
-    return ContinuousPropDatabase(data)
+    velocity_parts: list[FloatArray] = []
+    rpm_parts: list[FloatArray] = []
+    thrust_parts: list[FloatArray] = []
+    torque_parts: list[FloatArray] = []
+
+    for rpm_table in propeller.rpm_data:
+        point_count = rpm_table.sample_count
+
+        velocity_parts.append(
+            np.asarray(
+                rpm_table.velocity_mph,
+                dtype=np.float64,
+            )
+        )
+
+        rpm_parts.append(
+            np.full(
+                point_count,
+                rpm_table.rpm,
+                dtype=np.float64,
+            )
+        )
+
+        thrust_parts.append(
+            np.asarray(
+                rpm_table.thrust_n,
+                dtype=np.float64,
+            )
+        )
+
+        torque_parts.append(
+            np.asarray(
+                rpm_table.torque_nm,
+                dtype=np.float64,
+            )
+        )
+
+    velocity_mph = np.concatenate(velocity_parts)
+    rpm = np.concatenate(rpm_parts)
+    thrust_n = np.concatenate(thrust_parts)
+    torque_nm = np.concatenate(torque_parts)
+
+    points = np.column_stack((velocity_mph, rpm))
+
+    unique_point_count = len(
+        np.unique(points, axis=0)
+    )
+
+    if unique_point_count != len(points):
+        duplicate_count = len(points) - unique_point_count
+
+        raise ValueError(
+            f'Propeller "{propeller.key}" contains '
+            f"{duplicate_count} duplicate velocity/RPM points."
+        )
+
+    try:
+        triangulation = Delaunay(points)
+    except QhullError as error:
+        raise ValueError(
+            f'Could not triangulate propeller "{propeller.key}".'
+        ) from error
+
+    thrust_interpolator = LinearNDInterpolator(
+        triangulation,
+        thrust_n,
+        fill_value=np.nan,
+    )
+
+    torque_interpolator = LinearNDInterpolator(
+        triangulation,
+        torque_nm,
+        fill_value=np.nan,
+    )
+
+    extrapolator = LocalLinearExtrapolator.build(
+        points=points,
+        thrust_values=thrust_n,
+        torque_values=torque_nm,
+    )
+
+    points.setflags(write=False)
+    thrust_n.setflags(write=False)
+    torque_nm.setflags(write=False)
+
+    return CatalogPropSurface(
+        key=propeller.key,
+        diameter_in=propeller.diameter_in,
+        pitch_in=propeller.pitch_in,
+        points=points,
+        thrust_values=thrust_n,
+        torque_values=torque_nm,
+        extrapolator=extrapolator,
+        triangulation=triangulation,
+        thrust_interpolator=thrust_interpolator,
+        torque_interpolator=torque_interpolator,
+    )
 
 
+class CatalogPropDatabase:
+    """
+    Collection of MATLAB-style surfaces for catalog propellers.
+
+    This is the foundation of the later continuous 4D database.
+    """
+
+    def __init__(
+        self,
+        surfaces: tuple[CatalogPropSurface, ...],
+    ) -> None:
+        if not surfaces:
+            raise ValueError(
+                "Catalog prop database cannot be empty."
+            )
+
+        self.surfaces = surfaces
+
+        self._by_key = {
+            surface.key: surface
+            for surface in surfaces
+        }
+
+        self._by_geometry = {
+            (
+                surface.diameter_in,
+                surface.pitch_in,
+            ): surface
+            for surface in surfaces
+        }
+
+        if len(self._by_key) != len(surfaces):
+            raise ValueError(
+                "Catalog database contains duplicate propeller keys."
+            )
+
+        if len(self._by_geometry) != len(surfaces):
+            raise ValueError(
+                "Catalog database contains duplicate geometries."
+            )
+
+    def get_by_key(
+        self,
+        propeller_key: str,
+    ) -> CatalogPropSurface:
+        """Return one surface using its JSON key."""
+
+        try:
+            return self._by_key[propeller_key]
+        except KeyError as error:
+            raise KeyError(
+                f'Unknown propeller key: "{propeller_key}"'
+            ) from error
+
+    def get_by_geometry(
+        self,
+        diameter_in: float,
+        pitch_in: float,
+    ) -> CatalogPropSurface:
+        """
+        Return an exact catalog geometry.
+
+        This function does not snap nearby geometries to catalog props.
+        """
+
+        geometry = (
+            float(diameter_in),
+            float(pitch_in),
+        )
+
+        try:
+            return self._by_geometry[geometry]
+        except KeyError as error:
+            raise KeyError(
+                f"No exact catalog propeller exists at "
+                f"{diameter_in:g}x{pitch_in:g}."
+            ) from error
+
+    @property
+    def propeller_count(self) -> int:
+        return len(self.surfaces)
+
+
+def build_catalog_database(
+    propellers: tuple[PropellerData, ...],
+) -> CatalogPropDatabase:
+    """Build catalog surfaces for all loaded propellers."""
+
+    surfaces = tuple(
+        build_catalog_surface(propeller)
+        for propeller in propellers
+    )
+
+    return CatalogPropDatabase(surfaces)
+
+
+def load_catalog_prop_database(
+    json_path: str | Path = DEFAULT_PROP_DATA_PATH,
+) -> CatalogPropDatabase:
+    """Load the JSON and build all catalog propeller surfaces."""
+
+    propellers = load_prop_data(json_path)
+    return build_catalog_database(propellers)
 
 
 @lru_cache(maxsize=1)
-def load_default_prop_database() -> ContinuousPropDatabase:
+def load_default_catalog_prop_database(
+) -> CatalogPropDatabase:
     """
-    Load the prebuilt prop interpolator from .pkl if available.
-    If not available/outdated, rebuild from JSON and save a new .pkl.
+    Load and cache the default catalog database.
+
+    The cache lasts only for the current Python process.
     """
-    json_path = DEFAULT_PROP_DATA_PATH
-    cache_path = DEFAULT_PROP_PICKLE_PATH
 
-    if cache_path.exists():
-        with cache_path.open("rb") as file:
-            payload = pickle.load(file)
+    return load_catalog_prop_database(
+        DEFAULT_PROP_DATA_PATH
+    )
 
-        if (
-            isinstance(payload, dict)
-            and payload.get("version") == PROP_CACHE_VERSION
-            and "prop_database" in payload
-        ):
-            return payload["prop_database"]
-
-    prop_database = load_continuous_prop_database(json_path)
-
-    payload = {
-        "version": PROP_CACHE_VERSION,
-        "prop_database": prop_database,
-    }
-
-    with cache_path.open("wb") as file:
-        pickle.dump(payload, file, protocol=pickle.HIGHEST_PROTOCOL)
-
-    return prop_database
-
-# @lru_cache(maxsize=1)
-# def load_default_prop_database() -> ContinuousPropDatabase:
-#     import time
-
-#     json_path = DEFAULT_PROP_DATA_PATH
-#     cache_path = DEFAULT_PROP_PICKLE_PATH
-
-#     print("load_default_prop_database() called")
-
-#     if cache_path.exists():
-#         print(f"Found cache file: {cache_path}")
-#         print(f"Cache file size: {cache_path.stat().st_size / 1_000_000:.2f} MB")
-
-#         start = time.perf_counter()
-
-#         try:
-#             with cache_path.open("rb") as file:
-#                 payload = pickle.load(file)
-
-#             print(f"pickle.load() took {time.perf_counter() - start:.2f} seconds")
-
-#             if (
-#                 isinstance(payload, dict)
-#                 and payload.get("version") == PROP_CACHE_VERSION
-#                 and "prop_database" in payload
-#             ):
-#                 print("Using prop database from .pkl cache")
-#                 return payload["prop_database"]
-
-#             print("Cache exists but is invalid/outdated. Rebuilding...")
-
-#         except Exception as error:
-#             print(f"Could not load cache. Rebuilding. Reason: {error}")
-
-#     start = time.perf_counter()
-#     print("Building prop database from JSON...")
-#     prop_database = load_continuous_prop_database(json_path)
-#     print(f"Building prop database took {time.perf_counter() - start:.2f} seconds")
-
-#     start = time.perf_counter()
-#     print("Saving prop database to .pkl...")
-#     payload = {
-#         "version": PROP_CACHE_VERSION,
-#         "prop_database": prop_database,
-#     }
-
-#     with cache_path.open("wb") as file:
-#         pickle.dump(payload, file, protocol=pickle.HIGHEST_PROTOCOL)
-
-#     print(f"Saving .pkl took {time.perf_counter() - start:.2f} seconds")
-
-#     return prop_database

@@ -1,173 +1,47 @@
-# and here I am, catching you slacking, looking at the codebase for the first time...
 from __future__ import annotations
-import math
-import numpy as np
 
-from src.vectors import DesignVector, ParameterVector
+import numpy as np
+from numpy.typing import ArrayLike
+
+from src.vectors import (
+    DesignVector,
+    ParameterVector,
+)
 from src.prop.prop_classes import (
-    Battery,
-    Motor,
-    MotorCheckResult,
-    PropInterpolants,
-    PropulsionCurveFit,
-    MPS_TO_MPH,
     DEFAULT_VELOCITIES_MPS,
 )
-
-from src.prop.prop_database import (
+from src.prop.continuous_prop_database import (
     ContinuousPropDatabase,
-    load_default_prop_database,
+    load_default_continuous_prop_database,
+)
+from src.prop.prop_cruise_values import (
+    solve_cruise_samples,
+)
+from src.prop.prop_helper_functions import (
+    _get_value,
+    make_battery_from_design,
+    make_motor_from_design,
 )
 
-from src.prop.prop_helper_functions import battery_resistance, motor_properties, motor_check, _get_value, make_motor_from_design, make_battery_from_design
+
+CurveFit = tuple[float, float, float]
 
 
+def _curve_fit_tuple(
+    coefficients: np.ndarray,
+) -> CurveFit:
+    """Convert NumPy coefficients into three plain floats."""
 
-
-'''Cruise Values'''
-
-def cruise_values(
-    diameter_in: float,
-    pitch_in: float,
-    velocity_mph: float,
-    motor: Motor,
-    battery: Battery,
-    max_current_a: float,
-    cruise_throttle: float,
-    prop_database: ContinuousPropDatabase,
-    min_rpm: int = 3000,
-    max_rpm: int = 16000,
-    rpm_step: int = 100,
-    knockdown: bool = False,
-    knockdown_factor: float = 0.9,
-) -> tuple[float, float, bool]:
-    """
-    Finds the highest valid thrust at a given airspeed and throttle limit.
-
-    Inputs:
-        diameter_in:
-            Propeller diameter [in]
-
-        pitch_in:
-            Propeller pitch [in]
-
-        velocity_mph:
-            Aircraft forward speed [mph]
-
-        motor:
-            Motor object
-
-        battery:
-            Battery object
-
-        max_current_a:
-            Current limit [A]
-
-        cruise_throttle:
-            Maximum allowed throttle for this condition.
-            Use 1.0 for max-throttle thrust.
-            Use something like 0.7 or 0.9 for cruise-throttle thrust.
-
-        prop_database:
-            ContinuousPropDatabase object with thrust/torque interpolation.
-
-    Returns:
-        best_thrust_n:
-            Highest valid thrust found [N]
-
-        best_flight_time_s:
-            Estimated flight time at that operating point [s]
-        total_fail:
-            True if no valid thrust was found, False otherwise.
-    """
-
-    total_fail = False
-
-    failed_velocity = 0.0
-
-
-    if diameter_in <= 0:
-        raise ValueError("Propeller diameter must be positive.")
-
-    if pitch_in <= 0:
-        raise ValueError("Propeller pitch must be positive.")
-
-    if velocity_mph < 0:
-        raise ValueError("Velocity cannot be negative.")
-
-    if max_current_a <= 0:
-        raise ValueError("Max current must be positive.")
-
-    if cruise_throttle <= 0:
-        raise ValueError("Cruise throttle must be positive.")
-
-    # Do not allow throttle limit above 1.
-    cruise_throttle = min(float(cruise_throttle), 1.0)
-
-    best_thrust_n = -math.inf
-    best_flight_time_s = math.inf
-
-    rpm_low = int(min_rpm)
-    rpm_high = int(max_rpm)
-
-    while (rpm_high - rpm_low) >= rpm_step:
-        rpm_mid = int(round((rpm_low + rpm_high) / 2))
-
-        thrust_n = prop_database.thrust(
-            diameter_in=diameter_in,
-            pitch_in=pitch_in,
-            velocity_mph=velocity_mph,
-            rpm=rpm_mid,
+    if coefficients.shape != (3,):
+        raise ValueError(
+            "Quadratic fit must contain three coefficients."
         )
 
-        torque_nm = prop_database.torque(
-            diameter_in=diameter_in,
-            pitch_in=pitch_in,
-            velocity_mph=velocity_mph,
-            rpm=rpm_mid,
-        )
-
-        if not math.isfinite(thrust_n) or not math.isfinite(torque_nm):
-            rpm_low = rpm_mid + 1
-            continue
-
-        check = motor_check(
-            torque=torque_nm,
-            rpm=rpm_mid,
-            motor=motor,
-            battery=battery,
-        )
-
-        within_limits = (
-            check.passed
-            and check.throttle <= cruise_throttle
-            and check.power_w <= motor.max_power
-            and check.current_a <= max_current_a
-        )
-
-        if within_limits:
-            if thrust_n > best_thrust_n:
-                best_thrust_n = thrust_n
-                best_flight_time_s = check.flight_time_s
-
-            # This RPM works, so try a higher RPM.
-            rpm_low = rpm_mid + 1
-
-        else:
-            # This RPM does not work, so try a lower RPM.
-            rpm_high = rpm_mid - 1
-
-    if best_thrust_n == -math.inf:
-        total_fail = True
-        failed_velocity = velocity_mph
-        return 0.0, 0.0, total_fail, failed_velocity
-    if knockdown == True:
-        best_thrust_n = best_thrust_n*knockdown_factor
-    return float(best_thrust_n), float(best_flight_time_s), total_fail, failed_velocity
-
-'''PROP MAIN BLOCK'''
-
-
+    return (
+        float(coefficients[0]),
+        float(coefficients[1]),
+        float(coefficients[2]),
+    )
 
 
 def prop_main(
@@ -175,39 +49,94 @@ def prop_main(
     parameter_vector: ParameterVector,
     mission: int,
     prop_database: ContinuousPropDatabase | None = None,
-    velocities_mps: np.ndarray | None = None,
+    velocities_mps: ArrayLike | None = None,
     disp_res: bool = False,
     knockdown: bool = False,
     knockdown_factor: float = 0.9,
-) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+) -> tuple[CurveFit, CurveFit]:
     """
-    Main propulsion model.
+    Return the throttled thrust and flight-time quadratic fits.
 
-    Continuous diameter/pitch replacement for old MATLAB propMainInterp.m.
+    Each fit has the form:
+
+        (a, b, c)
+
+    where:
+
+        output(V) = a*V**2 + b*V + c
+
+    Velocity V is measured in m/s.
     """
 
     if mission not in (1, 2, 3):
-        raise ValueError("mission must be 1, 2, or 3.")
+        raise ValueError(
+            "mission must be 1, 2, or 3."
+        )
 
     if prop_database is None:
-        prop_database = load_default_prop_database()
+        prop_database = (
+            load_default_continuous_prop_database()
+        )
 
     if velocities_mps is None:
-        velocities_mps = DEFAULT_VELOCITIES_MPS.copy()
+        fit_velocities_mps = (
+            DEFAULT_VELOCITIES_MPS.copy()
+        )
     else:
-        velocities_mps = np.asarray(velocities_mps, dtype=float).reshape(-1)
+        fit_velocities_mps = np.asarray(
+            velocities_mps,
+            dtype=np.float64,
+        ).reshape(-1)
 
-    if len(velocities_mps) < 3:
-        raise ValueError("Need at least 3 velocity samples for quadratic polyfit.")
+    if fit_velocities_mps.size < 3:
+        raise ValueError(
+            "At least three velocity samples are required "
+            "for a quadratic fit."
+        )
 
-    diameter_in = float(_get_value(design_vector, "prop_diameter_in", 14.0))
-    pitch_in = float(_get_value(design_vector, "prop_pitch_in", 10.0))
+    if not np.all(
+        np.isfinite(fit_velocities_mps)
+    ):
+        raise ValueError(
+            "Fit velocities must all be finite."
+        )
+
+    if np.any(fit_velocities_mps < 0.0):
+        raise ValueError(
+            "Fit velocities cannot be negative."
+        )
+
+    diameter_in = float(
+        _get_value(
+            design_vector,
+            "prop_diameter_in",
+            14.0,
+        )
+    )
+
+    pitch_in = float(
+        _get_value(
+            design_vector,
+            "prop_pitch_in",
+            10.0,
+        )
+    )
 
     if mission in (1, 2):
-        cruise_throttle = float(_get_value(design_vector, "cruise_throttle", 0.90))
+        cruise_throttle = float(
+            _get_value(
+                design_vector,
+                "cruise_throttle",
+                0.90,
+            )
+        )
     else:
         cruise_throttle = float(
-            _get_value(design_vector, "mission3_cruise_throttle", 0.85)
+            _get_value(
+                design_vector,
+                "mission3_cruise_throttle",
+                0.85,
+            )
         )
 
     motor = make_motor_from_design(
@@ -220,203 +149,117 @@ def prop_main(
         parameter_vector=parameter_vector,
     )
 
-    max_thrust_samples = np.zeros_like(velocities_mps, dtype=float)
-    throttled_thrust_samples = np.zeros_like(velocities_mps, dtype=float)
-    max_time_samples = np.zeros_like(velocities_mps, dtype=float)
-    throttled_time_samples = np.zeros_like(velocities_mps, dtype=float)
-
-    failure = False
-
-    highest_failed_velocity = 0.0
-
-    for i, velocity_mps in enumerate(velocities_mps):
-        velocity_mph = float(velocity_mps * MPS_TO_MPH)
-
-        max_thrust, max_time, true_fail, filler = cruise_values(
-            diameter_in=diameter_in,
-            pitch_in=pitch_in,
-            velocity_mph=velocity_mph,
-            motor=motor,
-            battery=battery,
-            max_current_a=motor.max_current,
-            cruise_throttle=1.0,
-            prop_database=prop_database,
-            knockdown=knockdown,
-        )
-
-        throttled_thrust, throttled_time, _, failed_velocity = cruise_values(
-            diameter_in=diameter_in,
-            pitch_in=pitch_in,
-            velocity_mph=velocity_mph,
-            motor=motor,
-            battery=battery,
-            max_current_a=motor.max_current,
-            cruise_throttle=cruise_throttle,
-            prop_database=prop_database,
-            knockdown=knockdown,
-        )
-        if true_fail:
-            failure = True
-        if failed_velocity > highest_failed_velocity:
-            highest_failed_velocity = failed_velocity
-
-        # Match old MATLAB behavior:
-        # once thrust becomes zero at a lower speed, keep later speeds at zero.
-        if i > 0 and max_thrust_samples[i - 1] == 0.0:
-            max_thrust_samples[i] = 0.0
-            max_time_samples[i] = 0.0
-        else:
-            max_thrust_samples[i] = max_thrust
-            max_time_samples[i] = max_time
-
-        if i > 0 and throttled_thrust_samples[i - 1] == 0.0:
-            throttled_thrust_samples[i] = 0.0
-            throttled_time_samples[i] = 0.0
-        else:
-            throttled_thrust_samples[i] = throttled_thrust
-            throttled_time_samples[i] = throttled_time
-
-    penalty = highest_failed_velocity
-
-    max_time_samples = np.nan_to_num(
-        max_time_samples,
-        nan=0.0,
-        posinf=0.0,
-        neginf=0.0,
+    result = solve_cruise_samples(
+        diameter_in=diameter_in,
+        pitch_in=pitch_in,
+        velocities_mps=fit_velocities_mps,
+        motor=motor,
+        battery=battery,
+        max_current_a=motor.max_current,
+        cruise_throttle=cruise_throttle,
+        prop_database=prop_database,
+        min_rpm=3000,
+        max_rpm=16000,
+        rpm_step=100,
+        knockdown=knockdown,
+        knockdown_factor=knockdown_factor,
     )
 
-    throttled_time_samples = np.nan_to_num(
-        throttled_time_samples,
-        nan=0.0,
-        posinf=0.0,
-        neginf=0.0,
+    thrust_samples_n = (
+        result.thrust_samples_n.copy()
     )
 
-    max_thrust_fit = np.polyfit(velocities_mps, max_thrust_samples, 2)
-    throttled_thrust_fit = np.polyfit(velocities_mps, throttled_thrust_samples, 2)
+    flight_time_samples_s = (
+        result.flight_time_samples_s.copy()
+    )
 
-    max_time_fit = np.polyfit(velocities_mps, max_time_samples, 2)
-    throttled_time_fit = np.polyfit(velocities_mps, throttled_time_samples, 2)
 
-    # result = PropulsionCurveFit(
-    #     throttled_thrust=throttled_thrust_fit,
-    #     max_thrust=max_thrust_fit,
-    #     throttled_time=throttled_time_fit,
-    #     max_time=max_time_fit,
-    #     sample_velocities_mps=velocities_mps,
-    #     throttled_thrust_samples=throttled_thrust_samples,
-    #     max_thrust_samples=max_thrust_samples,
-    #     throttled_time_samples=throttled_time_samples,
-    #     max_time_samples=max_time_samples,
-    # )
+    # ---------------------------------------------------------
+    # OPTIONAL OLD MATLAB BEHAVIOR
+    # ---------------------------------------------------------
+    # Uncomment this block if the team later decides that once
+    # one velocity has zero thrust, every later velocity should
+    # also be forced to zero.
+    #
+    # for index in range(
+    #     1,
+    #     len(thrust_samples_n),
+    # ):
+    #     if thrust_samples_n[index - 1] == 0.0:
+    #         thrust_samples_n[index] = 0.0
+    #         flight_time_samples_s[index] = 0.0
+    # ---------------------------------------------------------
 
-    # if disp_res:
-    #     plot_propulsion_result(result)
+    # Reject the entire propulsion curve if no valid RPM exists
+    # at any one of the required velocity points.
+    curve_failed = np.any(result.failed_mask)
+
+    if curve_failed:
+        # Zero the displayed/stored sample values.
+        thrust_samples_n.fill(0.0)
+        flight_time_samples_s.fill(0.0)
+
+        # Return exact zero polynomial coefficients.
+        thrust_fit = np.zeros(
+            3,
+            dtype=np.float64,
+        )
+
+        flight_time_fit = np.zeros(
+            3,
+            dtype=np.float64,
+        )
+
+    else:
+        thrust_fit = np.polyfit(
+            fit_velocities_mps,
+            thrust_samples_n,
+            2,
+        )
+
+        flight_time_fit = np.polyfit(
+            fit_velocities_mps,
+            flight_time_samples_s,
+            2,
+        )
+
+    if disp_res:
+        print()
+        print(
+            f"Propeller: "
+            f"{diameter_in:g}x{pitch_in:g}"
+        )
+
+        print(
+            f"Cruise throttle: "
+            f"{cruise_throttle:.3f}"
+        )
+
+        print()
+        print(
+            "Velocity [m/s] | RPM | Thrust [N] | "
+            "Current [A] | Throttle | Valid RPMs"
+        )
+
+        for index, velocity_mps in enumerate(
+            result.velocities_mps
+        ):
+            print(
+                f"{velocity_mps:14.4f} | "
+                f"{result.selected_rpm[index]:5.0f} | "
+                f"{thrust_samples_n[index]:10.4f} | "
+                f"{result.selected_current_a[index]:11.4f} | "
+                f"{result.selected_throttle[index]:8.4f} | "
+                f"{result.valid_rpm_count[index]:10d}"
+            )
+
+        print()
+        print(
+            f"Failed velocities: "
+            f"{np.count_nonzero(result.failed_mask)}"
+        )
 
     return (
-        (
-            float(throttled_thrust_fit[0]),
-            float(throttled_thrust_fit[1]),
-            float(throttled_thrust_fit[2]),
-        ),
-        (
-            float(max_thrust_fit[0]),
-            float(max_thrust_fit[1]),
-            float(max_thrust_fit[2]),
-        ),
-        # (
-        #     float(throttled_time_fit[0]),
-        #     float(throttled_time_fit[1]),
-        #     float(throttled_time_fit[2]),
-        # ),
-        # failure,
-        # penalty,
+        _curve_fit_tuple(thrust_fit),
+        _curve_fit_tuple(flight_time_fit),
     )
-
-# def prop_main_interp(
-#     design_vector: DesignVector,
-#     parameter_vector: ParameterVector = ParameterVector,
-#     mission: int = 1,
-#     prop_database: ContinuousPropDatabase | None = None,
-#     velocities_mps: np.ndarray | None = None,
-#     disp_res: bool = False,
-# ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-#     """
-#     MATLAB-style wrapper.
-
-#     Returns:
-#         p_throttled_thrust, p_max_thrust, p_throttled_t, p_max_t
-#     """
-
-#     result = prop_main(
-#         design_vector=design_vector,
-#         parameter_vector=parameter_vector,
-#         mission=mission,
-#         prop_database=prop_database,
-#         velocities_mps=velocities_mps,
-#         disp_res=disp_res,
-#     )
-
-#     return (
-#         result.throttled_thrust,
-#         result.max_thrust,
-#         result.throttled_time,
-#         result.max_time,
-#     )
-
-
-def evaluate_curve(coefficients: np.ndarray, velocity_mps):
-    """
-    Evaluates a polynomial curve fit.
-    """
-    return np.polyval(coefficients, velocity_mps)
-
-
-def plot_propulsion_result(result: PropulsionCurveFit) -> None:
-    """
-    Optional debug plotting helper.
-    """
-
-    import matplotlib.pyplot as plt
-
-    velocities = result.sample_velocities_mps
-
-    plt.figure()
-    plt.scatter(velocities, result.throttled_thrust_samples, label="Cruise samples")
-    plt.scatter(velocities, result.max_thrust_samples, label="Max samples")
-    plt.plot(
-        velocities,
-        evaluate_curve(result.throttled_thrust, velocities),
-        label="Cruise fit",
-    )
-    plt.plot(
-        velocities,
-        evaluate_curve(result.max_thrust, velocities),
-        label="Max fit",
-    )
-    plt.xlabel("Velocity [m/s]")
-    plt.ylabel("Thrust [N]")
-    plt.title("Propulsion thrust curve")
-    plt.grid(True)
-    plt.legend()
-
-    plt.figure()
-    plt.scatter(velocities, result.throttled_time_samples, label="Cruise samples")
-    plt.scatter(velocities, result.max_time_samples, label="Max samples")
-    plt.plot(
-        velocities,
-        evaluate_curve(result.throttled_time, velocities),
-        label="Cruise fit",
-    )
-    plt.plot(
-        velocities,
-        evaluate_curve(result.max_time, velocities),
-        label="Max fit",
-    )
-    plt.xlabel("Velocity [m/s]")
-    plt.ylabel("Flight time [s]")
-    plt.title("Propulsion flight-time curve")
-    plt.grid(True)
-    plt.legend()
-
-    plt.show()
