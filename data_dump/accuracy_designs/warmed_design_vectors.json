@@ -1,0 +1,1502 @@
+[
+  {
+    "wing_span": 1.2431041497441027,
+    "wing_chord": 0.2862423441092849,
+    "tail_arm": 0.6968978479190777,
+    "nose_length": 0.22925636492762438,
+    "ducks_num": 3,
+    "pucks_num": 2,
+    "banner_length": 2.306394026352029,
+    "batt_capacity": 3.932374013793655
+  },
+  {
+    "wing_span": 1.2052848260847253,
+    "wing_chord": 0.2694822734723346,
+    "tail_arm": 0.6227905510589336,
+    "nose_length": 0.2100710759437151,
+    "ducks_num": 6,
+    "pucks_num": 5,
+    "banner_length": 2.787046305070974,
+    "batt_capacity": 6.2337289144581165
+  },
+  {
+    "wing_span": 1.4896466086262328,
+    "wing_chord": 0.2604175022834375,
+    "tail_arm": 0.7947209778037677,
+    "nose_length": 0.2199159742072997,
+    "ducks_num": 7,
+    "pucks_num": 4,
+    "banner_length": 2.591687597701414,
+    "batt_capacity": 6.612483132549499
+  },
+  {
+    "wing_span": 1.1716500234802378,
+    "wing_chord": 0.2557795713244971,
+    "tail_arm": 0.6770721642628194,
+    "nose_length": 0.228089061941036,
+    "ducks_num": 6,
+    "pucks_num": 5,
+    "banner_length": 2.4195933950132518,
+    "batt_capacity": 7.321433664467671
+  },
+  {
+    "wing_span": 1.1822626573661257,
+    "wing_chord": 0.201171065198847,
+    "tail_arm": 0.5700432973974253,
+    "nose_length": 0.15603644019979246,
+    "ducks_num": 4,
+    "pucks_num": 2,
+    "banner_length": 2.5882943245604824,
+    "batt_capacity": 5.609626725035592
+  },
+  {
+    "wing_span": 1.2587337476325757,
+    "wing_chord": 0.2622974031731752,
+    "tail_arm": 0.6757647305218366,
+    "nose_length": 0.18485856990643224,
+    "ducks_num": 4,
+    "pucks_num": 4,
+    "banner_length": 2.4922529246193497,
+    "batt_capacity": 3.972023664727435
+  },
+  {
+    "wing_span": 1.5567166076808765,
+    "wing_chord": 0.33,
+    "tail_arm": 0.8013297726544608,
+    "nose_length": 0.270499748416528,
+    "ducks_num": 5,
+    "pucks_num": 2,
+    "banner_length": 2.6953177252211495,
+    "batt_capacity": 4.747120088327787
+  },
+  {
+    "wing_span": 1.4764572254019934,
+    "wing_chord": 0.2461370676113346,
+    "tail_arm": 0.6777910775043379,
+    "nose_length": 0.17356821385885052,
+    "ducks_num": 5,
+    "pucks_num": 5,
+    "banner_length": 2.7649320588565405,
+    "batt_capacity": 5.031297886474273
+  },
+  {
+    "wing_span": 1.5748936826549746,
+    "wing_chord": 0.27405659400584087,
+    "tail_arm": 0.6649376948490736,
+    "nose_length": 0.25132163319912754,
+    "ducks_num": 4,
+    "pucks_num": 2,
+    "banner_length": 2.2437546246962747,
+    "batt_capacity": 4.810792334805506
+  },
+  {
+    "wing_span": 1.4964666747484308,
+    "wing_chord": 0.2878276638001102,
+    "tail_arm": 0.7183392597492382,
+    "nose_length": 0.18822180361872623,
+    "ducks_num": 3,
+    "pucks_num": 5,
+    "banner_length": 3.1455575168935126,
+    "batt_capacity": 5.498019174981488
+  },
+  {
+    "wing_span": 1.2549813760448663,
+    "wing_chord": 0.2517852246184776,
+    "tail_arm": 0.7430038660112279,
+    "nose_length": 0.178478675922606,
+    "ducks_num": 7,
+    "pucks_num": 3,
+    "banner_length": 2.244077839232806,
+    "batt_capacity": 5.925045964251232
+  },
+  {
+    "wing_span": 1.146910147470893,
+    "wing_chord": 0.23010123624035128,
+    "tail_arm": 0.6396600203622284,
+    "nose_length": 0.18377056840560382,
+    "ducks_num": 4,
+    "pucks_num": 4,
+    "banner_length": 2.4192903528697363,
+    "batt_capacity": 4.75056204131679
+  },
+  {
+    "wing_span": 1.2239320976219958,
+    "wing_chord": 0.21639172319707012,
+    "tail_arm": 0.55,
+    "nose_length": 0.1901726100831398,
+    "ducks_num": 7,
+    "pucks_num": 3,
+    "banner_length": 2.5503972839501454,
+    "batt_capacity": 6.91906222549903
+  },
+  {
+    "wing_span": 1.190623780783774,
+    "wing_chord": 0.2761131871961538,
+    "tail_arm": 0.7865779011579083,
+    "nose_length": 0.20549237535014303,
+    "ducks_num": 3,
+    "pucks_num": 5,
+    "banner_length": 1.9526822075033183,
+    "batt_capacity": 4.063069071142308
+  },
+  {
+    "wing_span": 1.320360230423196,
+    "wing_chord": 0.23177171506131866,
+    "tail_arm": 0.6355512859665498,
+    "nose_length": 0.1613930357804569,
+    "ducks_num": 6,
+    "pucks_num": 4,
+    "banner_length": 2.4017595312650255,
+    "batt_capacity": 5.417164624571759
+  },
+  {
+    "wing_span": 1.2366099196353408,
+    "wing_chord": 0.22041188796083902,
+    "tail_arm": 0.55,
+    "nose_length": 0.15296492410904547,
+    "ducks_num": 7,
+    "pucks_num": 4,
+    "banner_length": 2.779730754406803,
+    "batt_capacity": 7.197183427354774
+  },
+  {
+    "wing_span": 1.346740035545774,
+    "wing_chord": 0.2522140081825644,
+    "tail_arm": 0.7413617516764704,
+    "nose_length": 0.20654756818968603,
+    "ducks_num": 5,
+    "pucks_num": 4,
+    "banner_length": 2.1997507193357997,
+    "batt_capacity": 5.880425518107761
+  },
+  {
+    "wing_span": 1.3675626819896418,
+    "wing_chord": 0.2408932684079991,
+    "tail_arm": 0.5961512404232289,
+    "nose_length": 0.22151492484138685,
+    "ducks_num": 5,
+    "pucks_num": 2,
+    "banner_length": 2.4077151812224282,
+    "batt_capacity": 5.223767478717779
+  },
+  {
+    "wing_span": 1.3266659303600843,
+    "wing_chord": 0.24497834688680967,
+    "tail_arm": 0.610660102153888,
+    "nose_length": 0.17341286394601058,
+    "ducks_num": 7,
+    "pucks_num": 1,
+    "banner_length": 2.3236968157550644,
+    "batt_capacity": 5.398019970358228
+  },
+  {
+    "wing_span": 1.1218325517848722,
+    "wing_chord": 0.2216508600939395,
+    "tail_arm": 0.6744365265746557,
+    "nose_length": 0.19482721858370367,
+    "ducks_num": 5,
+    "pucks_num": 4,
+    "banner_length": 2.4259770824370004,
+    "batt_capacity": 5.787878819776586
+  },
+  {
+    "wing_span": 1.3391707372711017,
+    "wing_chord": 0.27721144247793206,
+    "tail_arm": 0.6393758034207961,
+    "nose_length": 0.18448744620506585,
+    "ducks_num": 5,
+    "pucks_num": 3,
+    "banner_length": 2.2511568618286764,
+    "batt_capacity": 5.248341344904582
+  },
+  {
+    "wing_span": 1.2579561131933488,
+    "wing_chord": 0.2167585724765441,
+    "tail_arm": 0.5678437787955223,
+    "nose_length": 0.17866700596047871,
+    "ducks_num": 6,
+    "pucks_num": 1,
+    "banner_length": 2.4715375407350235,
+    "batt_capacity": 5.656074514386998
+  },
+  {
+    "wing_span": 1.5812654855013033,
+    "wing_chord": 0.2989100227060416,
+    "tail_arm": 0.7100246713883519,
+    "nose_length": 0.2121816512149277,
+    "ducks_num": 3,
+    "pucks_num": 5,
+    "banner_length": 2.284944017678304,
+    "batt_capacity": 4.99511876494414
+  },
+  {
+    "wing_span": 1.110409275682628,
+    "wing_chord": 0.22628613000261696,
+    "tail_arm": 0.5770757998820052,
+    "nose_length": 0.1978833167952325,
+    "ducks_num": 5,
+    "pucks_num": 5,
+    "banner_length": 2.739943975539818,
+    "batt_capacity": 5.559017083038491
+  },
+  {
+    "wing_span": 1.1704249861329228,
+    "wing_chord": 0.262134053487299,
+    "tail_arm": 0.7446279448372881,
+    "nose_length": 0.20282237498639957,
+    "ducks_num": 5,
+    "pucks_num": 4,
+    "banner_length": 2.093475352876681,
+    "batt_capacity": 5.284752556369269
+  },
+  {
+    "wing_span": 1.1255201547596358,
+    "wing_chord": 0.2,
+    "tail_arm": 0.55,
+    "nose_length": 0.17051365682622288,
+    "ducks_num": 5,
+    "pucks_num": 2,
+    "banner_length": 2.4695338717282693,
+    "batt_capacity": 4.637892047636678
+  },
+  {
+    "wing_span": 1.2441733740624263,
+    "wing_chord": 0.223055295259189,
+    "tail_arm": 0.55,
+    "nose_length": 0.17911411055532486,
+    "ducks_num": 5,
+    "pucks_num": 4,
+    "banner_length": 2.352997725370292,
+    "batt_capacity": 6.237132435651356
+  },
+  {
+    "wing_span": 1.1919473803418472,
+    "wing_chord": 0.2787715291530037,
+    "tail_arm": 0.7130579176255778,
+    "nose_length": 0.2255300888011694,
+    "ducks_num": 7,
+    "pucks_num": 1,
+    "banner_length": 2.6711429591381917,
+    "batt_capacity": 5.712156293754904
+  },
+  {
+    "wing_span": 1.1724321243550826,
+    "wing_chord": 0.25677871509705463,
+    "tail_arm": 0.7942589443969437,
+    "nose_length": 0.17318037936234104,
+    "ducks_num": 6,
+    "pucks_num": 5,
+    "banner_length": 2.236288262807174,
+    "batt_capacity": 5.927697955308984
+  },
+  {
+    "wing_span": 1.17098862970412,
+    "wing_chord": 0.22258601978323156,
+    "tail_arm": 0.6818133484727497,
+    "nose_length": 0.16627397070369632,
+    "ducks_num": 5,
+    "pucks_num": 5,
+    "banner_length": 1.9593362972817359,
+    "batt_capacity": 5.970646322883256
+  },
+  {
+    "wing_span": 1.1232713080869794,
+    "wing_chord": 0.2059851679993963,
+    "tail_arm": 0.55,
+    "nose_length": 0.1669957052489262,
+    "ducks_num": 6,
+    "pucks_num": 2,
+    "banner_length": 2.124192348782305,
+    "batt_capacity": 5.582350443985538
+  },
+  {
+    "wing_span": 1.2028199791286516,
+    "wing_chord": 0.23273832064236136,
+    "tail_arm": 0.6101865522335719,
+    "nose_length": 0.1519115586831775,
+    "ducks_num": 5,
+    "pucks_num": 5,
+    "banner_length": 2.091708590049706,
+    "batt_capacity": 7.028878941613494
+  },
+  {
+    "wing_span": 1.3623794310945527,
+    "wing_chord": 0.29815089446934173,
+    "tail_arm": 0.8165274538178667,
+    "nose_length": 0.24564769667137426,
+    "ducks_num": 3,
+    "pucks_num": 3,
+    "banner_length": 2.3424833160449072,
+    "batt_capacity": 4.165179034597346
+  },
+  {
+    "wing_span": 1.1521267626197371,
+    "wing_chord": 0.20847519151689287,
+    "tail_arm": 0.55,
+    "nose_length": 0.18384055218514184,
+    "ducks_num": 5,
+    "pucks_num": 4,
+    "banner_length": 2.2791077715520682,
+    "batt_capacity": 5.17605954448937
+  },
+  {
+    "wing_span": 1.3478519707278724,
+    "wing_chord": 0.27707890197766954,
+    "tail_arm": 0.6391768771594363,
+    "nose_length": 0.23995097071337862,
+    "ducks_num": 4,
+    "pucks_num": 1,
+    "banner_length": 2.5064360086342026,
+    "batt_capacity": 3.5
+  },
+  {
+    "wing_span": 1.167233761919008,
+    "wing_chord": 0.2388617411282917,
+    "tail_arm": 0.7259597459296905,
+    "nose_length": 0.17292882075146035,
+    "ducks_num": 7,
+    "pucks_num": 1,
+    "banner_length": 2.069889393249852,
+    "batt_capacity": 6.56572958089704
+  },
+  {
+    "wing_span": 1.3891757586308129,
+    "wing_chord": 0.2769833923867199,
+    "tail_arm": 0.6506765759849797,
+    "nose_length": 0.24232731056571397,
+    "ducks_num": 5,
+    "pucks_num": 5,
+    "banner_length": 2.3122436120727436,
+    "batt_capacity": 6.1618327524579195
+  },
+  {
+    "wing_span": 1.4008438938382992,
+    "wing_chord": 0.33,
+    "tail_arm": 0.8674378683605346,
+    "nose_length": 0.27712902520915,
+    "ducks_num": 6,
+    "pucks_num": 3,
+    "banner_length": 2.8955524154312995,
+    "batt_capacity": 5.788070211788751
+  },
+  {
+    "wing_span": 1.347436357824323,
+    "wing_chord": 0.28324223857239367,
+    "tail_arm": 0.6773917150451316,
+    "nose_length": 0.24828186478739475,
+    "ducks_num": 5,
+    "pucks_num": 4,
+    "banner_length": 2.3127955762942767,
+    "batt_capacity": 5.335241254551245
+  },
+  {
+    "wing_span": 1.5107315737399518,
+    "wing_chord": 0.26592814552941696,
+    "tail_arm": 0.8068595450479892,
+    "nose_length": 0.2047756157213416,
+    "ducks_num": 6,
+    "pucks_num": 1,
+    "banner_length": 2.9860769412992143,
+    "batt_capacity": 5.613279894027005
+  },
+  {
+    "wing_span": 1.1503208565854008,
+    "wing_chord": 0.21552706209431566,
+    "tail_arm": 0.55,
+    "nose_length": 0.17305721671405172,
+    "ducks_num": 6,
+    "pucks_num": 4,
+    "banner_length": 2.2812754743295987,
+    "batt_capacity": 5.469946233032805
+  },
+  {
+    "wing_span": 1.1272629824064238,
+    "wing_chord": 0.24233253250120176,
+    "tail_arm": 0.5931296844276281,
+    "nose_length": 0.1954467743550924,
+    "ducks_num": 6,
+    "pucks_num": 3,
+    "banner_length": 2.1570200898481575,
+    "batt_capacity": 5.218793070613262
+  },
+  {
+    "wing_span": 1.5574488472266543,
+    "wing_chord": 0.31737800132970106,
+    "tail_arm": 0.9,
+    "nose_length": 0.20637831814598362,
+    "ducks_num": 5,
+    "pucks_num": 5,
+    "banner_length": 3.2392784752388275,
+    "batt_capacity": 6.305988102504283
+  },
+  {
+    "wing_span": 1.4946197349360968,
+    "wing_chord": 0.2894050573656663,
+    "tail_arm": 0.7721871466153232,
+    "nose_length": 0.2512029162829408,
+    "ducks_num": 3,
+    "pucks_num": 4,
+    "banner_length": 2.1807667422112855,
+    "batt_capacity": 3.967281082743499
+  },
+  {
+    "wing_span": 1.1814399233948898,
+    "wing_chord": 0.25576714544494494,
+    "tail_arm": 0.7926930927413662,
+    "nose_length": 0.20334320769940586,
+    "ducks_num": 7,
+    "pucks_num": 5,
+    "banner_length": 2.6750987562070936,
+    "batt_capacity": 6.849358762386091
+  },
+  {
+    "wing_span": 1.2353892226538752,
+    "wing_chord": 0.23815989212132696,
+    "tail_arm": 0.692247084997453,
+    "nose_length": 0.22077630381819308,
+    "ducks_num": 3,
+    "pucks_num": 5,
+    "banner_length": 2.1533522150905964,
+    "batt_capacity": 5.484780116046078
+  },
+  {
+    "wing_span": 1.2179819841134272,
+    "wing_chord": 0.21834786647494145,
+    "tail_arm": 0.55,
+    "nose_length": 0.1557156911486031,
+    "ducks_num": 4,
+    "pucks_num": 3,
+    "banner_length": 2.705098371570118,
+    "batt_capacity": 4.063193710278045
+  },
+  {
+    "wing_span": 1.3193377327788542,
+    "wing_chord": 0.27864800682931273,
+    "tail_arm": 0.7856367658460228,
+    "nose_length": 0.2099371442936914,
+    "ducks_num": 5,
+    "pucks_num": 3,
+    "banner_length": 2.831889201285629,
+    "batt_capacity": 5.368383195149706
+  },
+  {
+    "wing_span": 1.1164752671843174,
+    "wing_chord": 0.23718491097446956,
+    "tail_arm": 0.7210615848526771,
+    "nose_length": 0.22101765116683494,
+    "ducks_num": 6,
+    "pucks_num": 5,
+    "banner_length": 2.6754100662712363,
+    "batt_capacity": 5.85381698060228
+  },
+  {
+    "wing_span": 1.3868119740201963,
+    "wing_chord": 0.26529265032904414,
+    "tail_arm": 0.6608674662490145,
+    "nose_length": 0.18913752620614907,
+    "ducks_num": 5,
+    "pucks_num": 1,
+    "banner_length": 2.3114613764239045,
+    "batt_capacity": 4.932162971021186
+  },
+  {
+    "wing_span": 1.166180721375073,
+    "wing_chord": 0.2717541611164146,
+    "tail_arm": 0.7957674102637672,
+    "nose_length": 0.17748976124302235,
+    "ducks_num": 5,
+    "pucks_num": 4,
+    "banner_length": 2.2310689410212525,
+    "batt_capacity": 4.846136228198232
+  },
+  {
+    "wing_span": 1.3018288595125234,
+    "wing_chord": 0.2385858010722018,
+    "tail_arm": 0.6472942375597044,
+    "nose_length": 0.19546724313783528,
+    "ducks_num": 7,
+    "pucks_num": 4,
+    "banner_length": 2.7615628123113605,
+    "batt_capacity": 5.847229046467572
+  },
+  {
+    "wing_span": 1.51312515658487,
+    "wing_chord": 0.28531516047851035,
+    "tail_arm": 0.8818018397161879,
+    "nose_length": 0.20381873094112118,
+    "ducks_num": 5,
+    "pucks_num": 2,
+    "banner_length": 2.66786929399375,
+    "batt_capacity": 4.872303603859726
+  },
+  {
+    "wing_span": 1.1555484833458214,
+    "wing_chord": 0.22952355659465393,
+    "tail_arm": 0.7100588504601281,
+    "nose_length": 0.2011498649419575,
+    "ducks_num": 3,
+    "pucks_num": 4,
+    "banner_length": 1.8916074447134439,
+    "batt_capacity": 5.231960145565724
+  },
+  {
+    "wing_span": 1.2036156162643077,
+    "wing_chord": 0.25421983236401957,
+    "tail_arm": 0.7348437068662075,
+    "nose_length": 0.16743338756912085,
+    "ducks_num": 4,
+    "pucks_num": 2,
+    "banner_length": 2.833196460133089,
+    "batt_capacity": 4.41768858475285
+  },
+  {
+    "wing_span": 1.4992758343064287,
+    "wing_chord": 0.2941485928182369,
+    "tail_arm": 0.8703520918141967,
+    "nose_length": 0.2741191178579739,
+    "ducks_num": 6,
+    "pucks_num": 4,
+    "banner_length": 2.425152453569752,
+    "batt_capacity": 5.796237516581722
+  },
+  {
+    "wing_span": 1.4537906292303369,
+    "wing_chord": 0.3265682573451737,
+    "tail_arm": 0.9,
+    "nose_length": 0.22419469326277705,
+    "ducks_num": 3,
+    "pucks_num": 1,
+    "banner_length": 2.8240627280583412,
+    "batt_capacity": 4.715524501889378
+  },
+  {
+    "wing_span": 1.3855567470993626,
+    "wing_chord": 0.23751238748365652,
+    "tail_arm": 0.5564265771544563,
+    "nose_length": 0.17588072900060064,
+    "ducks_num": 3,
+    "pucks_num": 3,
+    "banner_length": 3.0827491969459784,
+    "batt_capacity": 5.195339506964484
+  },
+  {
+    "wing_span": 1.3765021633911574,
+    "wing_chord": 0.27036799810281653,
+    "tail_arm": 0.7676246818630414,
+    "nose_length": 0.24131528499166247,
+    "ducks_num": 3,
+    "pucks_num": 5,
+    "banner_length": 3.3966660597423113,
+    "batt_capacity": 4.781190678192037
+  },
+  {
+    "wing_span": 1.561556413865499,
+    "wing_chord": 0.33,
+    "tail_arm": 0.8742680043404767,
+    "nose_length": 0.23396874206290671,
+    "ducks_num": 7,
+    "pucks_num": 4,
+    "banner_length": 2.873294840493339,
+    "batt_capacity": 6.004255734843494
+  },
+  {
+    "wing_span": 1.460789181293735,
+    "wing_chord": 0.3087539086522122,
+    "tail_arm": 0.9,
+    "nose_length": 0.29,
+    "ducks_num": 4,
+    "pucks_num": 1,
+    "banner_length": 2.576519764869231,
+    "batt_capacity": 4.889096230334964
+  },
+  {
+    "wing_span": 1.1765278331984055,
+    "wing_chord": 0.2459049051835703,
+    "tail_arm": 0.6399021436084652,
+    "nose_length": 0.1747243798136723,
+    "ducks_num": 6,
+    "pucks_num": 4,
+    "banner_length": 2.0763193937530793,
+    "batt_capacity": 5.906311212463918
+  },
+  {
+    "wing_span": 1.5285569431966797,
+    "wing_chord": 0.30292371062879525,
+    "tail_arm": 0.844756365362928,
+    "nose_length": 0.25174141908451875,
+    "ducks_num": 4,
+    "pucks_num": 5,
+    "banner_length": 3.019715662662602,
+    "batt_capacity": 5.372523335355025
+  },
+  {
+    "wing_span": 1.201477727758261,
+    "wing_chord": 0.24456294545049662,
+    "tail_arm": 0.6540322058534547,
+    "nose_length": 0.22916353850795113,
+    "ducks_num": 5,
+    "pucks_num": 4,
+    "banner_length": 2.450773769960074,
+    "batt_capacity": 5.427511886943984
+  },
+  {
+    "wing_span": 1.3035351041917498,
+    "wing_chord": 0.24789081685016948,
+    "tail_arm": 0.7332819787665167,
+    "nose_length": 0.20701783554841913,
+    "ducks_num": 5,
+    "pucks_num": 4,
+    "banner_length": 2.9622103239567945,
+    "batt_capacity": 5.531364304298079
+  },
+  {
+    "wing_span": 1.5356495807269959,
+    "wing_chord": 0.33,
+    "tail_arm": 0.9,
+    "nose_length": 0.2667802410972882,
+    "ducks_num": 5,
+    "pucks_num": 5,
+    "banner_length": 2.6486965365558826,
+    "batt_capacity": 6.046829721136499
+  },
+  {
+    "wing_span": 1.190085661355573,
+    "wing_chord": 0.24362881724326643,
+    "tail_arm": 0.6217058645516639,
+    "nose_length": 0.17650869044221076,
+    "ducks_num": 5,
+    "pucks_num": 1,
+    "banner_length": 2.3711686841530706,
+    "batt_capacity": 4.5958311740081825
+  },
+  {
+    "wing_span": 1.2039147113760744,
+    "wing_chord": 0.24043598656554085,
+    "tail_arm": 0.5983695275688369,
+    "nose_length": 0.2017319990018104,
+    "ducks_num": 6,
+    "pucks_num": 4,
+    "banner_length": 2.239515654397759,
+    "batt_capacity": 6.229386883679782
+  },
+  {
+    "wing_span": 1.4123243422468736,
+    "wing_chord": 0.23980909948252913,
+    "tail_arm": 0.6860987770540142,
+    "nose_length": 0.19913951474518798,
+    "ducks_num": 5,
+    "pucks_num": 3,
+    "banner_length": 2.8473483253529297,
+    "batt_capacity": 5.5908620117143375
+  },
+  {
+    "wing_span": 1.2470299682251123,
+    "wing_chord": 0.23900281025273187,
+    "tail_arm": 0.7301235295658048,
+    "nose_length": 0.2053705627151335,
+    "ducks_num": 4,
+    "pucks_num": 5,
+    "banner_length": 2.4926067762575914,
+    "batt_capacity": 5.060925664587488
+  },
+  {
+    "wing_span": 1.1464092852073573,
+    "wing_chord": 0.26899738590723854,
+    "tail_arm": 0.6912924181683674,
+    "nose_length": 0.23596008885794606,
+    "ducks_num": 3,
+    "pucks_num": 3,
+    "banner_length": 2.469801559673939,
+    "batt_capacity": 4.141588462488135
+  },
+  {
+    "wing_span": 1.4886625066336094,
+    "wing_chord": 0.25161333622279863,
+    "tail_arm": 0.6240332035716719,
+    "nose_length": 0.1693699393023165,
+    "ducks_num": 6,
+    "pucks_num": 5,
+    "banner_length": 2.31784365363948,
+    "batt_capacity": 6.411013703163936
+  },
+  {
+    "wing_span": 1.3945718647990566,
+    "wing_chord": 0.2868253159863212,
+    "tail_arm": 0.776457462762867,
+    "nose_length": 0.25300062966175174,
+    "ducks_num": 4,
+    "pucks_num": 2,
+    "banner_length": 2.1833769940109975,
+    "batt_capacity": 4.235120356489042
+  },
+  {
+    "wing_span": 1.440290910367093,
+    "wing_chord": 0.2623455044539871,
+    "tail_arm": 0.7325531859965791,
+    "nose_length": 0.21642075874713648,
+    "ducks_num": 5,
+    "pucks_num": 1,
+    "banner_length": 2.8829553232220007,
+    "batt_capacity": 5.34681688317316
+  },
+  {
+    "wing_span": 1.4267577920624577,
+    "wing_chord": 0.2804378115826064,
+    "tail_arm": 0.8675779820191218,
+    "nose_length": 0.18257183765858528,
+    "ducks_num": 3,
+    "pucks_num": 4,
+    "banner_length": 1.951205261839395,
+    "batt_capacity": 4.650297833843178
+  },
+  {
+    "wing_span": 1.2837305142230175,
+    "wing_chord": 0.27464766276688257,
+    "tail_arm": 0.7595820817869713,
+    "nose_length": 0.19759448213437267,
+    "ducks_num": 4,
+    "pucks_num": 1,
+    "banner_length": 2.0567812325152426,
+    "batt_capacity": 4.619470621424515
+  },
+  {
+    "wing_span": 1.4629979297282831,
+    "wing_chord": 0.2908883279212584,
+    "tail_arm": 0.7818255196858945,
+    "nose_length": 0.22924245554565179,
+    "ducks_num": 3,
+    "pucks_num": 5,
+    "banner_length": 3.3812630895573887,
+    "batt_capacity": 4.7997211603181285
+  },
+  {
+    "wing_span": 1.1762296922237412,
+    "wing_chord": 0.2394318714111146,
+    "tail_arm": 0.6094410364941116,
+    "nose_length": 0.18995924101157058,
+    "ducks_num": 4,
+    "pucks_num": 3,
+    "banner_length": 1.6943674117506666,
+    "batt_capacity": 4.533912144833386
+  },
+  {
+    "wing_span": 1.3502538616295392,
+    "wing_chord": 0.27913454155496775,
+    "tail_arm": 0.8095121458840535,
+    "nose_length": 0.2107813254171593,
+    "ducks_num": 6,
+    "pucks_num": 1,
+    "banner_length": 1.8271131264193614,
+    "batt_capacity": 5.217420990998496
+  },
+  {
+    "wing_span": 1.1559865349223242,
+    "wing_chord": 0.23344527831124692,
+    "tail_arm": 0.5840933015957858,
+    "nose_length": 0.17469483106708744,
+    "ducks_num": 3,
+    "pucks_num": 2,
+    "banner_length": 1.9571601957430154,
+    "batt_capacity": 3.7754686221368763
+  },
+  {
+    "wing_span": 1.133813297960972,
+    "wing_chord": 0.22784273401603655,
+    "tail_arm": 0.7003910094986938,
+    "nose_length": 0.19719727545518975,
+    "ducks_num": 5,
+    "pucks_num": 4,
+    "banner_length": 2.5939075043699362,
+    "batt_capacity": 5.541030949232517
+  },
+  {
+    "wing_span": 1.3823688467466926,
+    "wing_chord": 0.2580002536076046,
+    "tail_arm": 0.6212029291874115,
+    "nose_length": 0.2166120889327558,
+    "ducks_num": 5,
+    "pucks_num": 4,
+    "banner_length": 2.745629001717127,
+    "batt_capacity": 5.034905525102537
+  },
+  {
+    "wing_span": 1.4187403602859787,
+    "wing_chord": 0.2951980199274363,
+    "tail_arm": 0.883454948349466,
+    "nose_length": 0.2651610225348407,
+    "ducks_num": 3,
+    "pucks_num": 1,
+    "banner_length": 3.351787000712378,
+    "batt_capacity": 3.9083248160889625
+  },
+  {
+    "wing_span": 1.4137802116936207,
+    "wing_chord": 0.23797786894969972,
+    "tail_arm": 0.6384807399104394,
+    "nose_length": 0.19839305634985901,
+    "ducks_num": 5,
+    "pucks_num": 5,
+    "banner_length": 2.863616287093665,
+    "batt_capacity": 6.2808252703456295
+  },
+  {
+    "wing_span": 1.5133595099098376,
+    "wing_chord": 0.28528774675771923,
+    "tail_arm": 0.7734727443184072,
+    "nose_length": 0.2376025896564079,
+    "ducks_num": 7,
+    "pucks_num": 5,
+    "banner_length": 1.8965314945996414,
+    "batt_capacity": 5.589161252198384
+  },
+  {
+    "wing_span": 1.5951162112609927,
+    "wing_chord": 0.33,
+    "tail_arm": 0.8527534091522097,
+    "nose_length": 0.21639877116288997,
+    "ducks_num": 3,
+    "pucks_num": 4,
+    "banner_length": 2.4127038634627143,
+    "batt_capacity": 4.468492939776379
+  },
+  {
+    "wing_span": 1.4396765161238274,
+    "wing_chord": 0.2821595405402189,
+    "tail_arm": 0.8704523738418426,
+    "nose_length": 0.24438555944444346,
+    "ducks_num": 5,
+    "pucks_num": 2,
+    "banner_length": 2.382923731794485,
+    "batt_capacity": 4.653778531969579
+  },
+  {
+    "wing_span": 1.5017184655772007,
+    "wing_chord": 0.33,
+    "tail_arm": 0.8725984587436607,
+    "nose_length": 0.25071220750178985,
+    "ducks_num": 4,
+    "pucks_num": 4,
+    "banner_length": 2.9265716984015016,
+    "batt_capacity": 4.9692923501734825
+  },
+  {
+    "wing_span": 1.2944721532615633,
+    "wing_chord": 0.22582483857246322,
+    "tail_arm": 0.6730810905706763,
+    "nose_length": 0.1825688333158965,
+    "ducks_num": 3,
+    "pucks_num": 3,
+    "banner_length": 2.042736223891428,
+    "batt_capacity": 3.8159569812342204
+  },
+  {
+    "wing_span": 1.5966079173423822,
+    "wing_chord": 0.30103557560334193,
+    "tail_arm": 0.8906773383694131,
+    "nose_length": 0.27088436985953024,
+    "ducks_num": 5,
+    "pucks_num": 2,
+    "banner_length": 2.116016738245769,
+    "batt_capacity": 6.107340896536586
+  },
+  {
+    "wing_span": 1.2816876684496235,
+    "wing_chord": 0.2808226009685537,
+    "tail_arm": 0.755396701657456,
+    "nose_length": 0.25580020069672865,
+    "ducks_num": 4,
+    "pucks_num": 1,
+    "banner_length": 2.075673239045772,
+    "batt_capacity": 4.526852418215781
+  },
+  {
+    "wing_span": 1.5151827925774397,
+    "wing_chord": 0.3033365718280854,
+    "tail_arm": 0.8420652987799098,
+    "nose_length": 0.25710174651002915,
+    "ducks_num": 5,
+    "pucks_num": 5,
+    "banner_length": 2.164718130437331,
+    "batt_capacity": 5.253243612384899
+  },
+  {
+    "wing_span": 1.5448222858308498,
+    "wing_chord": 0.27173094376804874,
+    "tail_arm": 0.7418016082886567,
+    "nose_length": 0.19792410035949537,
+    "ducks_num": 7,
+    "pucks_num": 5,
+    "banner_length": 2.647371075664573,
+    "batt_capacity": 6.64471804018237
+  },
+  {
+    "wing_span": 1.4758052774652883,
+    "wing_chord": 0.29580902295163575,
+    "tail_arm": 0.8898504534407683,
+    "nose_length": 0.19966746063163024,
+    "ducks_num": 4,
+    "pucks_num": 3,
+    "banner_length": 2.68123380815605,
+    "batt_capacity": 5.092002485170221
+  },
+  {
+    "wing_span": 1.3914801258635068,
+    "wing_chord": 0.29063689562163264,
+    "tail_arm": 0.7223924191513406,
+    "nose_length": 0.2602084248121418,
+    "ducks_num": 6,
+    "pucks_num": 4,
+    "banner_length": 3.496583604460467,
+    "batt_capacity": 6.347346263333347
+  },
+  {
+    "wing_span": 1.3298146972109812,
+    "wing_chord": 0.2757030903060593,
+    "tail_arm": 0.8223932183016148,
+    "nose_length": 0.20913559350780642,
+    "ducks_num": 5,
+    "pucks_num": 1,
+    "banner_length": 2.3048859650118185,
+    "batt_capacity": 4.778538810942344
+  },
+  {
+    "wing_span": 1.248644400717534,
+    "wing_chord": 0.28474294515219567,
+    "tail_arm": 0.8441949426371477,
+    "nose_length": 0.2099344614830693,
+    "ducks_num": 7,
+    "pucks_num": 1,
+    "banner_length": 2.4695410349389637,
+    "batt_capacity": 5.136144581767797
+  },
+  {
+    "wing_span": 1.1154986083075915,
+    "wing_chord": 0.21695467489624765,
+    "tail_arm": 0.6274354145649496,
+    "nose_length": 0.17132973591048237,
+    "ducks_num": 7,
+    "pucks_num": 2,
+    "banner_length": 2.2236322058816054,
+    "batt_capacity": 4.773933069090793
+  },
+  {
+    "wing_span": 1.3987724020072185,
+    "wing_chord": 0.27362926234415286,
+    "tail_arm": 0.8473056377413049,
+    "nose_length": 0.24839635594283394,
+    "ducks_num": 6,
+    "pucks_num": 5,
+    "banner_length": 2.107941266725014,
+    "batt_capacity": 6.305579105989965
+  },
+  {
+    "wing_span": 1.2371371343037103,
+    "wing_chord": 0.27046828921363647,
+    "tail_arm": 0.8170596294168994,
+    "nose_length": 0.2110734699648615,
+    "ducks_num": 3,
+    "pucks_num": 5,
+    "banner_length": 1.9765616711437413,
+    "batt_capacity": 4.73919375337467
+  },
+  {
+    "wing_span": 1.1378829816106772,
+    "wing_chord": 0.21647383302578385,
+    "tail_arm": 0.55,
+    "nose_length": 0.15042691220324347,
+    "ducks_num": 6,
+    "pucks_num": 1,
+    "banner_length": 2.298930790958086,
+    "batt_capacity": 4.815470178036593
+  },
+  {
+    "wing_span": 1.2946216187268118,
+    "wing_chord": 0.29436302082575,
+    "tail_arm": 0.685426811988964,
+    "nose_length": 0.24235607692356048,
+    "ducks_num": 4,
+    "pucks_num": 4,
+    "banner_length": 3.3461348328021345,
+    "batt_capacity": 5.221557404730558
+  },
+  {
+    "wing_span": 1.3122930460716846,
+    "wing_chord": 0.2613047159113083,
+    "tail_arm": 0.6462445091118874,
+    "nose_length": 0.1717402980954695,
+    "ducks_num": 4,
+    "pucks_num": 1,
+    "banner_length": 2.0510081972770253,
+    "batt_capacity": 4.999557247315469
+  },
+  {
+    "wing_span": 1.3076173415300087,
+    "wing_chord": 0.22817470691717354,
+    "tail_arm": 0.6811128550503872,
+    "nose_length": 0.17366792624039562,
+    "ducks_num": 4,
+    "pucks_num": 2,
+    "banner_length": 2.727288214832933,
+    "batt_capacity": 5.189907262693811
+  },
+  {
+    "wing_span": 1.4636989961955535,
+    "wing_chord": 0.32469877706832206,
+    "tail_arm": 0.8427206207050263,
+    "nose_length": 0.28420330532932336,
+    "ducks_num": 7,
+    "pucks_num": 1,
+    "banner_length": 2.238849670981424,
+    "batt_capacity": 5.0955104054471985
+  },
+  {
+    "wing_span": 1.5473126812763598,
+    "wing_chord": 0.3275519668338286,
+    "tail_arm": 0.8375070873171563,
+    "nose_length": 0.21611603862900802,
+    "ducks_num": 4,
+    "pucks_num": 2,
+    "banner_length": 2.930210618092198,
+    "batt_capacity": 5.2247838181792385
+  },
+  {
+    "wing_span": 1.2705462656846809,
+    "wing_chord": 0.21392951028335233,
+    "tail_arm": 0.55,
+    "nose_length": 0.18173925885159367,
+    "ducks_num": 7,
+    "pucks_num": 5,
+    "banner_length": 2.5445269935330033,
+    "batt_capacity": 5.184283674667743
+  },
+  {
+    "wing_span": 1.3531934839148452,
+    "wing_chord": 0.3165659100051513,
+    "tail_arm": 0.7528235149006174,
+    "nose_length": 0.2192005632928383,
+    "ducks_num": 7,
+    "pucks_num": 5,
+    "banner_length": 2.719341066536307,
+    "batt_capacity": 6.945553900513861
+  },
+  {
+    "wing_span": 1.2309571091233125,
+    "wing_chord": 0.2056610447916374,
+    "tail_arm": 0.6255448856680206,
+    "nose_length": 0.18556787527702767,
+    "ducks_num": 6,
+    "pucks_num": 2,
+    "banner_length": 2.9076127690528963,
+    "batt_capacity": 5.873359214347666
+  },
+  {
+    "wing_span": 1.3330953100726919,
+    "wing_chord": 0.2887695522851497,
+    "tail_arm": 0.7505516407944471,
+    "nose_length": 0.24849204820340007,
+    "ducks_num": 6,
+    "pucks_num": 2,
+    "banner_length": 2.6819595626431156,
+    "batt_capacity": 5.530896463204117
+  },
+  {
+    "wing_span": 1.482907240818389,
+    "wing_chord": 0.28173999912471637,
+    "tail_arm": 0.6592769572485877,
+    "nose_length": 0.2435298822956296,
+    "ducks_num": 4,
+    "pucks_num": 5,
+    "banner_length": 3.063443146106035,
+    "batt_capacity": 5.96853225027153
+  },
+  {
+    "wing_span": 1.3696914334556207,
+    "wing_chord": 0.2509968737901471,
+    "tail_arm": 0.6466362081156576,
+    "nose_length": 0.22972043064108882,
+    "ducks_num": 3,
+    "pucks_num": 5,
+    "banner_length": 2.657988299021643,
+    "batt_capacity": 4.524257873702182
+  },
+  {
+    "wing_span": 1.1737278364341097,
+    "wing_chord": 0.20595641373226042,
+    "tail_arm": 0.55,
+    "nose_length": 0.15582987129775022,
+    "ducks_num": 7,
+    "pucks_num": 2,
+    "banner_length": 2.032364719042861,
+    "batt_capacity": 6.284332445256585
+  },
+  {
+    "wing_span": 1.471591471680345,
+    "wing_chord": 0.33,
+    "tail_arm": 0.9,
+    "nose_length": 0.2861173356162522,
+    "ducks_num": 5,
+    "pucks_num": 5,
+    "banner_length": 3.317821874308481,
+    "batt_capacity": 5.569111077068866
+  },
+  {
+    "wing_span": 1.241133951028533,
+    "wing_chord": 0.2777111065292077,
+    "tail_arm": 0.8248895858393115,
+    "nose_length": 0.20973759259348626,
+    "ducks_num": 6,
+    "pucks_num": 5,
+    "banner_length": 2.2199309232139806,
+    "batt_capacity": 5.747381742895159
+  },
+  {
+    "wing_span": 1.262271715994184,
+    "wing_chord": 0.293526155410613,
+    "tail_arm": 0.8351111972345926,
+    "nose_length": 0.2178290675007463,
+    "ducks_num": 3,
+    "pucks_num": 4,
+    "banner_length": 2.5148268051304696,
+    "batt_capacity": 5.271573227130838
+  },
+  {
+    "wing_span": 1.392611232403554,
+    "wing_chord": 0.2678898834989862,
+    "tail_arm": 0.742824428315692,
+    "nose_length": 0.2216008375889047,
+    "ducks_num": 4,
+    "pucks_num": 2,
+    "banner_length": 2.7712607382223444,
+    "batt_capacity": 4.7038631392337376
+  },
+  {
+    "wing_span": 1.5076285521328892,
+    "wing_chord": 0.3135770263028411,
+    "tail_arm": 0.861123830801582,
+    "nose_length": 0.2468330789062679,
+    "ducks_num": 6,
+    "pucks_num": 5,
+    "banner_length": 2.7388604058912254,
+    "batt_capacity": 6.514463512489178
+  },
+  {
+    "wing_span": 1.1276899889040726,
+    "wing_chord": 0.2318914148896749,
+    "tail_arm": 0.7094792900397578,
+    "nose_length": 0.18873394964581783,
+    "ducks_num": 4,
+    "pucks_num": 1,
+    "banner_length": 1.6045765694026912,
+    "batt_capacity": 4.560224969884606
+  },
+  {
+    "wing_span": 1.5914268521875201,
+    "wing_chord": 0.32101376473305027,
+    "tail_arm": 0.9,
+    "nose_length": 0.29,
+    "ducks_num": 3,
+    "pucks_num": 5,
+    "banner_length": 2.513756471144962,
+    "batt_capacity": 5.489460614705551
+  },
+  {
+    "wing_span": 1.5465805785982796,
+    "wing_chord": 0.2989250395358564,
+    "tail_arm": 0.9,
+    "nose_length": 0.20546560571893374,
+    "ducks_num": 5,
+    "pucks_num": 1,
+    "banner_length": 2.4479643974429206,
+    "batt_capacity": 4.893187090184073
+  },
+  {
+    "wing_span": 1.138810309094545,
+    "wing_chord": 0.2,
+    "tail_arm": 0.5522968444406566,
+    "nose_length": 0.1799850319083426,
+    "ducks_num": 3,
+    "pucks_num": 4,
+    "banner_length": 2.304646572101675,
+    "batt_capacity": 4.294316321289422
+  },
+  {
+    "wing_span": 1.1602286828416506,
+    "wing_chord": 0.23536133692832126,
+    "tail_arm": 0.5978121249232019,
+    "nose_length": 0.1547781172525322,
+    "ducks_num": 7,
+    "pucks_num": 3,
+    "banner_length": 2.8920932820072554,
+    "batt_capacity": 5.12473912613978
+  },
+  {
+    "wing_span": 1.3535552034390803,
+    "wing_chord": 0.23866445167353212,
+    "tail_arm": 0.7329261827770208,
+    "nose_length": 0.21804303583673387,
+    "ducks_num": 6,
+    "pucks_num": 1,
+    "banner_length": 2.435437238186034,
+    "batt_capacity": 5.892615460779496
+  },
+  {
+    "wing_span": 1.2764795538271279,
+    "wing_chord": 0.24233043704327575,
+    "tail_arm": 0.6532852479334582,
+    "nose_length": 0.20804157108349539,
+    "ducks_num": 7,
+    "pucks_num": 5,
+    "banner_length": 2.8943036244246167,
+    "batt_capacity": 6.357478144890833
+  },
+  {
+    "wing_span": 1.4717591472027196,
+    "wing_chord": 0.27012048615703094,
+    "tail_arm": 0.6432187482542469,
+    "nose_length": 0.21717468057309158,
+    "ducks_num": 5,
+    "pucks_num": 5,
+    "banner_length": 2.825359814634571,
+    "batt_capacity": 5.747733169292097
+  },
+  {
+    "wing_span": 1.2282103627914944,
+    "wing_chord": 0.20526437435506856,
+    "tail_arm": 0.5839240451984846,
+    "nose_length": 0.19229651247800153,
+    "ducks_num": 7,
+    "pucks_num": 2,
+    "banner_length": 2.8730022731097273,
+    "batt_capacity": 5.194848514117219
+  },
+  {
+    "wing_span": 1.2142945428708412,
+    "wing_chord": 0.27990425194346763,
+    "tail_arm": 0.6561687024558087,
+    "nose_length": 0.1955332368007234,
+    "ducks_num": 6,
+    "pucks_num": 5,
+    "banner_length": 1.6853338106010796,
+    "batt_capacity": 6.4116463454625805
+  },
+  {
+    "wing_span": 1.5548642749518606,
+    "wing_chord": 0.3106464733630973,
+    "tail_arm": 0.859557992241715,
+    "nose_length": 0.29,
+    "ducks_num": 7,
+    "pucks_num": 5,
+    "banner_length": 2.8397523909007547,
+    "batt_capacity": 6.408242488405407
+  },
+  {
+    "wing_span": 1.4367806899908926,
+    "wing_chord": 0.28615053191866124,
+    "tail_arm": 0.75206747504261,
+    "nose_length": 0.26506179620011505,
+    "ducks_num": 5,
+    "pucks_num": 1,
+    "banner_length": 2.3399700356332387,
+    "batt_capacity": 4.308443426540745
+  },
+  {
+    "wing_span": 1.286163000255441,
+    "wing_chord": 0.23121516823305807,
+    "tail_arm": 0.6814059595802324,
+    "nose_length": 0.15241895758097074,
+    "ducks_num": 3,
+    "pucks_num": 5,
+    "banner_length": 2.215303236815927,
+    "batt_capacity": 4.244570050382262
+  },
+  {
+    "wing_span": 1.4118448141954862,
+    "wing_chord": 0.3184267512089182,
+    "tail_arm": 0.784289842224466,
+    "nose_length": 0.2146190005207364,
+    "ducks_num": 7,
+    "pucks_num": 4,
+    "banner_length": 2.2164348337982442,
+    "batt_capacity": 6.614877733068555
+  },
+  {
+    "wing_span": 1.2113728970289357,
+    "wing_chord": 0.2080197400764869,
+    "tail_arm": 0.6216253632477874,
+    "nose_length": 0.15992065061321975,
+    "ducks_num": 5,
+    "pucks_num": 1,
+    "banner_length": 2.301749485273566,
+    "batt_capacity": 5.259355776690327
+  },
+  {
+    "wing_span": 1.4152089325570834,
+    "wing_chord": 0.2640854389337728,
+    "tail_arm": 0.762231051497819,
+    "nose_length": 0.19582801069119843,
+    "ducks_num": 6,
+    "pucks_num": 1,
+    "banner_length": 1.8329629095323987,
+    "batt_capacity": 4.497225651336228
+  },
+  {
+    "wing_span": 1.4317239506356745,
+    "wing_chord": 0.3144205963345901,
+    "tail_arm": 0.9,
+    "nose_length": 0.21123692218899787,
+    "ducks_num": 6,
+    "pucks_num": 5,
+    "banner_length": 2.667456750630108,
+    "batt_capacity": 6.030104361321238
+  },
+  {
+    "wing_span": 1.5850913726964921,
+    "wing_chord": 0.29115975487494417,
+    "tail_arm": 0.7001284818655341,
+    "nose_length": 0.19526310374159062,
+    "ducks_num": 5,
+    "pucks_num": 1,
+    "banner_length": 2.8995521401199866,
+    "batt_capacity": 4.859443260296348
+  },
+  {
+    "wing_span": 1.1502166119294905,
+    "wing_chord": 0.21974181644617144,
+    "tail_arm": 0.6746784849205529,
+    "nose_length": 0.18241206933810755,
+    "ducks_num": 4,
+    "pucks_num": 2,
+    "banner_length": 3.0233451111414364,
+    "batt_capacity": 5.179297078377205
+  },
+  {
+    "wing_span": 1.2511900086800607,
+    "wing_chord": 0.2714096086541377,
+    "tail_arm": 0.8120152249957543,
+    "nose_length": 0.19292878933420948,
+    "ducks_num": 5,
+    "pucks_num": 1,
+    "banner_length": 2.2337245479515726,
+    "batt_capacity": 4.347500080115553
+  },
+  {
+    "wing_span": 1.410078805676791,
+    "wing_chord": 0.3056435356754908,
+    "tail_arm": 0.8947261934630798,
+    "nose_length": 0.2766863583384502,
+    "ducks_num": 6,
+    "pucks_num": 1,
+    "banner_length": 1.8112385408402192,
+    "batt_capacity": 5.8266439010743145
+  },
+  {
+    "wing_span": 1.1141549727491338,
+    "wing_chord": 0.20560119377707803,
+    "tail_arm": 0.55,
+    "nose_length": 0.16615561393823855,
+    "ducks_num": 4,
+    "pucks_num": 3,
+    "banner_length": 1.727603609786549,
+    "batt_capacity": 5.202603918097012
+  },
+  {
+    "wing_span": 1.1920231042978888,
+    "wing_chord": 0.21546523321225738,
+    "tail_arm": 0.55,
+    "nose_length": 0.18653024459191805,
+    "ducks_num": 6,
+    "pucks_num": 2,
+    "banner_length": 2.0969810148714982,
+    "batt_capacity": 5.160332092710028
+  },
+  {
+    "wing_span": 1.1063351912604906,
+    "wing_chord": 0.20111849849072125,
+    "tail_arm": 0.55,
+    "nose_length": 0.1473781399724859,
+    "ducks_num": 6,
+    "pucks_num": 2,
+    "banner_length": 2.456970796078203,
+    "batt_capacity": 4.968711625074137
+  },
+  {
+    "wing_span": 1.3098202971266306,
+    "wing_chord": 0.2536104564334512,
+    "tail_arm": 0.7483367299184152,
+    "nose_length": 0.22350066802793292,
+    "ducks_num": 5,
+    "pucks_num": 2,
+    "banner_length": 2.93479111114966,
+    "batt_capacity": 4.771041647288085
+  },
+  {
+    "wing_span": 1.2249998463117688,
+    "wing_chord": 0.21574501315638062,
+    "tail_arm": 0.6396234551071179,
+    "nose_length": 0.19841668237409266,
+    "ducks_num": 7,
+    "pucks_num": 3,
+    "banner_length": 2.4376554766390366,
+    "batt_capacity": 5.211394795551509
+  },
+  {
+    "wing_span": 1.1948552304679594,
+    "wing_chord": 0.25650622150927477,
+    "tail_arm": 0.7383768445611509,
+    "nose_length": 0.24321592557760094,
+    "ducks_num": 4,
+    "pucks_num": 5,
+    "banner_length": 2.682426198337084,
+    "batt_capacity": 6.08997461086119
+  },
+  {
+    "wing_span": 1.2711764741603924,
+    "wing_chord": 0.2469455123843549,
+    "tail_arm": 0.588194308193203,
+    "nose_length": 0.21380165858005223,
+    "ducks_num": 3,
+    "pucks_num": 4,
+    "banner_length": 2.932884968805323,
+    "batt_capacity": 5.320503142725835
+  },
+  {
+    "wing_span": 1.4669806317942353,
+    "wing_chord": 0.3057329941500252,
+    "tail_arm": 0.8984561529490009,
+    "nose_length": 0.25116689739439924,
+    "ducks_num": 4,
+    "pucks_num": 1,
+    "banner_length": 2.7952892220386696,
+    "batt_capacity": 4.162214629967389
+  },
+  {
+    "wing_span": 1.497479284949777,
+    "wing_chord": 0.3234744724150354,
+    "tail_arm": 0.9,
+    "nose_length": 0.23618547067462284,
+    "ducks_num": 3,
+    "pucks_num": 5,
+    "banner_length": 2.6893304829358233,
+    "batt_capacity": 5.020157352414067
+  },
+  {
+    "wing_span": 1.365383732922452,
+    "wing_chord": 0.27614231499889813,
+    "tail_arm": 0.6418082841138356,
+    "nose_length": 0.22018664910973113,
+    "ducks_num": 7,
+    "pucks_num": 1,
+    "banner_length": 1.730794941952397,
+    "batt_capacity": 5.1494833770581785
+  },
+  {
+    "wing_span": 1.3923416863264393,
+    "wing_chord": 0.2645436355355163,
+    "tail_arm": 0.7916600861563382,
+    "nose_length": 0.22031452371191565,
+    "ducks_num": 4,
+    "pucks_num": 1,
+    "banner_length": 2.84440010524761,
+    "batt_capacity": 3.8971355287733456
+  }
+]

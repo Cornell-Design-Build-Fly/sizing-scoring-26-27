@@ -1,9 +1,9 @@
 """Fast, deterministic Mission-2 payload placement inside a local fuselage.
 
-The fuselage is packed before it is installed on the airplane.  Each payload
-type starts immediately behind the electronics, with its first item against
-the negative-y sidewall.  Rows fill across the available width and then move
-aft.  Static margin is deliberately not part of this local packing step.
+The fuselage is packed before it is installed on the airplane. Each payload
+type starts immediately behind the electronics. Rows fill across the available
+width, are centered laterally in the fuselage, and then move aft. Static margin
+is deliberately not part of this local packing step.
 """
 
 from __future__ import annotations
@@ -26,6 +26,66 @@ class _FuselageLocation:
     column: int
     x_m: float
     y_m: float
+
+
+@dataclass(frozen=True)
+class PayloadPackingSummary:
+    """Mass and longitudinal envelope of a payload packing without item creation."""
+
+    total_mass_kg: float
+    x_moment_kg_m: float
+    back_edge_x_m: float | None
+
+
+def _payload_type_summary(
+    *,
+    payload: PayloadTypeConfig,
+    count: int,
+    electronics_back_x_m: float,
+    available_width_m: float,
+    clearance_m: float,
+) -> PayloadPackingSummary:
+    """Return exact row-packing totals for one payload type in constant time."""
+
+    if count == 0:
+        return PayloadPackingSummary(0.0, 0.0, None)
+    if not payload.rules.allow_aft:
+        raise PayloadPlacementError(
+            f"The {payload.label} rules forbid the required aftward placement."
+        )
+
+    length_x, width_y, _ = payload.dimensions_m
+    columns = floor(
+        (available_width_m + clearance_m + 1e-12)
+        / (width_y + clearance_m)
+    )
+    if columns < 1:
+        raise ValueError(
+            "Mission2Config violates the required starting-width invariant: "
+            f"{payload.label} width is {width_y:.4f} m but the fuselage width "
+            f"is {available_width_m:.4f} m."
+        )
+
+    complete_rows, final_row_count = divmod(count, columns)
+    row_index_sum = (
+        columns * complete_rows * (complete_rows - 1) // 2
+        + final_row_count * complete_rows
+    )
+    first_x = electronics_back_x_m + clearance_m + 0.5 * length_x
+    pitch_x = length_x + clearance_m
+    position_sum_x = count * first_x + row_index_sum * pitch_x
+    final_row_index = (count - 1) // columns
+    back_edge_x = (
+        electronics_back_x_m
+        + clearance_m
+        + length_x
+        + final_row_index * pitch_x
+    )
+    return PayloadPackingSummary(
+        total_mass_kg=float(count * payload.mass_kg),
+        x_moment_kg_m=float(payload.mass_kg * position_sum_x),
+        back_edge_x_m=float(back_edge_x),
+    )
 
 
 def _front_to_back_locations(
@@ -58,15 +118,27 @@ def _front_to_back_locations(
         )
 
     first_x = electronics_back_x_m + clearance_m + 0.5 * length_x
-    first_y = y_bounds_m[0] + 0.5 * width_y
     pitch_x = length_x + clearance_m
     pitch_y = width_y + clearance_m
+    fuselage_center_y = 0.5 * (y_bounds_m[0] + y_bounds_m[1])
+    row_count = (count + columns - 1) // columns
+    first_y_by_row: list[float] = []
+    for row in range(row_count):
+        items_in_row = min(columns, count - row * columns)
+        occupied_width = (
+            items_in_row * width_y + (items_in_row - 1) * clearance_m
+        )
+        first_y_by_row.append(
+            fuselage_center_y - 0.5 * occupied_width + 0.5 * width_y
+        )
     return tuple(
         _FuselageLocation(
             row=index // columns,
             column=index % columns,
             x_m=float(first_x + (index // columns) * pitch_x),
-            y_m=float(first_y + (index % columns) * pitch_y),
+            y_m=float(
+                first_y_by_row[index // columns] + (index % columns) * pitch_y
+            ),
         )
         for index in range(count)
     )
@@ -98,8 +170,8 @@ def _payload_items(
             category="mission_2_payload",
             notes=(
                 "Fuselage-local front-to-back placement; "
-                f"row {location.row}, column {location.column}; first column "
-                "is against the negative-y fuselage sidewall."
+                f"centered lateral row {location.row}, "
+                f"column {location.column}."
             ),
         )
         for index, location in enumerate(locations, start=1)
@@ -160,6 +232,73 @@ def _validate_vertical_fit(
             f"The fixed {payload.label} layer crosses the fuselage vertical "
             f"bounds [{z_bounds_m[0]:.4f}, {z_bounds_m[1]:.4f}] m."
         )
+
+
+def summarize_mission2_payload(
+    *,
+    duck_count: int,
+    puck_count: int,
+    config: Mission2Config,
+    electronics_back_x_m: float,
+    fuselage_width_m: float,
+    z_bounds_m: tuple[float, float] | None = None,
+) -> PayloadPackingSummary:
+    """Summarize deterministic M2 packing without constructing mass items."""
+
+    if duck_count < 0 or puck_count < 0:
+        raise ValueError("Mission-2 payload counts cannot be negative.")
+    if not np.isfinite(electronics_back_x_m):
+        raise ValueError("electronics_back_x_m must be finite.")
+    if not np.isfinite(fuselage_width_m) or fuselage_width_m <= 0.0:
+        raise PayloadPlacementError("Mission-2 fuselage width must be finite and positive.")
+    if z_bounds_m is not None and not (
+        np.all(np.isfinite(z_bounds_m)) and z_bounds_m[0] < z_bounds_m[1]
+    ):
+        raise PayloadPlacementError("Mission-2 z bounds must be finite and increasing.")
+
+    duck_z, puck_z = _vertical_layer_centers(
+        config, duck_count=duck_count, puck_count=puck_count
+    )
+    _validate_vertical_fit(
+        payload=config.duck,
+        count=duck_count,
+        center_z_m=duck_z,
+        z_bounds_m=z_bounds_m,
+    )
+    _validate_vertical_fit(
+        payload=config.puck,
+        count=puck_count,
+        center_z_m=puck_z,
+        z_bounds_m=z_bounds_m,
+    )
+    duck_summary = _payload_type_summary(
+        payload=config.duck,
+        count=duck_count,
+        electronics_back_x_m=electronics_back_x_m,
+        available_width_m=fuselage_width_m,
+        clearance_m=config.clearance_m,
+    )
+    puck_summary = _payload_type_summary(
+        payload=config.puck,
+        count=puck_count,
+        electronics_back_x_m=electronics_back_x_m,
+        available_width_m=fuselage_width_m,
+        clearance_m=config.clearance_m,
+    )
+    back_edges = tuple(
+        edge
+        for edge in (duck_summary.back_edge_x_m, puck_summary.back_edge_x_m)
+        if edge is not None
+    )
+    return PayloadPackingSummary(
+        total_mass_kg=(
+            duck_summary.total_mass_kg + puck_summary.total_mass_kg
+        ),
+        x_moment_kg_m=(
+            duck_summary.x_moment_kg_m + puck_summary.x_moment_kg_m
+        ),
+        back_edge_x_m=max(back_edges) if back_edges else None,
+    )
 
 
 def place_mission2_payload(
@@ -233,3 +372,11 @@ def place_mission2_payload(
         clearance_m=config.clearance_m,
     )
     return ducks + pucks
+
+
+__all__ = [
+    "PayloadPackingSummary",
+    "PayloadPlacementError",
+    "place_mission2_payload",
+    "summarize_mission2_payload",
+]

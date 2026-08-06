@@ -236,6 +236,7 @@ def cruise_analysis(
         cg: tuple[float, float, float],
         mass: float,
         mission: int,
+        debug: bool = False,
 ) -> CruiseCondition:
     """
     Perform thorough and accurate cruise analysis for a given design vector. Includes ASB optimization methods and 
@@ -250,7 +251,8 @@ def cruise_analysis(
     """
 
     # Create an optimization problem
-    print("[aero] Preparing cruise trim optimization...", flush=True)
+    if debug:
+        print("[aero] Preparing cruise trim optimization...", flush=True)
     opti = asb.Opti()  
 
     # Flight-condition variables
@@ -294,19 +296,13 @@ def cruise_analysis(
     weight = mass * parameter_vector.gravity  # N
 
     # Residual minimization approach
-    lift_residual = (lift - weight) / weight 
-    drag_residual = (drag - thrust) / weight 
-    moment_residual = pitching_moment / (
-        weight * airplane.c_ref
-    ) 
-
-    trim_error = (
-        lift_residual**2
-        + drag_residual**2
-        + moment_residual**2
-    )
-
-    opti.minimize(trim_error) 
+    lift_residual = (lift - weight) / weight
+    drag_residual = (drag - thrust) / weight
+    moment_residual = pitching_moment / (weight * airplane.c_ref)
+    trim_error = lift_residual**2 + drag_residual**2 + moment_residual**2
+    opti.subject_to(lift == weight)
+    opti.subject_to(drag == thrust)
+    opti.subject_to(pitching_moment == 0)
 
    # Tolerances used to decide whether the resulting point is truly trimmed.
     LIFT_RESIDUAL_TOL = 1e-2
@@ -314,9 +310,10 @@ def cruise_analysis(
     MOMENT_RESIDUAL_TOL = 1e-2
 
     optimization_start = perf_counter()
-    print("[aero] Solving cruise trim optimization (this may take a while)...", flush=True)
+    if debug:
+        print("[aero] Solving cruise trim optimization (this may take a while)...", flush=True)
     try:
-        solution = opti.solve()
+        solution = opti.solve(verbose=False)
 
         solved_velocity = float(solution.value(velocity))
         solved_alpha = float(solution.value(alpha))
@@ -339,11 +336,11 @@ def cruise_analysis(
         )
 
     except RuntimeError as exc:
-        print(
-            f"[aero] Cruise trim optimization failed after "
-            f"{perf_counter() - optimization_start:.2f} s: {exc}",
-            flush=True,
-        )
+        if debug:
+            print(
+                f"[aero] Cruise trim optimization failed after {perf_counter() - optimization_start:.2f} s: {exc}",
+                flush=True,
+            )
 
         return CruiseCondition(
             operating_point=OperatingPoint(
@@ -358,18 +355,15 @@ def cruise_analysis(
             converged=False,
         )
 
-    print(
-        f"[aero] Cruise trim optimization finished in "
-        f"{perf_counter() - optimization_start:.2f} s "
-        f"(converged={converged}, velocity={solved_velocity:.2f} m/s, "
-        f"alpha={solved_alpha:.2f} deg, "
-        f"{control_name}={solved_trim_control:.2f}, "
-        f"trim residual={float(solution.value(trim_error)):.3e}, "
-        f"lift residual={solved_lift_residual:.2%}, "
-        f"drag residual={solved_drag_residual:.2%}, "
-        f"moment residual={solved_moment_residual:.2%}).",
-        flush=True,
-    )
+    if debug:
+        print(
+            f"[aero] Cruise trim optimization finished in {perf_counter() - optimization_start:.2f} s "
+            f"(converged={converged}, velocity={solved_velocity:.2f} m/s, alpha={solved_alpha:.2f} deg, "
+            f"{control_name}={solved_trim_control:.2f}, trim residual={float(solution.value(trim_error)):.3e}, "
+            f"lift residual={solved_lift_residual:.2%}, drag residual={solved_drag_residual:.2%}, "
+            f"moment residual={solved_moment_residual:.2%}).",
+            flush=True,
+        )
 
     # Construct cruise condition object, no stall speed for now
     cruise_condition = CruiseCondition(
