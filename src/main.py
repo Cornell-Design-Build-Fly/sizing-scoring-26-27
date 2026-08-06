@@ -3,7 +3,7 @@ from dataclasses import replace
 from src.aero.main_aero import aero_main
 from src.mech.main_mech import evaluate_mechanical_module
 from src.prop.main_prop import prop_main
-from src.prop.prop_database import ContinuousPropDatabase
+from src.prop.continuous_prop_database import ContinuousPropDatabase
 from src.vectors import DesignVector, ParameterVector
 from src.opt.score import total_score
 
