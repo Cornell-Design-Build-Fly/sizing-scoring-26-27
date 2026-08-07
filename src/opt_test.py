@@ -12,7 +12,9 @@ from io import StringIO
 from pathlib import Path
 
 import numpy as np
-from scipy.optimize import differential_evolution
+from scipy.optimize import differential_evolution, NonlinearConstraint
+
+
 from tqdm.auto import tqdm
 
 from src.main import main
@@ -54,6 +56,13 @@ HISTORY_ARTIFACTS = (
     "penalty_history.png",
 )
 
+
+
+pd_constraint = NonlinearConstraint(
+    lambda x: x[9] / x[8],
+    0.4,   # minimum P/D
+    0.8,   # maximum P/D
+)
 
 def _prepare_output_dir() -> None:
     """Create the output directory and clear inapplicable old history."""
@@ -372,6 +381,7 @@ def _differential_evolution_kwargs() -> dict:
     return {
         "func": fitness,
         "bounds": DesignVector.bounds(),
+        "constraints": (pd_constraint,),
         "maxiter": MAXITER,
         "popsize": POPSIZE,
         "polish": False,
