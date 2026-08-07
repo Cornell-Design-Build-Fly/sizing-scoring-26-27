@@ -102,6 +102,7 @@ def test_aero_main_smoke() -> None:
         design_vector=design_vector,
         parameter_vector=parameter_vector,
         thrust_velocity=thrust_velocity,
+        flight_time_fit=(0.0, 0.0, 1e6),
         mission=1,
         cg=cg,
         inertia_matrix=inertia_matrix,

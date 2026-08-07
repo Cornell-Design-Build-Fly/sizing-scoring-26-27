@@ -41,7 +41,7 @@ def run(design, pv, inputs, model):
     try:
         with redirect_stdout(io.StringIO()):
             aero_module.aero_main(
-                design, pv, tuple(inputs["thrust_velocity"]), MISSION,
+                design, pv, tuple(inputs["thrust_velocity"]), tuple(inputs["flight_time_fit"]), MISSION,
                 tuple(inputs["cg"]), np.asarray(inputs["inertia_matrix"]),
                 float(inputs["mass"]), False, debug=False,
             )

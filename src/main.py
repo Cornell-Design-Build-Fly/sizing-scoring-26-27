@@ -45,7 +45,7 @@ def main(
     )
 
     # M1 run
-    m1_thrust_curve, _ = prop_main(
+    m1_thrust_curve, m1_flight_time_fit = prop_main(
         resolved_dv,
         pv,
         mission=1,
@@ -57,6 +57,7 @@ def main(
         design_vector=resolved_dv,
         parameter_vector=pv,
         thrust_velocity=m1_thrust_curve,
+        flight_time_fit=m1_flight_time_fit,
         mission=1,
         cg=m1_properties.cg_m,
         inertia_matrix=m1_properties.inertia_tensor_kg_m2,
@@ -65,7 +66,7 @@ def main(
     )
 
     # M2 run
-    m2_thrust_curve, _ = prop_main(
+    m2_thrust_curve, m2_flight_time_fit = prop_main(
         resolved_dv,
         pv,
         mission=2,
@@ -77,6 +78,7 @@ def main(
         design_vector=resolved_dv,
         parameter_vector=pv,
         thrust_velocity=m2_thrust_curve,
+        flight_time_fit=m2_flight_time_fit,
         mission=2,
         cg=m2_properties.cg_m,
         inertia_matrix=m2_properties.inertia_tensor_kg_m2,
@@ -85,7 +87,7 @@ def main(
     )
 
     # M3 run
-    m3_thrust_curve, _ = prop_main(
+    m3_thrust_curve, m3_flight_time_fit = prop_main(
         resolved_dv,
         pv,
         mission=3,
@@ -97,6 +99,7 @@ def main(
         design_vector=resolved_dv,
         parameter_vector=pv,
         thrust_velocity=m3_thrust_curve,
+        flight_time_fit=m3_flight_time_fit,
         mission=3,
         cg=m3_properties.cg_m,
         inertia_matrix=m3_properties.inertia_tensor_kg_m2,

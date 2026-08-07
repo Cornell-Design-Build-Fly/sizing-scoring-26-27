@@ -33,7 +33,9 @@ def _constant_aero_inputs(pv: ParameterVector) -> dict:
     """Cache the baseline inputs calculated by main's mech/prop path."""
     cache = DATA_DIR / f"aero_main_constant_inputs_m{AERO_MISSION}.json"
     if cache.exists():
-        return json.loads(cache.read_text(encoding="utf-8"))
+        inputs = json.loads(cache.read_text(encoding="utf-8"))
+        if "flight_time_fit" in inputs:
+            return inputs
 
     baseline = DesignVector()
     mech = evaluate_mechanical_module(baseline, parameter_vector=pv)
@@ -43,9 +45,10 @@ def _constant_aero_inputs(pv: ParameterVector) -> dict:
         fuselage_height=mech.resolved_fuselage_height_m,
     )
     props = mech.for_mission(f"M{AERO_MISSION}")
-    thrust, _ = prop_main(resolved, pv, mission=AERO_MISSION)
+    thrust, flight_time_fit = prop_main(resolved, pv, mission=AERO_MISSION)
     inputs = {
         "thrust_velocity": list(map(float, thrust)),
+        "flight_time_fit": list(map(float, flight_time_fit)),
         "cg": list(map(float, props.cg_m)),
         "inertia_matrix": np.asarray(props.inertia_tensor_kg_m2, dtype=float).tolist(),
         "mass": float(props.total_mass_kg),
@@ -70,6 +73,7 @@ def _result(
             design_vector=design,
             parameter_vector=pv,
             thrust_velocity=tuple(aero_inputs["thrust_velocity"]),
+            flight_time_fit=tuple(aero_inputs["flight_time_fit"]),
             mission=AERO_MISSION,
             cg=tuple(aero_inputs["cg"]),
             inertia_matrix=np.asarray(aero_inputs["inertia_matrix"], dtype=float),

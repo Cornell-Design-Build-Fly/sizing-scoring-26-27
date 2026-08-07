@@ -53,7 +53,7 @@ def stability_analysis(
             require_scalar(mass_props.z_cg),
         ),
         include_wave_drag=False,
-    ).run_with_stability_derivatives()
+    ).run_with_stability_derivatives() 
 
     # Handle missing keys
     missing_keys = _REQUIRED_MODE_AERO_KEYS - stability_dict.keys()
@@ -65,7 +65,7 @@ def stability_analysis(
         airplane=airplane,
         op_point=cruise_condition.operating_point,
         mass_props=mass_props,
-        aero=stability_dict # type: ignore
+        aero=stability_dict
     )
 
     # Calculate static margin

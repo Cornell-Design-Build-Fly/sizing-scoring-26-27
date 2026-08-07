@@ -80,6 +80,7 @@ SM_PENALTY_SCALE:     float = 0.10          # [fraction of MAC]
 CMA_PENALTY_SCALE:    float = 0.50          # [1/rad]
 CNB_PENALTY_SCALE:    float = 0.10          # [1/rad]
 SPIRAL_PENALTY_SCALE: float = SPIRAL_RATE_MAX  # [s⁻¹]
+ENDURANCE_PENALTY_SCALE: float = 1.0
 
 # Weights applied to each component penalty before summing.
 # Must sum to 1.0 so the weighted total stays in [0, 10].
@@ -224,6 +225,24 @@ def _compute_lap_time(
     return t_straight + t_turns
 
 
+def _endurance_values(
+    flight_time_fit: tuple[float, float, float],
+    cruise_speed: float,
+    lap_time: float,
+    mission: int,
+) -> tuple[float, float, float]:
+    """Return available time, required time, and endurance penalty."""
+    if mission not in (1, 2, 3):
+        raise ValueError(f"Mission must be 1, 2, or 3, got {mission}.")
+    available = float(np.polyval(flight_time_fit, cruise_speed))
+    if not np.isfinite(available):
+        available = 0.0
+    available = max(0.0, available)
+    required = 3.0 * lap_time if mission == 1 else 300.0
+    violation = max(0.0, required - available) / required
+    return available, required, _log_penalty(violation, ENDURANCE_PENALTY_SCALE)
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Public API
 # ──────────────────────────────────────────────────────────────────────────
@@ -232,6 +251,8 @@ def aero_score(
         cruise_condition: CruiseCondition,
         stability_result: StabilityResult,
         parameter_vector: ParameterVector,
+        flight_time_fit: tuple[float, float, float],
+        mission: int,
 ) -> AeroScore:
     """
     Score the aerodynamic performance and flyability of a design.
@@ -268,6 +289,13 @@ def aero_score(
     cruise_speed = cruise_condition.operating_point.velocity
     stall_speed  = cruise_condition.stall_speed
     lap_time = _compute_lap_time(cruise_speed, stall_speed, parameter_vector)
+    available_time, required_time, p_endurance = _endurance_values(
+        flight_time_fit, cruise_speed, lap_time, mission
+    )
+    endurance_ok = available_time >= required_time
+    lap_time_ok = np.isfinite(lap_time) and lap_time < 1e6
+    if not lap_time_ok:
+        p_endurance = 10.0
 
     # ── Flyability gates ──────────────────────────────────────────────────
     longitudinally_stable = stability_result.Cma < CMA_LIMIT          # Cma < 0
@@ -280,7 +308,10 @@ def aero_score(
     spiral_rate = stability_result.spiral.eigenvalue_real
     spiral_ok   = spiral_rate <= SPIRAL_RATE_MAX
 
-    can_fly = longitudinally_stable and directionally_stable and cg_ahead_of_np and spiral_ok
+    can_fly = (
+        longitudinally_stable and directionally_stable and cg_ahead_of_np
+        and spiral_ok and endurance_ok and lap_time_ok
+    )
 
     # ── Penalty ──────────────────────────────────────────────────────────
     if can_fly:
@@ -306,7 +337,11 @@ def aero_score(
     p_spiral = _log_penalty(spiral_violation, SPIRAL_PENALTY_SCALE)
 
     # Weighted sum; weights sum to 1.0 so total stays in [0, 10].
-    penalty = min(10.0, W_SM * p_sm + W_CMA * p_cma + W_CNB * p_cnb + W_SPIRAL * p_spiral)
+    penalty = min(
+        10.0,
+        W_SM * p_sm + W_CMA * p_cma + W_CNB * p_cnb + W_SPIRAL * p_spiral
+        + p_endurance,
+    )
 
     return AeroScore(
         lap_time=lap_time,

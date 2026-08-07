@@ -20,6 +20,7 @@ def aero_main(
         design_vector: DesignVector,
         parameter_vector: ParameterVector,
         thrust_velocity: tuple[float, float, float],
+        flight_time_fit: tuple[float, float, float],
         mission: int,
         cg: tuple[float, float, float],
         inertia_matrix: np.ndarray,
@@ -83,7 +84,9 @@ def aero_main(
     stability_result = stability_analysis_coarse(design_vector, cruise_condition, mass_props)
 
     # Return final score for design vector based on cruise speed, stall speed, and stability numbers.
-    score = aero_score(cruise_condition, stability_result, parameter_vector)
+    score = aero_score(
+        cruise_condition, stability_result, parameter_vector, flight_time_fit, mission
+    )
     if debug:
         print(
             f"[aero] Aerodynamic evaluation finished in {perf_counter() - analysis_start:.2f} s "
