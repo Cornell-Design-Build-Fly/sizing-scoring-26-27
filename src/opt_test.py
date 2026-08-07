@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import math
 import csv
+import json
 import os
+import time
 from contextlib import nullcontext, redirect_stdout
 from dataclasses import asdict
+from datetime import datetime
 from io import StringIO
 from pathlib import Path
 
@@ -29,10 +32,10 @@ from src.vectors import DesignVector, ParameterVector
 
 
 BAD_OBJECTIVE = 1.0e6
-ROUND_PAYLOAD = False
+ROUND_PAYLOAD = True
 MAXITER = 100
 POPSIZE = 15
-WORKERS = 10
+WORKERS = 4
 OUTPUT_DIR = Path("data_dump") / "opt_preliminary"
 SUPPRESS_MODULE_OUTPUT = True
 REPORT_REJECTIONS = False
@@ -43,6 +46,50 @@ BEST_SCORE = -math.inf
 PROP_DATABASE: ContinuousPropDatabase | None = None
 PARAMETER_VECTOR = ParameterVector()
 COMPLETED_GENERATIONS = 0
+
+HISTORY_ARTIFACTS = (
+    "history.csv",
+    "score_history.png",
+    "generation_score_distribution.png",
+    "penalty_history.png",
+)
+
+
+def _prepare_output_dir() -> None:
+    """Create the output directory and clear inapplicable old history."""
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    if not should_record_evaluations():
+        for name in HISTORY_ARTIFACTS:
+            path = OUTPUT_DIR / name
+            if path.exists():
+                path.unlink()
+
+
+def _write_run_summary(result, elapsed_seconds: float) -> Path:
+    """Save actual run size, timing, settings, and termination details."""
+
+    path = OUTPUT_DIR / "run_summary.json"
+    summary = {
+        "finished_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "elapsed_seconds": elapsed_seconds,
+        "nfev": int(result.nfev),
+        "nit": int(result.nit),
+        "success": bool(result.success),
+        "message": str(result.message),
+        "workers": resolved_worker_count(),
+        "maxiter": MAXITER,
+        "popsize": POPSIZE,
+        "variables": len(DesignVector.bounds()),
+        "population_size": de_population_size(),
+        "maximum_expected_evaluations": expected_de_evaluations(),
+        "history_recorded": should_record_evaluations(),
+        "best_objective": float(result.fun),
+        "best_score": -float(result.fun),
+    }
+    with path.open("w", encoding="utf-8") as file:
+        json.dump(summary, file, indent=2)
+    return path
 
 
 def _history_row(
@@ -439,6 +486,7 @@ def print_final_population_spread(result) -> None:
 def main_opt_test() -> None:
     global PROP_DATABASE
 
+    _prepare_output_dir()
     print("Loading prop database...")
     PROP_DATABASE = _load_prop_database()
 
@@ -459,7 +507,15 @@ def main_opt_test() -> None:
 
     print("\nStarting preliminary differential-evolution run...")
     print(f"Expected DE evaluations: {expected_de_evaluations()}")
+    optimization_start = time.perf_counter()
     result = run_preliminary_optimization()
+    elapsed_seconds = time.perf_counter() - optimization_start
+    run_summary_path = _write_run_summary(result, elapsed_seconds)
+    print(
+        f"Optimization finished in {elapsed_seconds:.1f} s "
+        f"with {result.nfev} evaluations across {result.nit} generations."
+    )
+    print(f"Termination: {result.message}")
 
     best_design = DesignVector.from_array(result.x)
     print_best_result(result, DesignVector.opt_names())
@@ -475,7 +531,6 @@ def main_opt_test() -> None:
     print("\nBest design vector:")
     print(best_design.disp_vars())
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     history_path = OUTPUT_DIR / "history.csv"
     score_history_path = OUTPUT_DIR / "score_history.png"
     generation_scores_path = OUTPUT_DIR / "generation_score_distribution.png"
@@ -512,6 +567,7 @@ def main_opt_test() -> None:
         show=False,
     )
     print("\nSaved optimization artifacts:")
+    print(f"  run summary: {run_summary_path}")
     if EVALUATION_HISTORY:
         print(f"  history: {history_path}")
         print(f"  score history: {score_history_path}")

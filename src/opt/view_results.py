@@ -147,7 +147,7 @@ def plot_generation_score_distribution(
     ]
 
     plt.figure()
-    plt.boxplot(score_groups, labels=[str(generation) for generation in generations])
+    plt.boxplot(score_groups, tick_labels=[str(generation) for generation in generations])
     plt.xlabel("Generation")
     plt.ylabel("Trial evaluation score")
     plt.title("Trial Score Distribution by Generation")

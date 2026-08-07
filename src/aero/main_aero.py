@@ -11,6 +11,7 @@ from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 from src.aero.utils import require_scalar
 from src.aero.cruise_analysis import cruise_analysis
 from src.aero.cruise_analysis_coarse import cruise_analysis_coarse
+from src.aero.cruise_analysis_fast import cruise_analysis_fast
 from src.aero.aero_analysis import aero_analysis
 from src.aero.stability_analysis_coarse import stability_analysis_coarse
 from src.aero.stability_analysis import stability_analysis
@@ -63,7 +64,10 @@ def aero_main(
     # cruise_condition = cruise_analysis(
     #     design_vector, parameter_vector, thrust_velocity, cg, mass, mission, debug
     # )
-    cruise_condition = cruise_analysis_coarse(
+    # cruise_condition = cruise_analysis_coarse(
+    #     design_vector, parameter_vector, thrust_velocity, cg, mass, mission, debug
+    # )
+    cruise_condition = cruise_analysis_fast(
         design_vector, parameter_vector, thrust_velocity, cg, mass, mission, debug
     )
     if debug:
