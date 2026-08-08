@@ -1,0 +1,22 @@
+{
+  "finished_at": "2026-08-07T22:41:38-04:00",
+  "elapsed_seconds": 1020.2222939999774,
+  "nfev": 41791,
+  "nit": 237,
+  "success": false,
+  "message": "Maximum number of iterations has been exceeded.",
+  "workers": 10,
+  "maxiter": 237,
+  "popsize": 15,
+  "variables": 14,
+  "population_size": 210,
+  "maximum_expected_evaluations": 49980,
+  "evaluations_per_second": 40.962641422145715,
+  "wall_seconds_per_evaluation": 0.024412488191236807,
+  "estimated_worker_seconds_per_evaluation": 0.24412488191236809,
+  "tol": 0.0001,
+  "atol": 0.0,
+  "history_recorded": false,
+  "best_objective": -6.8268707607199115,
+  "best_score": 6.8268707607199115
+}

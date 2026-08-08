@@ -5,6 +5,7 @@ from aerosandbox import OperatingPoint
 from scipy.optimize import brentq
 
 from src.aero.custom_classes import CruiseCondition
+from src.aero.drag_model import drag_coefficients, fuselage_drag_geometry
 from src.vectors import DesignVector, ParameterVector
 
 
@@ -69,6 +70,7 @@ def cruise_analysis_fast(
 
     weight = mass * parameter_vector.gravity
     thrust_a, thrust_b, thrust_c = thrust_velocity
+    fuselage_geometry = fuselage_drag_geometry(design_vector)
 
     def state(velocity: float) -> tuple[float, float, float, float]:
         q = 0.5 * parameter_vector.rho * velocity**2
@@ -76,18 +78,7 @@ def cruise_analysis_fast(
         alpha_rad, elevator_rad = np.linalg.solve(trim_matrix, [cl_required - cl0, -cm0])
         wing_cl = wing_cl0 + wing_cla * alpha_rad
         tail_cl = tail_cla * alpha_rad + tail_cle * elevator_rad
-        reynolds = parameter_vector.rho * velocity * design_vector.wing_chord / 1.81e-5
-        cd = (
-            0.001870
-            + 3.66232 / np.sqrt(reynolds)
-            + wing_cl**2 / (np.pi * wing_ar)
-            + 0.68
-            * (
-                0.012 * (design_vector.hstab_area + design_vector.vstab_area) / design_vector.wing_area
-                + tail_ratio * tail_cl**2 / (np.pi * 0.80 * tail_ar)
-            )
-            + 0.126 * design_vector.fuselage_width * design_vector.fuselage_height / design_vector.wing_area
-        )
+        cd = sum(drag_coefficients(design_vector, parameter_vector, velocity, wing_cl, tail_cl, fuselage_geometry).values())
         drag = q * design_vector.wing_area * cd
         if mission == 3:
             drag += 0.005 * parameter_vector.rho * velocity**2 * design_vector.banner_length**2

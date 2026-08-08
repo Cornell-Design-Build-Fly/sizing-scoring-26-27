@@ -5,6 +5,7 @@ import aerosandbox.numpy as np
 from aerosandbox import OperatingPoint
 
 from src.aero.custom_classes import CruiseCondition
+from src.aero.drag_model import drag_coefficients, fuselage_drag_geometry
 from src.vectors import DesignVector, ParameterVector
 
 
@@ -62,19 +63,9 @@ def cruise_analysis_coarse(
         + body_cm
     )
 
-    # Reynolds-aware profile drag plus induced and component drag.
-    reynolds = parameter_vector.rho * velocity * design_vector.wing_chord / 1.81e-5
-    wing_profile_cd = 0.001870 + 3.66232 / np.sqrt(reynolds)
-    tail_cd = 0.68 * (
-        0.012 * (design_vector.hstab_area + design_vector.vstab_area) / design_vector.wing_area
-        + tail_ratio * tail_cl**2 / (np.pi * 0.80 * tail_ar)
-    )
-    cd = (
-        wing_profile_cd
-        + wing_cl**2 / (np.pi * wing_ar)
-        + tail_cd
-        + 0.126 * design_vector.fuselage_width * design_vector.fuselage_height / design_vector.wing_area
-    )
+    # Reynolds-aware profile, fuselage, and interacting induced drag.
+    fuselage_geometry = fuselage_drag_geometry(design_vector)
+    cd = sum(drag_coefficients(design_vector, parameter_vector, velocity, wing_cl, tail_cl, fuselage_geometry).values())
 
     dynamic_pressure = 0.5 * parameter_vector.rho * velocity**2
     lift = dynamic_pressure * design_vector.wing_area * total_cl

@@ -6,7 +6,7 @@ import json
 import os
 import time
 from contextlib import nullcontext, redirect_stdout
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
@@ -18,6 +18,7 @@ from scipy.optimize import differential_evolution, NonlinearConstraint
 from tqdm.auto import tqdm
 
 from src.main import main
+from src.mech.main_mech import evaluate_mechanical_module
 from src.opt.view_results import (
     plot_final_population,
     plot_final_population_spread,
@@ -30,24 +31,28 @@ from src.prop.continuous_prop_database import (
     ContinuousPropDatabase,
     load_default_continuous_prop_database,
 )
-from src.vectors import DesignVector, ParameterVector
+from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 
 
 BAD_OBJECTIVE = 1.0e6
 ROUND_PAYLOAD = True
-MAXITER = 100
+MAXITER = 237
 POPSIZE = 15
-WORKERS = 4
+WORKERS = 10
+DE_TOL = 1.0e-4
+DE_ATOL = 0.0
 OUTPUT_DIR = Path("data_dump") / "opt_preliminary"
 SUPPRESS_MODULE_OUTPUT = True
 REPORT_REJECTIONS = False
 REJECTION_DETAIL_CHARS = 220
+SAVE_BEST_DESIGN_VISUALIZATION = True
 EVALUATION_HISTORY: list[dict] = []
 PROGRESS_BAR = None
 BEST_SCORE = -math.inf
 PROP_DATABASE: ContinuousPropDatabase | None = None
 PARAMETER_VECTOR = ParameterVector()
 COMPLETED_GENERATIONS = 0
+OPTIMIZATION_START: float | None = None
 
 HISTORY_ARTIFACTS = (
     "history.csv",
@@ -92,6 +97,11 @@ def _write_run_summary(result, elapsed_seconds: float) -> Path:
         "variables": len(DesignVector.bounds()),
         "population_size": de_population_size(),
         "maximum_expected_evaluations": expected_de_evaluations(),
+        "evaluations_per_second": int(result.nfev) / elapsed_seconds,
+        "wall_seconds_per_evaluation": elapsed_seconds / int(result.nfev),
+        "estimated_worker_seconds_per_evaluation": elapsed_seconds * resolved_worker_count() / int(result.nfev),
+        "tol": DE_TOL,
+        "atol": DE_ATOL,
         "history_recorded": should_record_evaluations(),
         "best_objective": float(result.fun),
         "best_score": -float(result.fun),
@@ -99,6 +109,44 @@ def _write_run_summary(result, elapsed_seconds: float) -> Path:
     with path.open("w", encoding="utf-8") as file:
         json.dump(summary, file, indent=2)
     return path
+
+
+def save_best_design_visualization(design: DesignVector) -> tuple[Path, Path]:
+    """Save the rounded, mechanically resolved best design and three-view."""
+
+    import matplotlib.pyplot as plt
+
+    scoring_design = replace(
+        design,
+        ducks_num=round(design.ducks_num) if ROUND_PAYLOAD else design.ducks_num,
+        pucks_num=round(design.pucks_num) if ROUND_PAYLOAD else design.pucks_num,
+    )
+    with _module_output_context():
+        mech = evaluate_mechanical_module(scoring_design, parameter_vector=PARAMETER_VECTOR)
+    resolved_design = replace(
+        scoring_design,
+        fuselage_width=mech.resolved_fuselage_width_m,
+        fuselage_height=mech.resolved_fuselage_height_m,
+    )
+    vector_path = OUTPUT_DIR / "best_design_vector.json"
+    geometry_path = OUTPUT_DIR / "best_design_geometry.png"
+    vector_path.write_text(
+        json.dumps(
+            {
+                "optimizer_vector": asdict(design),
+                "visualized_resolved_vector": asdict(resolved_design),
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    ASBDesignVector.from_design_vector(resolved_design).make_airplane(
+        name="Optimized Design"
+    ).draw_three_view(style="shaded")
+    plt.gcf().savefig(geometry_path, dpi=200, bbox_inches="tight")
+    plt.close(plt.gcf())
+    return vector_path, geometry_path
 
 
 def _history_row(
@@ -322,6 +370,18 @@ def progress_callback(xk: np.ndarray, convergence: float) -> bool:
 
     del xk
     COMPLETED_GENERATIONS += 1
+    completed_evaluations = min(
+        expected_de_evaluations(),
+        de_population_size() * (COMPLETED_GENERATIONS + 1),
+    )
+    elapsed = time.perf_counter() - OPTIMIZATION_START if OPTIMIZATION_START is not None else 0.0
+    rate = completed_evaluations / elapsed if elapsed > 0 else 0.0
+    eta = (expected_de_evaluations() - completed_evaluations) / rate if rate > 0 else 0.0
+    timing = (
+        f", elapsed={elapsed:.1f}s, throughput={rate:.1f} eval/s, "
+        f"worker_avg={elapsed * resolved_worker_count() / completed_evaluations:.4f}s/eval, "
+        f"eta={eta:.1f}s"
+    )
 
     if should_record_evaluations():
         sync_progress_bar_to_history()
@@ -334,23 +394,19 @@ def progress_callback(xk: np.ndarray, convergence: float) -> bool:
             _notify(
                 f"[opt] generation complete: evaluations={len(EVALUATION_HISTORY)}, "
                 f"best_score={best['score']:.6g}, rejected={rejected_count}, "
-                f"convergence={convergence:.3g}"
+                f"convergence={convergence:.3g}{timing}"
             )
         else:
             _notify(
                 f"[opt] generation complete: evaluations={len(EVALUATION_HISTORY)}, "
                 f"no successful designs yet, rejected={rejected_count}, "
-                f"convergence={convergence:.3g}"
+                f"convergence={convergence:.3g}{timing}"
             )
     else:
-        completed_evaluations = min(
-            expected_de_evaluations(),
-            de_population_size() * (COMPLETED_GENERATIONS + 1),
-        )
         sync_progress_bar_to_count(completed_evaluations)
         _notify(
             f"[opt] generation complete: approx_evaluations={completed_evaluations}, "
-            f"convergence={convergence:.3g}"
+            f"convergence={convergence:.3g}{timing}"
         )
     return False
 
@@ -387,6 +443,8 @@ def _differential_evolution_kwargs() -> dict:
         "polish": False,
         "updating": de_updating_mode(),
         "callback": progress_callback,
+        "tol": DE_TOL,
+        "atol": DE_ATOL,
         "disp": False,
     }
 
@@ -412,12 +470,13 @@ def _run_parallel_optimization():
 def run_preliminary_optimization():
     """Run a tiny DE pass through the full scoring stack."""
 
-    global BEST_SCORE, COMPLETED_GENERATIONS, PROGRESS_BAR
+    global BEST_SCORE, COMPLETED_GENERATIONS, PROGRESS_BAR, OPTIMIZATION_START
 
     worker_count = resolved_worker_count()
     EVALUATION_HISTORY.clear()
     BEST_SCORE = -math.inf
     COMPLETED_GENERATIONS = 0
+    OPTIMIZATION_START = time.perf_counter()
 
     with tqdm(
         total=expected_de_evaluations(),
@@ -540,6 +599,12 @@ def main_opt_test() -> None:
     print_final_population_spread(result)
     print("\nBest design vector:")
     print(best_design.disp_vars())
+    visualization_paths = None
+    if SAVE_BEST_DESIGN_VISUALIZATION:
+        try:
+            visualization_paths = save_best_design_visualization(best_design)
+        except Exception as exc:
+            print(f"Could not save best-design visualization: {exc}")
 
     history_path = OUTPUT_DIR / "history.csv"
     score_history_path = OUTPUT_DIR / "score_history.png"
@@ -585,6 +650,9 @@ def main_opt_test() -> None:
         print(f"  penalty history: {penalty_history_path}")
     print(f"  final population: {population_path}")
     print(f"  final population spread: {population_spread_path}")
+    if visualization_paths is not None:
+        print(f"  best design vector: {visualization_paths[0]}")
+        print(f"  best design geometry: {visualization_paths[1]}")
 
 
 if __name__ == "__main__":
