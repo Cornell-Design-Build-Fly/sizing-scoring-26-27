@@ -227,6 +227,166 @@ def _load_prop_database() -> ContinuousPropDatabase:
         return load_default_continuous_prop_database()
 
 
+def _ensure_prop_database_loaded() -> float:
+    """Load the shared prop database if needed and return load seconds."""
+
+    global PROP_DATABASE
+
+    if PROP_DATABASE is not None:
+        return 0.0
+
+    start = time.perf_counter()
+    PROP_DATABASE = _load_prop_database()
+    return time.perf_counter() - start
+
+
+def _random_pd_feasible_vector(rng: np.random.Generator) -> np.ndarray:
+    """Sample a random optimizer vector that satisfies the P/D constraint."""
+
+    bounds = DesignVector.bounds()
+    values = np.array(
+        [
+            rng.uniform(lower, upper)
+            for lower, upper in bounds
+        ],
+        dtype=float,
+    )
+
+    names = DesignVector.opt_names()
+    diameter_index = names.index("prop_diameter_in")
+    pitch_index = names.index("prop_pitch_in")
+    diameter = values[diameter_index]
+    pitch_lower, pitch_upper = bounds[pitch_index]
+
+    constrained_lower = max(pitch_lower, 0.4 * diameter)
+    constrained_upper = min(pitch_upper, 0.8 * diameter)
+    if constrained_lower > constrained_upper:
+        values[pitch_index] = np.clip(
+            values[pitch_index],
+            pitch_lower,
+            pitch_upper,
+        )
+    else:
+        values[pitch_index] = rng.uniform(
+            constrained_lower,
+            constrained_upper,
+        )
+
+    return values
+
+
+def benchmark_fitness_runtime(
+    sample_count: int = 100,
+    *,
+    seed: int = 1,
+    warmup_count: int = 5,
+    verbose: bool = True,
+) -> dict:
+    """Time warmed calls to the same objective function used by DE.
+
+    This intentionally uses ``fitness(..., record=False)`` so timing includes
+    the optimizer's exception handling and objective conversion, but excludes
+    progress bars and serial history bookkeeping.
+    """
+
+    if sample_count <= 0:
+        raise ValueError("sample_count must be positive.")
+    if warmup_count < 0:
+        raise ValueError("warmup_count cannot be negative.")
+
+    database_load_seconds = _ensure_prop_database_loaded()
+
+    baseline = DesignVector().to_array()
+    for _ in range(warmup_count):
+        fitness(baseline, record=False)
+
+    rng = np.random.default_rng(seed)
+    rows = []
+    for index in range(sample_count):
+        x = _random_pd_feasible_vector(rng)
+        start = time.perf_counter()
+        objective = fitness(x, record=False)
+        elapsed = time.perf_counter() - start
+        rows.append(
+            {
+                "sample": index,
+                "seconds": elapsed,
+                "objective": float(objective),
+                "status": (
+                    "rejected"
+                    if objective >= BAD_OBJECTIVE
+                    else "ok"
+                ),
+            }
+        )
+
+    seconds = np.array(
+        [row["seconds"] for row in rows],
+        dtype=float,
+    )
+    ok_seconds = np.array(
+        [
+            row["seconds"]
+            for row in rows
+            if row["status"] == "ok"
+        ],
+        dtype=float,
+    )
+    rejected_count = sum(
+        row["status"] == "rejected"
+        for row in rows
+    )
+
+    summary = {
+        "sample_count": sample_count,
+        "seed": seed,
+        "warmup_count": warmup_count,
+        "database_load_seconds": database_load_seconds,
+        "rejected_count": rejected_count,
+        "ok_count": sample_count - rejected_count,
+        "mean_seconds": float(np.mean(seconds)),
+        "median_seconds": float(np.median(seconds)),
+        "p95_seconds": float(np.percentile(seconds, 95)),
+        "max_seconds": float(np.max(seconds)),
+        "ok_mean_seconds": (
+            float(np.mean(ok_seconds))
+            if ok_seconds.size
+            else math.nan
+        ),
+        "ok_median_seconds": (
+            float(np.median(ok_seconds))
+            if ok_seconds.size
+            else math.nan
+        ),
+        "ok_p95_seconds": (
+            float(np.percentile(ok_seconds, 95))
+            if ok_seconds.size
+            else math.nan
+        ),
+        "rows": rows,
+    }
+
+    if verbose:
+        print("\nFitness runtime benchmark:")
+        print(f"  samples: {sample_count}")
+        print(f"  warmups: {warmup_count}")
+        print(f"  database load: {database_load_seconds:.4f} s")
+        print(
+            f"  ok/rejected: {summary['ok_count']}/"
+            f"{summary['rejected_count']}"
+        )
+        print(f"  all mean:   {summary['mean_seconds']:.4f} s")
+        print(f"  all median: {summary['median_seconds']:.4f} s")
+        print(f"  all p95:    {summary['p95_seconds']:.4f} s")
+        print(f"  all max:    {summary['max_seconds']:.4f} s")
+        if ok_seconds.size:
+            print(f"  ok mean:    {summary['ok_mean_seconds']:.4f} s")
+            print(f"  ok median:  {summary['ok_median_seconds']:.4f} s")
+            print(f"  ok p95:     {summary['ok_p95_seconds']:.4f} s")
+
+    return summary
+
+
 def _record_evaluation(row: dict) -> None:
     """Store one objective evaluation and update live progress displays."""
 
@@ -301,6 +461,8 @@ def fitness(x: np.ndarray, *, record: bool = True) -> float:
     evaluation = _next_evaluation_number()
     try:
         design_vector = DesignVector.from_array(x)
+        if PROP_DATABASE is None:
+            _ensure_prop_database_loaded()
         with _module_output_context():
             score, breakdown = main( # type: ignore
                 design_vector,
