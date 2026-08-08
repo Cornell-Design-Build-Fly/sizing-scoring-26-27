@@ -64,18 +64,20 @@ def cruise_analysis_fast(
     )
     cma = -0.021599 + wing_cla * wing_lever - tail_ratio * tail_cla * tail_lever + 0.059479 * body_scale
     cme = -tail_ratio * tail_cle * tail_lever
-    trim_matrix = np.array([[cla, cle], [cma, cme]])
-    if abs(np.linalg.det(trim_matrix)) < 1e-10:
+    trim_determinant = cla * cme - cle * cma
+    if abs(trim_determinant) < 1e-10:
         return CruiseCondition(OperatingPoint(velocity=-1.0, alpha=-999.0), None, False)
 
     weight = mass * parameter_vector.gravity
     thrust_a, thrust_b, thrust_c = thrust_velocity
     fuselage_geometry = fuselage_drag_geometry(design_vector)
 
-    def state(velocity: float) -> tuple[float, float, float, float]:
+    def state(velocity):
         q = 0.5 * parameter_vector.rho * velocity**2
         cl_required = weight / (q * design_vector.wing_area)
-        alpha_rad, elevator_rad = np.linalg.solve(trim_matrix, [cl_required - cl0, -cm0])
+        lift_rhs = cl_required - cl0
+        alpha_rad = (cme * lift_rhs + cle * cm0) / trim_determinant
+        elevator_rad = (-cma * lift_rhs - cla * cm0) / trim_determinant
         wing_cl = wing_cl0 + wing_cla * alpha_rad
         tail_cl = tail_cla * alpha_rad + tail_cle * elevator_rad
         cd = sum(drag_coefficients(design_vector, parameter_vector, velocity, wing_cl, tail_cl, fuselage_geometry).values())
@@ -91,7 +93,8 @@ def cruise_analysis_fast(
 
     # Bracket every crossing and prefer the valid solution nearest the former 18 m/s guess.
     velocity_grid = np.linspace(3.0, 50.0, 48)
-    residuals = [drag_residual(float(v)) for v in velocity_grid]
+    _, _, grid_drag, grid_thrust = state(velocity_grid)
+    residuals = grid_drag - grid_thrust
     roots = []
     for left, right, f_left, f_right in zip(velocity_grid[:-1], velocity_grid[1:], residuals[:-1], residuals[1:]):
         if f_left == 0:

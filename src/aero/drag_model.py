@@ -1,5 +1,7 @@
 """Fast drag build-up shared by algebraic cruise solvers."""
 
+from functools import lru_cache
+
 import aerosandbox.numpy as np
 from aerosandbox.aerodynamics.aero_3D.aero_buildup_submodels.fuselage_aerodynamics_utilities import (
     fuselage_base_drag_coefficient,
@@ -12,8 +14,10 @@ from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 MU = 1.81e-5
 
 
-def fuselage_drag_geometry(design: DesignVector) -> tuple[float, float, float, float]:
-    """Precompute the fuselage geometry used by its profile-drag model."""
+@lru_cache(maxsize=4096)
+def _fuselage_drag_geometry_cached(design_values: tuple[float, ...]) -> tuple[float, float, float, float]:
+    """Build fuselage geometry once for all mission evaluations of a design."""
+    design = DesignVector(*design_values)
     tail_te = design.tail_arm + max(design.hstab_chord, design.vstab_chord)
     fuselage = ASBDesignVector.from_design_vector(design).make_fuselage(
         wing_le_x=0.0, wing_te_x=design.wing_chord, tail_te_x=tail_te
@@ -24,6 +28,16 @@ def fuselage_drag_geometry(design: DesignVector) -> tuple[float, float, float, f
         float(fuselage.area_wetted()),
         float(fuselage.area_base()),
     )
+
+
+def fuselage_drag_geometry(design: DesignVector) -> tuple[float, float, float, float]:
+    """Precompute the fuselage geometry used by its profile-drag model."""
+    init_fields = tuple(
+        getattr(design, name)
+        for name, field in design.__dataclass_fields__.items()
+        if field.init
+    )
+    return _fuselage_drag_geometry_cached(init_fields)
 
 
 def drag_coefficients(
