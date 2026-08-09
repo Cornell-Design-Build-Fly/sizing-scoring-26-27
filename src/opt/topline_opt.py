@@ -59,7 +59,7 @@ PROGRESS_BAR = None
 class ToplineConfig:
     """Settings for the long, SciPy-managed top-line DE run."""
 
-    workers: int = 12
+    workers: int = -1
     popsize: int = 25
     maxiter: int | None = None
     target_seconds: float = TARGET_RUN_SECONDS
