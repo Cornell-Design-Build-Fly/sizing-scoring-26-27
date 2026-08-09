@@ -12,6 +12,18 @@ from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 
 
 MU = 1.81e-5
+BANNER_CD = 0.08
+BANNER_ASPECT_RATIO = 5.0
+
+
+def banner_drag_force(
+    design: DesignVector,
+    parameters: ParameterVector,
+    velocity,
+):
+    """Return banner drag using area = length^2 / aspect ratio."""
+    banner_area = design.banner_length**2 / BANNER_ASPECT_RATIO
+    return 0.5 * parameters.rho * velocity**2 * BANNER_CD * banner_area
 
 
 @lru_cache(maxsize=4096)

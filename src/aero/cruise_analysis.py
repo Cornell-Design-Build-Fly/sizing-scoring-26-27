@@ -5,6 +5,7 @@ from time import perf_counter
 
 from src.aero.aero_analysis import aero_analysis
 from src.aero.custom_classes import CruiseCondition
+from src.aero.drag_model import banner_drag_force
 from src.aero.utils import require_scalar
 from src.vectors import DesignVector, ASBDesignVector, ParameterVector
 import numpy as np
@@ -220,13 +221,13 @@ def m3_drag(
     Calculate additional drag from Mission 3-specific attachments.
 
     For the 2025-2026 competition, this consists only of the towed
-    banner, modeled with an aspect ratio of 5 and a drag coefficient of 0.05.
+    banner, modeled with an aspect ratio of 5 and a drag coefficient of 0.08.
     """
 
     if mission != 3:
         return 0.0
 
-    return 0.005 * parameter_vector.rho * velocity**2 * design_vector.banner_length**2
+    return banner_drag_force(design_vector, parameter_vector, velocity)
 
 
 def cruise_analysis(

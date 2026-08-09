@@ -5,7 +5,7 @@ from aerosandbox import OperatingPoint
 from scipy.optimize import brentq
 
 from src.aero.custom_classes import CruiseCondition
-from src.aero.drag_model import drag_coefficients, fuselage_drag_geometry
+from src.aero.drag_model import banner_drag_force, drag_coefficients, fuselage_drag_geometry
 from src.vectors import DesignVector, ParameterVector
 
 
@@ -83,7 +83,7 @@ def cruise_analysis_fast(
         cd = sum(drag_coefficients(design_vector, parameter_vector, velocity, wing_cl, tail_cl, fuselage_geometry).values())
         drag = q * design_vector.wing_area * cd
         if mission == 3:
-            drag += 0.005 * parameter_vector.rho * velocity**2 * design_vector.banner_length**2
+            drag += banner_drag_force(design_vector, parameter_vector, velocity)
         thrust = thrust_a * velocity**2 + thrust_b * velocity + thrust_c
         return alpha_rad, elevator_rad, drag, thrust
 
