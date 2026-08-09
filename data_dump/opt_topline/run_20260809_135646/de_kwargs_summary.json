@@ -1,0 +1,90 @@
+{
+  "bounds": [
+    [
+      0.914,
+      1.524
+    ],
+    [
+      0.12,
+      0.4
+    ],
+    [
+      0.3,
+      0.9
+    ],
+    [
+      0.08,
+      0.3
+    ],
+    [
+      3,
+      150
+    ],
+    [
+      1,
+      50
+    ],
+    [
+      0.5,
+      5.0
+    ],
+    [
+      1.0,
+      4.5
+    ],
+    [
+      10.0,
+      25.0
+    ],
+    [
+      5.0,
+      18.0
+    ],
+    [
+      200.0,
+      500.0
+    ],
+    [
+      1000.0,
+      3000.0
+    ],
+    [
+      0.5,
+      1.0
+    ],
+    [
+      0.5,
+      1.0
+    ]
+  ],
+  "maxiter": 561,
+  "popsize": 25,
+  "polish": false,
+  "updating": "deferred",
+  "tol": 1e-05,
+  "atol": 0.0,
+  "disp": false,
+  "workers": -1,
+  "init": "sobol",
+  "mutation": [
+    0.5,
+    1.0
+  ],
+  "recombination": 0.7,
+  "integrality": [
+    false,
+    false,
+    false,
+    false,
+    true,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ]
+}

@@ -41,6 +41,7 @@ from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 BAD_OBJECTIVE = 1.0e6
 PD_MIN = 0.4
 PD_MAX = 0.8
+MIN_DUCKS_PER_PUCK = 3.0
 TARGET_EVALS_PER_SECOND = 80.0
 TARGET_RUN_SECONDS = 3600.0
 
@@ -61,7 +62,7 @@ class ToplineConfig:
 
     workers: int = -1
     popsize: int = 25
-    maxiter: int | None = None
+    maxiter: int | None = 300
     target_seconds: float = TARGET_RUN_SECONDS
     assumed_evals_per_second: float = TARGET_EVALS_PER_SECOND
     init: str = "sobol"
@@ -107,6 +108,20 @@ def _pd_ratio(x: np.ndarray) -> float:
 PD_CONSTRAINT = NonlinearConstraint(_pd_ratio, PD_MIN, PD_MAX)
 
 
+def _ducks_per_puck(x: np.ndarray) -> float:
+    names = DesignVector.opt_names()
+    ducks = x[names.index("ducks_num")]
+    pucks = x[names.index("pucks_num")]
+    return float(ducks / pucks)
+
+
+DUCKS_PER_PUCK_CONSTRAINT = NonlinearConstraint(
+    _ducks_per_puck,
+    MIN_DUCKS_PER_PUCK,
+    np.inf,
+)
+
+
 def _integrality_mask() -> np.ndarray:
     names = DesignVector.opt_names()
     return np.array(
@@ -144,6 +159,8 @@ def _objective(x: np.ndarray) -> float:
     if not np.all(np.isfinite(x)):
         return BAD_OBJECTIVE
     if not PD_MIN <= _pd_ratio(x) <= PD_MAX:
+        return BAD_OBJECTIVE
+    if _ducks_per_puck(x) < MIN_DUCKS_PER_PUCK:
         return BAD_OBJECTIVE
 
     config = ToplineConfig()
@@ -241,7 +258,7 @@ def _differential_evolution_kwargs(config: ToplineConfig) -> dict:
     kwargs = {
         "func": _objective,
         "bounds": DesignVector.bounds(),
-        "constraints": (PD_CONSTRAINT,),
+        "constraints": (PD_CONSTRAINT, DUCKS_PER_PUCK_CONSTRAINT),
         "maxiter": _resolved_maxiter(config),
         "popsize": config.popsize,
         "polish": config.polish,

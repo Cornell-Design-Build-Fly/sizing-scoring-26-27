@@ -8,7 +8,7 @@ METERS_TO_INCHES = 39.37
 DUCKS_TIME = 2.5
 PUCKS_TIME = 1.5
 BANNER_TIME = 7.0
-BEST_GM_TIME_S = 18.0
+BEST_GM_TIME_S = 25.0
 
 # Mission 2 reference
 BEST_M2_PROFIT = 2613
@@ -22,7 +22,8 @@ BEST_RAC = 0.90
 def gm_score(dv: DesignVector) -> float:
     """Returns the ground mission score."""
     time_gm = 2.0 * (dv.ducks_num * DUCKS_TIME + dv.pucks_num * PUCKS_TIME) + BANNER_TIME
-    return BEST_GM_TIME_S / time_gm
+    normalization_time = min(BEST_GM_TIME_S, time_gm)
+    return normalization_time / time_gm
 
 
 def m1_score(lap_time_s: float) -> float:
@@ -41,7 +42,8 @@ def m2_score(dv: DesignVector, lap_time_s: float) -> float:
     efficiency_factor = dv.batt_energy / 100.0
     cost = num_laps * (10.0 + dv.ducks_num * 0.5 + dv.pucks_num * 2.0) * efficiency_factor
     profit = (income_passengers + income_cargo) - cost
-    return 1.0 + (profit / BEST_M2_PROFIT)
+    normalization_profit = max(BEST_M2_PROFIT, profit)
+    return 1.0 + (profit / normalization_profit)
 
 
 def m3_score(dv: DesignVector, lap_time_s: float) -> float:
@@ -50,7 +52,10 @@ def m3_score(dv: DesignVector, lap_time_s: float) -> float:
     rac = 0.05 * wing_span_ft + 0.75
     num_laps = int(SECONDS_PER_MISSION // lap_time_s)
     best_num_laps = int(SECONDS_PER_MISSION // BEST_M3_LAP_TIME_S)
-    return 2.0 + (num_laps * dv.banner_length * METERS_TO_INCHES / rac) / (best_num_laps * BEST_BANNER_LENGTH_IN / BEST_RAC)
+    performance = num_laps * dv.banner_length * METERS_TO_INCHES / rac
+    reference_performance = best_num_laps * BEST_BANNER_LENGTH_IN / BEST_RAC
+    normalization_performance = max(reference_performance, performance)
+    return 2.0 + (performance / normalization_performance)
 
 
 def total_score(dv: DesignVector, lap_time_m1: float, lap_time_m2: float, lap_time_m3: float,
