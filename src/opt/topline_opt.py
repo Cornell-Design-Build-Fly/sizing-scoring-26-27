@@ -25,6 +25,7 @@ from src.opt.view_results import (
     plot_final_population,
     plot_final_population_spread,
     plot_generation_convergence,
+    plot_payload_score_heatmap,
     plot_population_parallel_coordinates,
     plot_population_score_correlations,
     plot_population_score_vs_variables,
@@ -53,6 +54,7 @@ RUN_START_SECONDS: float | None = None
 CALLBACK_POPULATION_SIZE = 0
 CALLBACK_TARGET_CANDIDATES = 0
 CALLBACK_SCORE_BEST = True
+PAYLOAD_ARCHIVE: dict[tuple[int, int], dict[str, Any]] = {}
 PROGRESS_BAR = None
 
 
@@ -187,10 +189,67 @@ def _objective(x: np.ndarray) -> float:
     return -float(score)
 
 
-def _callback(xk: np.ndarray, convergence: float) -> bool:
+def _update_payload_archive(
+    population: np.ndarray,
+    population_energies: np.ndarray,
+    generation: int,
+    archive: dict[tuple[int, int], dict[str, Any]] | None = None,
+) -> int:
+    """Retain the highest-scoring design seen for each payload combination."""
+    archive = PAYLOAD_ARCHIVE if archive is None else archive
+    population = np.asarray(population, dtype=float)
+    energies = np.asarray(population_energies, dtype=float)
+    variable_names = DesignVector.opt_names()
+    if population.ndim != 2 or population.shape[1] != len(variable_names):
+        raise ValueError("Population has an unexpected shape.")
+    if energies.shape != (population.shape[0],):
+        raise ValueError("Population energies have an unexpected shape.")
+
+    ducks_index = variable_names.index("ducks_num")
+    pucks_index = variable_names.index("pucks_num")
+    updates = 0
+    for population_index, (vector, objective) in enumerate(zip(population, energies)):
+        objective = float(objective)
+        if not math.isfinite(objective) or objective >= BAD_OBJECTIVE:
+            continue
+
+        ducks = int(round(vector[ducks_index]))
+        pucks = int(round(vector[pucks_index]))
+        score = -objective
+        key = (ducks, pucks)
+        previous = archive.get(key)
+        if previous is not None and score <= previous["score"]:
+            continue
+
+        row = {
+            "ducks_num": ducks,
+            "pucks_num": pucks,
+            "score": score,
+            "objective": objective,
+            "generation": int(generation),
+            "population_index": int(population_index),
+        }
+        for name, value in zip(variable_names, vector):
+            row[name] = float(value)
+        row["ducks_num"] = ducks
+        row["pucks_num"] = pucks
+        archive[key] = row
+        updates += 1
+
+    return updates
+
+
+def _callback(intermediate_result) -> bool:
     global CALLBACK_GENERATION
 
     CALLBACK_GENERATION += 1
+    xk = np.asarray(intermediate_result.x, dtype=float)
+    convergence = float(intermediate_result.convergence)
+    _update_payload_archive(
+        intermediate_result.population,
+        intermediate_result.population_energies,
+        CALLBACK_GENERATION,
+    )
     elapsed = (
         time.perf_counter() - RUN_START_SECONDS
         if RUN_START_SECONDS is not None
@@ -312,6 +371,38 @@ def _write_csv(path: Path, rows: list[dict]) -> None:
         writer = csv.DictWriter(stream, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _payload_archive_rows() -> list[dict[str, Any]]:
+    return [PAYLOAD_ARCHIVE[key] for key in sorted(PAYLOAD_ARCHIVE)]
+
+
+def _write_payload_archive(output_dir: Path) -> tuple[Path, Path]:
+    """Write best scores and complete design vectors for each payload pair."""
+    rows = _payload_archive_rows()
+    csv_path = output_dir / "payload_score_archive.csv"
+    _write_csv(csv_path, rows)
+
+    variable_names = DesignVector.opt_names()
+    pairs = np.asarray(
+        [[row["ducks_num"], row["pucks_num"]] for row in rows],
+        dtype=int,
+    ).reshape(-1, 2)
+    design_vectors = np.asarray(
+        [[row[name] for name in variable_names] for row in rows],
+        dtype=float,
+    ).reshape(-1, len(variable_names))
+    npz_path = output_dir / "payload_score_archive.npz"
+    np.savez_compressed(
+        npz_path,
+        payload_pairs=pairs,
+        scores=np.asarray([row["score"] for row in rows], dtype=float),
+        objectives=np.asarray([row["objective"] for row in rows], dtype=float),
+        generations=np.asarray([row["generation"] for row in rows], dtype=int),
+        design_vectors=design_vectors,
+        variable_names=np.asarray(variable_names),
+    )
+    return csv_path, npz_path
 
 
 def _write_final_population(result, output_dir: Path) -> Path:
@@ -472,6 +563,7 @@ def _save_plots(result, output_dir: Path) -> list[Path]:
         "score_vs_variables": output_dir / "final_score_vs_variables.png",
         "score_correlations": output_dir / "final_score_correlations.png",
         "parallel_coordinates": output_dir / "final_parallel_coordinates.png",
+        "payload_score_heatmap": output_dir / "duck_puck_score_heatmap.png",
     }
 
     plot_generation_convergence(
@@ -520,6 +612,16 @@ def _save_plots(result, output_dir: Path) -> list[Path]:
         save_path=str(paths["parallel_coordinates"]),
         show=False,
     )
+    archive_rows = _payload_archive_rows()
+    plot_payload_score_heatmap(
+        [[row["ducks_num"], row["pucks_num"]] for row in archive_rows],
+        [row["score"] for row in archive_rows],
+        variable_names,
+        bounds,
+        min_ducks_per_puck=MIN_DUCKS_PER_PUCK,
+        save_path=str(paths["payload_score_heatmap"]),
+        show=False,
+    )
     return list(paths.values())
 
 
@@ -531,6 +633,7 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     global CALLBACK_POPULATION_SIZE
     global CALLBACK_SCORE_BEST
     global CALLBACK_TARGET_CANDIDATES
+    global PAYLOAD_ARCHIVE
     global PROGRESS_BAR
     global RUN_START_SECONDS
 
@@ -543,6 +646,7 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     CALLBACK_POPULATION_SIZE = _expected_population_size(config)
     CALLBACK_TARGET_CANDIDATES = _target_candidate_count(config)
     CALLBACK_SCORE_BEST = config.callback_score_best
+    PAYLOAD_ARCHIVE = {}
 
     print("Top-line differential evolution run")
     print(f"  output: {output_dir}")
@@ -590,6 +694,12 @@ def run_topline_optimization(config: ToplineConfig | None = None):
             PROGRESS_BAR = None
     elapsed_seconds = time.perf_counter() - RUN_START_SECONDS
 
+    _update_payload_archive(
+        result.population,
+        result.population_energies,
+        int(result.nit),
+    )
+
     print_best_result(result, DesignVector.opt_names())
     best_report = _best_design_report(result, config, output_dir)
     summary_path = _write_run_summary(
@@ -603,6 +713,7 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     generation_path = output_dir / "generation_history.csv"
     _write_csv(generation_path, CALLBACK_HISTORY)
     population_path = _write_final_population(result, output_dir)
+    payload_csv_path, payload_arrays_path = _write_payload_archive(output_dir)
     arrays_path = output_dir / "result_arrays.npz"
     np.savez(
         arrays_path,
@@ -616,6 +727,8 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     print(f"  summary: {summary_path}")
     print(f"  generation history: {generation_path}")
     print(f"  final population: {population_path}")
+    print(f"  payload archive: {payload_csv_path}")
+    print(f"  payload archive arrays: {payload_arrays_path}")
     print(f"  result arrays: {arrays_path}")
     print(f"  best design report: {output_dir / 'best_design_report.json'}")
     for path in plot_paths:

@@ -1,0 +1,122 @@
+{
+  "finished_at": "2026-08-09T21:13:09-04:00",
+  "elapsed_seconds": 3153.9629750999884,
+  "database_load_seconds_parent": 0.9068586000066716,
+  "nfev": 122258,
+  "nit": 300,
+  "success": false,
+  "message": "Maximum number of iterations has been exceeded.",
+  "best_objective": -5.494203535256776,
+  "best_score": 5.494203535256776,
+  "reevaluated_best_score": 5.494203535256776,
+  "workers": -1,
+  "variables": 14,
+  "popsize": 25,
+  "expected_population_size": 512,
+  "maxiter": 300,
+  "target_candidate_slots": 154112,
+  "assumed_evals_per_second": 80.0,
+  "target_seconds": 3600.0,
+  "observed_nfev_per_second": 38.7632958805181,
+  "observed_candidate_slots_per_second": 48.86297056011391,
+  "scipy_version": "1.17.1",
+  "python_version": "3.12.7",
+  "platform": "Windows-11-10.0.26100-SP0",
+  "cpu_count": 8,
+  "config": {
+    "workers": -1,
+    "popsize": 25,
+    "maxiter": 300,
+    "target_seconds": 3600.0,
+    "assumed_evals_per_second": 80.0,
+    "init": "sobol",
+    "mutation": [
+      0.5,
+      1.0
+    ],
+    "recombination": 0.7,
+    "tol": 1e-05,
+    "atol": 0.0,
+    "polish": false,
+    "seed": 20260808,
+    "output_dir": "data_dump\\opt_topline",
+    "round_payload": true,
+    "suppress_module_output": true,
+    "callback_score_best": true,
+    "save_best_visualization": true
+  },
+  "bounds": {
+    "wing_span": [
+      0.914,
+      1.524
+    ],
+    "wing_chord": [
+      0.12,
+      0.4
+    ],
+    "tail_arm": [
+      0.3,
+      0.9
+    ],
+    "nose_length": [
+      0.08,
+      0.3
+    ],
+    "ducks_num": [
+      3,
+      150
+    ],
+    "pucks_num": [
+      1,
+      50
+    ],
+    "banner_length": [
+      0.5,
+      5.0
+    ],
+    "batt_capacity": [
+      1.0,
+      4.5
+    ],
+    "prop_diameter_in": [
+      10.0,
+      25.0
+    ],
+    "prop_pitch_in": [
+      5.0,
+      18.0
+    ],
+    "motor_kv": [
+      200.0,
+      500.0
+    ],
+    "motor_max_power": [
+      1000.0,
+      3000.0
+    ],
+    "cruise_throttle": [
+      0.5,
+      1.0
+    ],
+    "mission3_cruise_throttle": [
+      0.5,
+      1.0
+    ]
+  },
+  "integrality": {
+    "wing_span": false,
+    "wing_chord": false,
+    "tail_arm": false,
+    "nose_length": false,
+    "ducks_num": true,
+    "pucks_num": true,
+    "banner_length": false,
+    "batt_capacity": false,
+    "prop_diameter_in": false,
+    "prop_pitch_in": false,
+    "motor_kv": false,
+    "motor_max_power": false,
+    "cruise_throttle": false,
+    "mission3_cruise_throttle": false
+  }
+}
