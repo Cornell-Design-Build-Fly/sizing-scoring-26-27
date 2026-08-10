@@ -10,6 +10,7 @@ import time
 from contextlib import nullcontext, redirect_stdout
 from dataclasses import asdict, dataclass, is_dataclass, replace
 from datetime import datetime
+from functools import partial
 from io import StringIO
 from pathlib import Path
 from typing import Any, cast
@@ -20,6 +21,11 @@ from scipy.optimize import NonlinearConstraint, differential_evolution
 from tqdm.auto import tqdm
 
 from src.main import main as score_aircraft
+from src.opt.score import (
+    DEFAULT_SCORING_REFERENCES,
+    ScoringReferences,
+    scoring_reference_values,
+)
 from src.mech.main_mech import evaluate_mechanical_module
 from src.opt.view_results import (
     plot_final_population,
@@ -79,6 +85,10 @@ class ToplineConfig:
     suppress_module_output: bool = True
     callback_score_best: bool = True
     save_best_visualization: bool = True
+    scoring_references: ScoringReferences = DEFAULT_SCORING_REFERENCES
+
+
+ACTIVE_TOPLINE_CONFIG: ToplineConfig | None = None
 
 
 def _module_output_context(config: ToplineConfig):
@@ -155,9 +165,10 @@ def _target_candidate_count(config: ToplineConfig) -> int:
     return (_resolved_maxiter(config) + 1) * _expected_population_size(config)
 
 
-def _objective(x: np.ndarray) -> float:
+def _objective(x: np.ndarray, *, config: ToplineConfig | None = None) -> float:
     """Top-level objective so SciPy can pickle it for worker processes."""
 
+    config = ToplineConfig() if config is None else config
     if not np.all(np.isfinite(x)):
         return BAD_OBJECTIVE
     if not PD_MIN <= _pd_ratio(x) <= PD_MAX:
@@ -165,7 +176,6 @@ def _objective(x: np.ndarray) -> float:
     if _ducks_per_puck(x) < MIN_DUCKS_PER_PUCK:
         return BAD_OBJECTIVE
 
-    config = ToplineConfig()
     try:
         _ensure_prop_database_loaded(config)
         design_vector = DesignVector.from_array(x)
@@ -178,6 +188,7 @@ def _objective(x: np.ndarray) -> float:
                     disp_res=False,
                     round_payload=config.round_payload,
                     prop_database=PROP_DATABASE,
+                    scoring_references=config.scoring_references,
                 ),
             )
     except Exception:
@@ -265,7 +276,8 @@ def _callback(intermediate_result) -> bool:
         if rate > 0.0
         else math.nan
     )
-    objective = _objective(xk) if CALLBACK_SCORE_BEST else math.nan
+    config = ACTIVE_TOPLINE_CONFIG or ToplineConfig()
+    objective = _objective(xk, config=config) if CALLBACK_SCORE_BEST else math.nan
     score = -objective if math.isfinite(objective) else math.nan
 
     row = {
@@ -315,7 +327,7 @@ def _callback(intermediate_result) -> bool:
 def _differential_evolution_kwargs(config: ToplineConfig) -> dict:
     parameters = inspect.signature(differential_evolution).parameters
     kwargs = {
-        "func": _objective,
+        "func": partial(_objective, config=config),
         "bounds": DesignVector.bounds(),
         "constraints": (PD_CONSTRAINT, DUCKS_PER_PUCK_CONSTRAINT),
         "maxiter": _resolved_maxiter(config),
@@ -449,6 +461,7 @@ def _best_design_report(result, config: ToplineConfig, output_dir: Path) -> dict
             round_payload=config.round_payload,
             prop_database=PROP_DATABASE,
             return_details=True,
+            scoring_references=config.scoring_references,
         ),
     )
     mech_result = evaluate_mechanical_module(
@@ -473,6 +486,7 @@ def _best_design_report(result, config: ToplineConfig, output_dir: Path) -> dict
         "optimizer_vector": asdict(best_design),
         "scoring_vector": asdict(scoring_design),
         "resolved_vector": asdict(resolved_design),
+        "scoring_references": scoring_reference_values(config.scoring_references),
         "mechanical": mech_result,
         "aero": details,
     }
@@ -534,6 +548,7 @@ def _write_run_summary(
         "platform": platform.platform(),
         "cpu_count": os.cpu_count(),
         "config": asdict(config),
+        "scoring_references": scoring_reference_values(config.scoring_references),
         "bounds": {
             name: bounds
             for name, bounds in zip(DesignVector.opt_names(), DesignVector.bounds())
@@ -636,8 +651,10 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     global PAYLOAD_ARCHIVE
     global PROGRESS_BAR
     global RUN_START_SECONDS
+    global ACTIVE_TOPLINE_CONFIG
 
     config = config or ToplineConfig()
+    ACTIVE_TOPLINE_CONFIG = config
     output_dir = _timestamped_output_dir(config.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 

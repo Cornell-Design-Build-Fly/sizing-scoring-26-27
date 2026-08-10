@@ -5,7 +5,11 @@ from src.mech.main_mech import evaluate_mechanical_module
 from src.prop.main_prop import prop_main
 from src.prop.continuous_prop_database import ContinuousPropDatabase
 from src.vectors import DesignVector, ParameterVector
-from src.opt.score import total_score
+from src.opt.score import (
+    DEFAULT_SCORING_REFERENCES,
+    ScoringReferences,
+    total_score,
+)
 
 
 def main(
@@ -15,6 +19,7 @@ def main(
     round_payload: bool = True,
     prop_database: ContinuousPropDatabase | None = None,
     return_details: bool = False,
+    scoring_references: ScoringReferences = DEFAULT_SCORING_REFERENCES,
 ) -> tuple[float, list[float]] | tuple[float, list[float], dict]:
     """Evaluate mechanics, propulsion, and aerodynamics for all missions.
 
@@ -113,6 +118,7 @@ def main(
         aero_m1.lap_time,
         aero_m2.lap_time,
         aero_m3.lap_time,
+        scoring_references,
     )
     tot_penalty = (
         mech_result.penalty
