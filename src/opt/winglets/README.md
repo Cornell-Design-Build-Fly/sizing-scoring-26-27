@@ -31,6 +31,13 @@ Run from the repo root:
 ```
 
 Artifacts are written to `data_dump/opt_winglets/run_*/`.
+Each optimizer run also writes two one-winglet export files:
+- `optimized_single_winglet.step`: CAD solid for Fusion editing.
+- `optimized_single_winglet_mm.stl`: millimeter-scale mesh for Bambu Studio.
+
+Both contain one right-side winglet and its root transition segment. Set
+`STEP_EXPORT_SINGLE_WINGLET = False` and `STEP_EXPORT_FULL_AIRPLANE = True` in
+`optimize.py` only if you want a larger context STEP export instead.
 
 To reopen the latest optimized geometry in an interactive 3D viewer without
 rerunning the optimizer:
@@ -44,3 +51,5 @@ The viewer settings live at the top of `viewer.py`. Set `VIEW_MODE =
 leave it as `"plotly"` for the browser-based interactive 3D model. To show the
 model immediately after a fresh optimization, set
 `SHOW_INTERACTIVE_AFTER_OPTIMIZATION = True` near the top of `optimize.py`.
+Set `EXPORT_STEP = True` or `EXPORT_STL = True` in `viewer.py` to write a
+one-winglet export for an existing run without rerunning the optimizer.

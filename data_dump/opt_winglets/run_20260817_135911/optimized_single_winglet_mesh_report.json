@@ -1,0 +1,22 @@
+{
+  "path": "data_dump\\opt_winglets\\run_20260817_135911\\optimized_single_winglet_mm.stl",
+  "units": "millimeters",
+  "minimum_airfoil_te_thickness_chord_fraction": 0.003,
+  "vertices": 5983,
+  "faces": 11962,
+  "is_watertight": true,
+  "is_winding_consistent": false,
+  "euler_number": 2,
+  "bounds": [
+    [
+      -0.023675559763376007,
+      -0.5198862217969226,
+      -13.022064458970615
+    ],
+    [
+      307.0306324150968,
+      80.68668903790171,
+      100.07176986576249
+    ]
+  ]
+}

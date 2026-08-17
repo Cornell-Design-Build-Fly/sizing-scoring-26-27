@@ -18,6 +18,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from src.aero.utils import require_scalar
+from src.opt.winglets.cad_export import (
+    FULL_AIRPLANE_STEP_FILENAME,
+    MAIN_WING_STEP_FILENAME,
+    SINGLE_WINGLET_STL_FILENAME,
+    SINGLE_WINGLET_STEP_FILENAME,
+    export_print_mesh_geometry,
+    export_step_geometry,
+)
 from src.opt.winglets.geometry import (
     WINGLET_REGION_LIMIT_M,
     WingletGeometry,
@@ -28,6 +36,10 @@ from src.vectors import ASBDesignVector, DesignVector
 
 SHOW_INTERACTIVE_AFTER_OPTIMIZATION = True
 INTERACTIVE_VISUALIZATION_BACKEND = "plotly"
+SAVE_STEP_GEOMETRY = True
+SAVE_PRINT_MESH_GEOMETRY = True
+STEP_EXPORT_SINGLE_WINGLET = True
+STEP_EXPORT_FULL_AIRPLANE = False
 
 
 @dataclass(frozen=True)
@@ -45,6 +57,11 @@ class WingletOptimizationConfig:
     save_visualization: bool = True
     show_interactive_after_optimization: bool = SHOW_INTERACTIVE_AFTER_OPTIMIZATION
     interactive_visualization_backend: str = INTERACTIVE_VISUALIZATION_BACKEND
+    save_step_geometry: bool = SAVE_STEP_GEOMETRY
+    save_print_mesh_geometry: bool = SAVE_PRINT_MESH_GEOMETRY
+    step_export_single_winglet: bool = STEP_EXPORT_SINGLE_WINGLET
+    step_export_full_airplane: bool = STEP_EXPORT_FULL_AIRPLANE
+    step_minimum_airfoil_te_thickness: float = 0.001
     verbose: bool = False
 
 
@@ -241,6 +258,47 @@ def _show_interactive_visualization(
         airplane.draw(backend=backend, show=True)
 
 
+def _save_step_geometry(
+    result: WingletOptimizationResult,
+    config: WingletOptimizationConfig,
+) -> Path | None:
+    try:
+        return export_step_geometry(
+            config.design_vector,
+            result.winglet,
+            result.output_dir,
+            winglet_airfoil=config.winglet_airfoil,
+            single_winglet=config.step_export_single_winglet,
+            full_airplane=config.step_export_full_airplane,
+            minimum_airfoil_te_thickness=config.step_minimum_airfoil_te_thickness,
+        )
+    except Exception as exc:
+        error_path = result.output_dir / "step_export_error.txt"
+        error_path.write_text(f"{type(exc).__name__}: {exc}\n", encoding="utf-8")
+        if config.verbose:
+            print(f"STEP export failed; wrote {error_path}")
+        return None
+
+
+def _save_print_mesh_geometry(
+    result: WingletOptimizationResult,
+    config: WingletOptimizationConfig,
+) -> Path | None:
+    try:
+        return export_print_mesh_geometry(
+            config.design_vector,
+            result.winglet,
+            result.output_dir,
+            winglet_airfoil=config.winglet_airfoil,
+        )
+    except Exception as exc:
+        error_path = result.output_dir / "stl_export_error.txt"
+        error_path.write_text(f"{type(exc).__name__}: {exc}\n", encoding="utf-8")
+        if config.verbose:
+            print(f"STL export failed; wrote {error_path}")
+        return None
+
+
 def run_winglet_optimization(
     config: WingletOptimizationConfig | None = None,
 ) -> WingletOptimizationResult:
@@ -311,6 +369,10 @@ def run_winglet_optimization(
     report_path = _write_report(result, config)
     if config.save_visualization:
         _save_visualization(result, config)
+    if config.save_step_geometry:
+        _save_step_geometry(result, config)
+    if config.save_print_mesh_geometry:
+        _save_print_mesh_geometry(result, config)
     if config.show_interactive_after_optimization:
         _show_interactive_visualization(result, config)
 
@@ -361,6 +423,26 @@ def main() -> None:
     print(f"L/D: {result.baseline_l_over_d:.2f} -> {result.optimized_l_over_d:.2f}")
     print(f"Drag reduction: {result.drag_reduction_percent:.2f}%")
     print(f"Winglet: {result.winglet.to_dict()}")
+    if STEP_EXPORT_SINGLE_WINGLET:
+        step_filename = SINGLE_WINGLET_STEP_FILENAME
+    elif STEP_EXPORT_FULL_AIRPLANE:
+        step_filename = FULL_AIRPLANE_STEP_FILENAME
+    else:
+        step_filename = MAIN_WING_STEP_FILENAME
+    step_path = result.output_dir / step_filename
+    if step_path.exists():
+        print(f"STEP: {step_path}")
+    else:
+        error_path = result.output_dir / "step_export_error.txt"
+        if error_path.exists():
+            print(f"STEP export failed: {error_path}")
+    stl_path = result.output_dir / SINGLE_WINGLET_STL_FILENAME
+    if stl_path.exists():
+        print(f"STL: {stl_path}")
+    else:
+        error_path = result.output_dir / "stl_export_error.txt"
+        if error_path.exists():
+            print(f"STL export failed: {error_path}")
 
 
 if __name__ == "__main__":

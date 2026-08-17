@@ -5,6 +5,7 @@ from dataclasses import fields
 from pathlib import Path
 from typing import Any
 
+from src.opt.winglets.cad_export import export_print_mesh_geometry, export_step_geometry
 from src.opt.winglets.geometry import WingletGeometry, make_winglet_airplane
 from src.vectors import DesignVector
 
@@ -17,6 +18,10 @@ BASE_OUTPUT_DIR = Path("data_dump") / "opt_winglets"
 VIEW_MODE = "plotly"
 
 THIN_WINGS = False
+EXPORT_STEP = False
+EXPORT_SINGLE_WINGLET_STEP = True
+EXPORT_FULL_AIRPLANE_STEP = False
+EXPORT_STL = False
 
 
 def _latest_run_dir(base_output_dir: Path) -> Path:
@@ -67,6 +72,25 @@ def main() -> None:
     print(f"CD: {report['result']['baseline_cd']:.5f} -> {report['result']['optimized_cd']:.5f}")
     print(f"Drag reduction: {report['result']['drag_reduction_percent']:.2f}%")
     print(f"Winglet: {winglet}")
+
+    if EXPORT_STEP:
+        step_path = export_step_geometry(
+            _design_vector_from_report(report),
+            _winglet_from_report(report),
+            run_dir,
+            winglet_airfoil=report["config"]["winglet_airfoil"],
+            single_winglet=EXPORT_SINGLE_WINGLET_STEP,
+            full_airplane=EXPORT_FULL_AIRPLANE_STEP,
+        )
+        print(f"STEP: {step_path}")
+    if EXPORT_STL:
+        stl_path = export_print_mesh_geometry(
+            _design_vector_from_report(report),
+            _winglet_from_report(report),
+            run_dir,
+            winglet_airfoil=report["config"]["winglet_airfoil"],
+        )
+        print(f"STL: {stl_path}")
 
     if VIEW_MODE == "three_view":
         import matplotlib.pyplot as plt
