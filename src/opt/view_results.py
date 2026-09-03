@@ -590,6 +590,7 @@ def plot_population_parallel_coordinates(
     bounds: list[tuple[float, float]],
     *,
     top_fraction: float = 0.15,
+    title: str = "Final Population Parallel Coordinates",
     save_path: str | None = None,
     show: bool = True,
 ) -> None:
@@ -635,7 +636,7 @@ def plot_population_parallel_coordinates(
     axis.yaxis.set_major_locator(MaxNLocator(nbins=8))
     axis.yaxis.set_minor_locator(AutoMinorLocator(2))
     axis.set_ylabel("Normalized variable value")
-    axis.set_title("Final Population Parallel Coordinates", pad=12)
+    axis.set_title(title, pad=12)
     axis.grid(True, which="major", axis="y", alpha=0.3)
     axis.grid(True, which="minor", axis="y", alpha=0.1)
     axis.legend()

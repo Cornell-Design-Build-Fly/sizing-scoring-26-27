@@ -5,7 +5,7 @@ from src.mech.main_mech import evaluate_mechanical_module
 from src.prop.main_prop import prop_main
 from src.prop.continuous_prop_database import ContinuousPropDatabase
 from src.vectors import DesignVector, ParameterVector
-from src.opt.score import total_score
+from src.opt.score import total_optimization_score, total_score
 
 
 def main(
@@ -15,6 +15,7 @@ def main(
     round_payload: bool = True,
     prop_database: ContinuousPropDatabase | None = None,
     return_details: bool = False,
+    continuous_lap_scoring: bool = False,
 ) -> tuple[float, list[float]] | tuple[float, list[float], dict]:
     """Evaluate mechanics, propulsion, and aerodynamics for all missions.
 
@@ -108,7 +109,8 @@ def main(
         debug=False,
     )
 
-    tot_score, breakdown = total_score(
+    score_function = total_optimization_score if continuous_lap_scoring else total_score
+    tot_score, breakdown = score_function(
         resolved_dv,
         aero_m1.lap_time,
         aero_m2.lap_time,

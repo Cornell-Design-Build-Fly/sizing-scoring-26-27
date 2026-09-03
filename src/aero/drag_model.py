@@ -12,8 +12,26 @@ from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 
 
 MU = 1.81e-5
-BANNER_CD = 0.08
-BANNER_ASPECT_RATIO = 5.0
+SENSOR_CD = 0.137
+SENSOR_RADIUS_M = 2.5 * 0.0254
+
+
+def sensor_drag_force(
+    design: DesignVector,
+    parameters: ParameterVector,
+    velocity,
+):
+    """Return sensor drag using the projected side area of a cylinder.
+
+    Until ``sensor_length`` is added to ``DesignVector``, ``banner_length`` is
+    used as the sensor length so the existing analysis remains executable.
+    Sensor weight does not enter the aerodynamic drag equation directly.
+    """
+    sensor_length = (
+        design.sensor_length if hasattr(design, "sensor_length") else design.banner_length
+    )
+    sensor_area = 2.0 * SENSOR_RADIUS_M * sensor_length
+    return 0.5 * parameters.rho * velocity**2 * SENSOR_CD * sensor_area
 
 
 def banner_drag_force(
@@ -21,9 +39,8 @@ def banner_drag_force(
     parameters: ParameterVector,
     velocity,
 ):
-    """Return banner drag using area = length^2 / aspect ratio."""
-    banner_area = design.banner_length**2 / BANNER_ASPECT_RATIO
-    return 0.5 * parameters.rho * velocity**2 * BANNER_CD * banner_area
+    """Compatibility wrapper for callers not yet migrated to the sensor name."""
+    return sensor_drag_force(design, parameters, velocity)
 
 
 @lru_cache(maxsize=4096)

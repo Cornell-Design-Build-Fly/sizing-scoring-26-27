@@ -34,28 +34,62 @@ def m1_score(lap_time_s: float) -> float:
     return 0.0
 
 
-def m2_score(dv: DesignVector, lap_time_s: float) -> float:
-    """Returns the mission 2 score."""
-    num_laps = int(SECONDS_PER_MISSION // lap_time_s)
+def continuous_laps(lap_time_s: float) -> float:
+    """Return modeled five-minute lap capacity without integer truncation."""
+    if lap_time_s <= 0.0:
+        raise ValueError("Lap time must be positive.")
+    return SECONDS_PER_MISSION / lap_time_s
+
+
+def m1_optimization_score(lap_time_s: float) -> float:
+    """Smoothly reward progress toward M1's official three-lap requirement."""
+    return min(1.0, continuous_laps(lap_time_s) / 3.0)
+
+
+def _m2_score_for_laps(dv: DesignVector, num_laps: float) -> float:
+    """Evaluate M2 for either an official or relaxed lap count."""
     income_passengers = dv.ducks_num * (6.0 + 2.0 * num_laps)
     income_cargo = dv.pucks_num * (10.0 + 8.0 * num_laps)
     efficiency_factor = dv.batt_energy / 100.0
-    cost = num_laps * (10.0 + dv.ducks_num * 0.5 + dv.pucks_num * 2.0) * efficiency_factor
+    cost = num_laps * (
+        10.0 + dv.ducks_num * 0.5 + dv.pucks_num * 2.0
+    ) * efficiency_factor
     profit = (income_passengers + income_cargo) - cost
     normalization_profit = max(BEST_M2_PROFIT, profit)
     return 1.0 + (profit / normalization_profit)
 
 
-def m3_score(dv: DesignVector, lap_time_s: float) -> float:
-    """Returns the mission 3 score."""
+def m2_score(dv: DesignVector, lap_time_s: float) -> float:
+    """Returns the mission 2 score."""
+    num_laps = int(SECONDS_PER_MISSION // lap_time_s)
+    return _m2_score_for_laps(dv, num_laps)
+
+
+def m2_optimization_score(dv: DesignVector, lap_time_s: float) -> float:
+    """Continuously reward M2 speed between official lap thresholds."""
+    return _m2_score_for_laps(dv, continuous_laps(lap_time_s))
+
+
+def _m3_score_for_laps(dv: DesignVector, num_laps: float) -> float:
+    """Evaluate M3 for either an official or relaxed lap count."""
     wing_span_ft = dv.wing_span * METERS_TO_FEET
     rac = 0.05 * wing_span_ft + 0.75
-    num_laps = int(SECONDS_PER_MISSION // lap_time_s)
     best_num_laps = int(SECONDS_PER_MISSION // BEST_M3_LAP_TIME_S)
     performance = num_laps * dv.banner_length * METERS_TO_INCHES / rac
     reference_performance = best_num_laps * BEST_BANNER_LENGTH_IN / BEST_RAC
     normalization_performance = max(reference_performance, performance)
     return 2.0 + (performance / normalization_performance)
+
+
+def m3_score(dv: DesignVector, lap_time_s: float) -> float:
+    """Returns the mission 3 score."""
+    num_laps = int(SECONDS_PER_MISSION // lap_time_s)
+    return _m3_score_for_laps(dv, num_laps)
+
+
+def m3_optimization_score(dv: DesignVector, lap_time_s: float) -> float:
+    """Continuously reward M3 speed between official lap thresholds."""
+    return _m3_score_for_laps(dv, continuous_laps(lap_time_s))
 
 
 def total_score(dv: DesignVector, lap_time_m1: float, lap_time_m2: float, lap_time_m3: float,
@@ -74,3 +108,26 @@ def total_score(dv: DesignVector, lap_time_m1: float, lap_time_m2: float, lap_ti
     breakdown = [gm, m1, m2, m3]
     # print(f"Score breakdown: GM={gm:.2f}, M1={m1:.2f}, M2={m2:.2f}, M3={m3:.2f}")
     return gm + m1 + m2 + m3, breakdown
+
+
+def total_optimization_score(
+    dv: DesignVector,
+    lap_time_m1: float,
+    lap_time_m2: float,
+    lap_time_m3: float,
+) -> tuple[float, list[float]]:
+    """Return relaxed lap credit while preserving official mission unlocks."""
+    gm = gm_score(dv)
+    official_m1 = m1_score(lap_time_m1)
+    m1 = m1_optimization_score(lap_time_m1)
+    m2 = 0.0
+    m3 = 0.0
+
+    if official_m1 > 0.0:
+        official_m2 = m2_score(dv, lap_time_m2)
+        m2 = m2_optimization_score(dv, lap_time_m2)
+        if official_m2 > 0.0:
+            m3 = m3_optimization_score(dv, lap_time_m3)
+
+    breakdown = [gm, m1, m2, m3]
+    return sum(breakdown), breakdown
