@@ -595,7 +595,7 @@ class Mission2Config:
 class Mission3Config:
     """Mission-3 sensor placement options."""
 
-    # The sensor is placed at the installed M1 airplane CG by default.
+    # The sensor is centered in the former primary-container volume by default.
     center_offset_m: tuple[float, float, float] = (0.0, 0.0, 0.0)
 
     def __post_init__(self) -> None:

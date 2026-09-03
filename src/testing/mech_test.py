@@ -119,8 +119,8 @@ def main() -> None:
         sensor.dimensions_m,
         (expected_sensor_length, 5.0 * INCH_M, 5.0 * INCH_M),
     )
-    assert np.allclose(sensor.position_m, result.for_mission("M1").cg_m)
-    assert np.allclose(result.for_mission("M3").cg_m, result.for_mission("M1").cg_m)
+    assert np.allclose(sensor.position_m, container.position_m)
+    assert np.all(sensor.dimensions_m <= container.dimensions_m)
 
     _assert_mass_properties(result)
     adapter_cg, adapter_inertia, adapter_weight = mech_main(design, mission="M3")

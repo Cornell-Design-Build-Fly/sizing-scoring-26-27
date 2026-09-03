@@ -47,6 +47,7 @@ def evaluate_mechanical_design(
     mission3_payload = place_mission3_payload(
         design_vector=design_vector,
         base_items=selection.base_items,
+        mission2_payload=selection.payload_items,
         electronics_layout=selection.electronics_layout,
         neutral_point_x_m=neutral_point_x,
         config=config,
