@@ -1,0 +1,71 @@
+{
+  "settings": {
+    "mode": "joint",
+    "cell_counts": [
+      6,
+      8
+    ],
+    "maxiter": 2,
+    "popsize": 4,
+    "workers": 4,
+    "seed": 20260903
+  },
+  "baseline_pack_sanity": [
+    {
+      "battery_cell_count": 6,
+      "capacity_ah": 4.5,
+      "nominal_voltage_v": 22.200000000000003,
+      "nominal_energy_wh": 99.9,
+      "usable_energy_wh": 84.915,
+      "internal_resistance_ohm": 0.017333333333333333,
+      "battery_mass_kg": 0.7705800000000002,
+      "m1_mass_kg": 2.823906675806976
+    },
+    {
+      "battery_cell_count": 8,
+      "capacity_ah": 4.5,
+      "nominal_voltage_v": 29.6,
+      "nominal_energy_wh": 133.20000000000002,
+      "usable_energy_wh": 113.22000000000001,
+      "internal_resistance_ohm": 0.02311111111111111,
+      "battery_mass_kg": 1.0274400000000001,
+      "m1_mass_kg": 3.080766675806976
+    }
+  ],
+  "runs": [],
+  "joint_run": {
+    "battery_cell_count": 6,
+    "run_dir": "data_dump\\prop\\battery_cell_joint_smoke\\comparison_20260903_181757\\joint\\run_20260903_181757",
+    "score": 0.0681198910081744,
+    "ground_score": 0.0681198910081744,
+    "m1_score": 0.0,
+    "m2_score": 0.0,
+    "m3_score": 0.0,
+    "nominal_voltage_v": 22.200000000000003,
+    "battery_capacity_ah": 2.639873632828494,
+    "nominal_energy_wh": 58.605194648792576,
+    "usable_energy_wh": 49.814415451473685,
+    "battery_internal_resistance_ohm": 0.02954686884630415,
+    "battery_mass_kg": 0.4536144670339754,
+    "motor_kv_rpm_per_v": 362.1726336776046,
+    "motor_max_power_w": 1002.2971950426652,
+    "prop_diameter_in": 23.37152837611706,
+    "prop_pitch_in": 12.12335962572872,
+    "cruise_throttle": 0.5297514963895082,
+    "mission3_cruise_throttle": 0.9315527421810418,
+    "ducks_num": 69,
+    "pucks_num": 5,
+    "banner_length_m": 4.2872429379180605,
+    "wing_span_m": 1.3149551649860547,
+    "wing_chord_m": 0.17985725002410136,
+    "m1_mass_kg": 3.1745565812074408,
+    "m2_mass_kg": 5.266556581207427,
+    "m3_mass_kg": 3.669911430727006,
+    "m1_lap_time_s": Infinity,
+    "m2_lap_time_s": Infinity,
+    "m3_lap_time_s": Infinity,
+    "nfev": 74,
+    "nit": 2,
+    "success": false
+  }
+}

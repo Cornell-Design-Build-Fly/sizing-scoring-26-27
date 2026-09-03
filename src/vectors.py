@@ -5,6 +5,13 @@ from dataclasses import dataclass, field
 import numpy as np
 import aerosandbox as asb
 
+from src.prop.prop_classes import (
+    DEFAULT_BATTERY_CELL_COUNT,
+    battery_energy_wh,
+    battery_nominal_voltage_v,
+    normalize_battery_cell_count,
+)
+
 # Constants from DFO baseline
 V_H  = 0.50
 V_V  = 0.036   # tail volume coeff; 0.075 was 2× oversize vs actual DF1 (0.036)
@@ -53,6 +60,8 @@ class DesignVector:
 
     # Prop components
     batt_capacity: float = 4.5 # [Ah]
+    # Fixed in the base vector; top-line config can fix or discretely optimize it.
+    battery_cell_count: int = DEFAULT_BATTERY_CELL_COUNT
     prop_diameter_in: float = 14.0  # [in]
     prop_pitch_in: float = 10.0  # [in]
     motor_kv: float = 335.0  # [RPM/V]
@@ -75,6 +84,7 @@ class DesignVector:
     vstab_area:       float = field(init=False)
     vstab_span:       float = field(init=False)
     vstab_chord:      float = field(init=False)
+    battery_nominal_voltage_v: float = field(init=False)
     batt_energy:      float = field(init=False)
 
 
@@ -100,7 +110,16 @@ class DesignVector:
         self.vstab_span  = np.sqrt(AR_V * self.vstab_area)
         self.vstab_chord = self.vstab_area / self.vstab_span
 
-        self.batt_energy = self.batt_capacity * ParameterVector.voltage
+        self.battery_cell_count = normalize_battery_cell_count(
+            self.battery_cell_count
+        )
+        self.battery_nominal_voltage_v = battery_nominal_voltage_v(
+            self.battery_cell_count
+        )
+        self.batt_energy = battery_energy_wh(
+            self.batt_capacity,
+            self.battery_cell_count,
+        )
 
     def to_array(self) -> np.ndarray:
         """Returns the optimizer variables in the same order as bounds()."""
@@ -155,10 +174,9 @@ class DesignVector:
 
 @dataclass
 class ParameterVector:
-    """A vector of parameters that can be used for non-geometry optimization."""
+    """Environmental parameters shared by the analysis modules."""
     gravity = 9.806 # [m/s^2]
     rho = 1.225 # [kg/m^3]
-    voltage = 22.2 # [V]
     temp = 20.0 # [C]
     pressure = 101325 # [Pa]
 
@@ -188,6 +206,7 @@ class ASBDesignVector(DesignVector):
             pucks_num=design_vector.pucks_num,
             banner_length=design_vector.banner_length * unit_scale,
             batt_capacity=design_vector.batt_capacity,
+            battery_cell_count=design_vector.battery_cell_count,
             fuselage_width=design_vector.fuselage_width * unit_scale,
             fuselage_height=design_vector.fuselage_height * unit_scale,
             wing_airfoil=design_vector.wing_airfoil,

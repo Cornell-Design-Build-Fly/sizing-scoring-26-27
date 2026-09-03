@@ -121,7 +121,7 @@ def _summarize_candidate(
 
     component_masses = airframe.electronics_component_masses_kg(
         design_vector.batt_capacity,
-        float(parameter_vector.voltage),
+        design_vector.battery_nominal_voltage_v,
         design_vector.motor_kv,
         design_vector.motor_max_power,
         design_vector.prop_diameter_in,
@@ -211,7 +211,7 @@ def _materialize_candidate(
 
     local_m1_group, local_m2_payload, local_layout = build_local_fuselage_assembly(
         design_vector,
-        battery_nominal_voltage_v=float(parameter_vector.voltage),
+        battery_nominal_voltage_v=design_vector.battery_nominal_voltage_v,
         fuselage_width_m=candidate.fuselage_width_m,
         duck_count=duck_count,
         puck_count=puck_count,

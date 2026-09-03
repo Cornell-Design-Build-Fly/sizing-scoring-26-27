@@ -7,7 +7,7 @@ from matplotlib.ticker import AutoMinorLocator, MaxNLocator
 import numpy as np
 
 
-INTEGER_VARIABLES = {"ducks_num", "pucks_num"}
+INTEGER_VARIABLES = {"ducks_num", "pucks_num", "battery_cell_count"}
 
 
 def _configure_numeric_x_axis(axis, variable_name=None, tick_count=8):

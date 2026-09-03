@@ -1,0 +1,71 @@
+{
+  "settings": {
+    "mode": "joint",
+    "cell_counts": [
+      6,
+      8
+    ],
+    "maxiter": 40,
+    "popsize": 12,
+    "workers": 12,
+    "seed": 20260903
+  },
+  "baseline_pack_sanity": [
+    {
+      "battery_cell_count": 6,
+      "capacity_ah": 4.5,
+      "nominal_voltage_v": 22.200000000000003,
+      "nominal_energy_wh": 99.9,
+      "usable_energy_wh": 84.915,
+      "internal_resistance_ohm": 0.017333333333333333,
+      "battery_mass_kg": 0.7705800000000002,
+      "m1_mass_kg": 2.823906675806976
+    },
+    {
+      "battery_cell_count": 8,
+      "capacity_ah": 4.5,
+      "nominal_voltage_v": 29.6,
+      "nominal_energy_wh": 133.20000000000002,
+      "usable_energy_wh": 113.22000000000001,
+      "internal_resistance_ohm": 0.02311111111111111,
+      "battery_mass_kg": 1.0274400000000001,
+      "m1_mass_kg": 3.080766675806976
+    }
+  ],
+  "runs": [],
+  "joint_run": {
+    "battery_cell_count": 8,
+    "run_dir": "data_dump\\prop\\battery_cell_joint_40gen\\comparison_20260903_181811\\joint\\run_20260903_181811",
+    "score": 5.381049561693821,
+    "ground_score": 0.048828125,
+    "m1_score": 1.0,
+    "m2_score": 2.0,
+    "m3_score": 2.332221436693821,
+    "nominal_voltage_v": 29.6,
+    "battery_capacity_ah": 2.338073026394681,
+    "nominal_energy_wh": 69.20696158128257,
+    "usable_energy_wh": 58.825917344090186,
+    "battery_internal_resistance_ohm": 0.044481074297481826,
+    "battery_mass_kg": 0.5362501915968715,
+    "motor_kv_rpm_per_v": 352.6397288813894,
+    "motor_max_power_w": 1509.257734580368,
+    "prop_diameter_in": 18.72709803317923,
+    "prop_pitch_in": 9.459879193296121,
+    "cruise_throttle": 0.8186803427815266,
+    "mission3_cruise_throttle": 0.7344425965650598,
+    "ducks_num": 89,
+    "pucks_num": 20,
+    "banner_length_m": 1.4858611240718858,
+    "wing_span_m": 1.4411815223672657,
+    "wing_chord_m": 0.36119483226869864,
+    "m1_mass_kg": 3.845753462184344,
+    "m2_mass_kg": 8.847753462184325,
+    "m3_mass_kg": 4.0812302555806586,
+    "m1_lap_time_s": 25.822139725588286,
+    "m2_lap_time_s": 31.15495660706712,
+    "m3_lap_time_s": 33.1063291307965,
+    "nfev": 5073,
+    "nit": 40,
+    "success": false
+  }
+}

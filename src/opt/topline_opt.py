@@ -42,6 +42,12 @@ from src.prop.continuous_prop_database import (
     ContinuousPropDatabase,
     load_default_continuous_prop_database,
 )
+from src.prop.prop_classes import (
+    DEFAULT_BATTERY_CELL_COUNT,
+    DEFAULT_BATTERY_CELL_COUNT_BOUNDS,
+    normalize_battery_cell_count,
+)
+from src.prop.prop_helper_functions import make_battery_from_design
 from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 
 
@@ -81,11 +87,28 @@ class ToplineConfig:
     polish: bool = False
     seed: int = 20260808
     output_dir: Path = Path("data_dump") / "opt_topline"
+    battery_cell_count: int = DEFAULT_BATTERY_CELL_COUNT
+    optimize_battery_cell_count: bool = False
+    battery_cell_count_bounds: tuple[int, int] = DEFAULT_BATTERY_CELL_COUNT_BOUNDS
     round_payload: bool = True
     suppress_module_output: bool = True
     callback_score_best: bool = True
     save_best_visualization: bool = True
     scoring_references: ScoringReferences = DEFAULT_SCORING_REFERENCES
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "battery_cell_count",
+            normalize_battery_cell_count(self.battery_cell_count),
+        )
+        if len(self.battery_cell_count_bounds) != 2:
+            raise ValueError("Battery cell-count bounds must contain two values.")
+        lower = normalize_battery_cell_count(self.battery_cell_count_bounds[0])
+        upper = normalize_battery_cell_count(self.battery_cell_count_bounds[1])
+        if lower > upper:
+            raise ValueError("Battery cell-count lower bound cannot exceed upper bound.")
+        object.__setattr__(self, "battery_cell_count_bounds", (lower, upper))
 
 
 ACTIVE_TOPLINE_CONFIG: ToplineConfig | None = None
@@ -114,7 +137,10 @@ def _ensure_prop_database_loaded(config: ToplineConfig) -> float:
 
 
 def _pd_ratio(x: np.ndarray) -> float:
-    return float(x[9] / x[8])
+    names = DesignVector.opt_names()
+    diameter = x[names.index("prop_diameter_in")]
+    pitch = x[names.index("prop_pitch_in")]
+    return float(pitch / diameter)
 
 
 PD_CONSTRAINT = NonlinearConstraint(_pd_ratio, PD_MIN, PD_MAX)
@@ -134,16 +160,56 @@ DUCKS_PER_PUCK_CONSTRAINT = NonlinearConstraint(
 )
 
 
-def _integrality_mask() -> np.ndarray:
+def _optimizer_variable_names(config: ToplineConfig | None = None) -> list[str]:
     names = DesignVector.opt_names()
+    if config is not None and config.optimize_battery_cell_count:
+        names.append("battery_cell_count")
+    return names
+
+
+def _optimizer_bounds(config: ToplineConfig | None = None) -> list[tuple[float, float]]:
+    bounds = DesignVector.bounds()
+    if config is not None and config.optimize_battery_cell_count:
+        bounds.append(tuple(map(float, config.battery_cell_count_bounds)))
+    return bounds
+
+
+def _integrality_mask(config: ToplineConfig | None = None) -> np.ndarray:
+    names = _optimizer_variable_names(config)
     return np.array(
-        [name in {"ducks_num", "pucks_num"} for name in names],
+        [
+            name in {"ducks_num", "pucks_num", "battery_cell_count"}
+            for name in names
+        ],
         dtype=bool,
     )
 
 
+def _design_vector_from_optimizer(
+    x: np.ndarray,
+    config: ToplineConfig,
+) -> DesignVector:
+    """Build a design from the continuous variables and battery run mode."""
+
+    base_variable_count = len(DesignVector.opt_names())
+    expected_count = base_variable_count + int(config.optimize_battery_cell_count)
+    if len(x) != expected_count:
+        raise ValueError(
+            f"Input array must have length {expected_count}, but got {len(x)}."
+        )
+    cell_count = (
+        normalize_battery_cell_count(x[-1])
+        if config.optimize_battery_cell_count
+        else config.battery_cell_count
+    )
+    return replace(
+        DesignVector.from_array(x[:base_variable_count]),
+        battery_cell_count=cell_count,
+    )
+
+
 def _expected_population_size(config: ToplineConfig) -> int:
-    requested = config.popsize * len(DesignVector.bounds())
+    requested = config.popsize * len(_optimizer_bounds(config))
     if config.init == "sobol":
         return 1 << (requested - 1).bit_length()
     return requested
@@ -178,7 +244,7 @@ def _objective(x: np.ndarray, *, config: ToplineConfig | None = None) -> float:
 
     try:
         _ensure_prop_database_loaded(config)
-        design_vector = DesignVector.from_array(x)
+        design_vector = _design_vector_from_optimizer(x, config)
         with _module_output_context(config):
             score, _ = cast(
                 tuple[float, list[float]],
@@ -205,12 +271,14 @@ def _update_payload_archive(
     population_energies: np.ndarray,
     generation: int,
     archive: dict[tuple[int, int], dict[str, Any]] | None = None,
+    config: ToplineConfig | None = None,
 ) -> int:
     """Retain the highest-scoring design seen for each payload combination."""
     archive = PAYLOAD_ARCHIVE if archive is None else archive
+    config = ToplineConfig() if config is None else config
     population = np.asarray(population, dtype=float)
     energies = np.asarray(population_energies, dtype=float)
-    variable_names = DesignVector.opt_names()
+    variable_names = _optimizer_variable_names(config)
     if population.ndim != 2 or population.shape[1] != len(variable_names):
         raise ValueError("Population has an unexpected shape.")
     if energies.shape != (population.shape[0],):
@@ -244,6 +312,10 @@ def _update_payload_archive(
             row[name] = float(value)
         row["ducks_num"] = ducks
         row["pucks_num"] = pucks
+        if config.optimize_battery_cell_count:
+            row["battery_cell_count"] = normalize_battery_cell_count(
+                row["battery_cell_count"]
+            )
         archive[key] = row
         updates += 1
 
@@ -256,10 +328,12 @@ def _callback(intermediate_result) -> bool:
     CALLBACK_GENERATION += 1
     xk = np.asarray(intermediate_result.x, dtype=float)
     convergence = float(intermediate_result.convergence)
+    config = ACTIVE_TOPLINE_CONFIG or ToplineConfig()
     _update_payload_archive(
         intermediate_result.population,
         intermediate_result.population_energies,
         CALLBACK_GENERATION,
+        config=config,
     )
     elapsed = (
         time.perf_counter() - RUN_START_SECONDS
@@ -276,7 +350,6 @@ def _callback(intermediate_result) -> bool:
         if rate > 0.0
         else math.nan
     )
-    config = ACTIVE_TOPLINE_CONFIG or ToplineConfig()
     objective = _objective(xk, config=config) if CALLBACK_SCORE_BEST else math.nan
     score = -objective if math.isfinite(objective) else math.nan
 
@@ -290,7 +363,7 @@ def _callback(intermediate_result) -> bool:
         "best_objective": float(objective),
         "best_score": float(score),
     }
-    for name, value in zip(DesignVector.opt_names(), xk):
+    for name, value in zip(_optimizer_variable_names(config), xk):
         row[name] = float(value)
     CALLBACK_HISTORY.append(row)
 
@@ -328,7 +401,7 @@ def _differential_evolution_kwargs(config: ToplineConfig) -> dict:
     parameters = inspect.signature(differential_evolution).parameters
     kwargs = {
         "func": partial(_objective, config=config),
-        "bounds": DesignVector.bounds(),
+        "bounds": _optimizer_bounds(config),
         "constraints": (PD_CONSTRAINT, DUCKS_PER_PUCK_CONSTRAINT),
         "maxiter": _resolved_maxiter(config),
         "popsize": config.popsize,
@@ -345,7 +418,7 @@ def _differential_evolution_kwargs(config: ToplineConfig) -> dict:
     }
 
     if "integrality" in parameters:
-        kwargs["integrality"] = _integrality_mask()
+        kwargs["integrality"] = _integrality_mask(config)
     if "rng" in parameters:
         kwargs["rng"] = np.random.default_rng(config.seed)
     elif "seed" in parameters:
@@ -389,13 +462,16 @@ def _payload_archive_rows() -> list[dict[str, Any]]:
     return [PAYLOAD_ARCHIVE[key] for key in sorted(PAYLOAD_ARCHIVE)]
 
 
-def _write_payload_archive(output_dir: Path) -> tuple[Path, Path]:
+def _write_payload_archive(
+    output_dir: Path,
+    config: ToplineConfig,
+) -> tuple[Path, Path]:
     """Write best scores and complete design vectors for each payload pair."""
     rows = _payload_archive_rows()
     csv_path = output_dir / "payload_score_archive.csv"
     _write_csv(csv_path, rows)
 
-    variable_names = DesignVector.opt_names()
+    variable_names = _optimizer_variable_names(config)
     pairs = np.asarray(
         [[row["ducks_num"], row["pucks_num"]] for row in rows],
         dtype=int,
@@ -417,7 +493,11 @@ def _write_payload_archive(output_dir: Path) -> tuple[Path, Path]:
     return csv_path, npz_path
 
 
-def _write_final_population(result, output_dir: Path) -> Path:
+def _write_final_population(
+    result,
+    output_dir: Path,
+    config: ToplineConfig,
+) -> Path:
     population = np.asarray(result.population, dtype=float)
     energies = np.asarray(result.population_energies, dtype=float)
     order = np.argsort(energies)
@@ -431,8 +511,12 @@ def _write_final_population(result, output_dir: Path) -> Path:
             "score": -objective,
             "finite": bool(np.isfinite(objective)),
         }
-        for name, value in zip(DesignVector.opt_names(), population[index]):
+        for name, value in zip(_optimizer_variable_names(config), population[index]):
             row[name] = float(value)
+        if config.optimize_battery_cell_count:
+            row["battery_cell_count"] = normalize_battery_cell_count(
+                row["battery_cell_count"]
+            )
         rows.append(row)
 
     path = output_dir / "final_population.csv"
@@ -441,7 +525,7 @@ def _write_final_population(result, output_dir: Path) -> Path:
 
 
 def _best_design_report(result, config: ToplineConfig, output_dir: Path) -> dict:
-    best_design = DesignVector.from_array(result.x)
+    best_design = _design_vector_from_optimizer(result.x, config)
     scoring_design = replace(
         best_design,
         ducks_num=round(best_design.ducks_num)
@@ -473,6 +557,7 @@ def _best_design_report(result, config: ToplineConfig, output_dir: Path) -> dict
         fuselage_width=mech_result.resolved_fuselage_width_m,
         fuselage_height=mech_result.resolved_fuselage_height_m,
     )
+    battery = make_battery_from_design(best_design, PARAMETER_VECTOR)
 
     report = {
         "score": float(score),
@@ -486,6 +571,17 @@ def _best_design_report(result, config: ToplineConfig, output_dir: Path) -> dict
         "optimizer_vector": asdict(best_design),
         "scoring_vector": asdict(scoring_design),
         "resolved_vector": asdict(resolved_design),
+        "battery": {
+            "cell_count": battery.cells,
+            "nominal_voltage_v": battery.vnom,
+            "capacity_ah": battery.capacity,
+            "nominal_energy_wh": best_design.batt_energy,
+            "usable_fraction": battery.useable_fraction,
+            "usable_energy_wh": (
+                best_design.batt_energy * battery.useable_fraction
+            ),
+            "internal_resistance_ohm": battery.get_Rb(),
+        },
         "scoring_references": scoring_reference_values(config.scoring_references),
         "mechanical": mech_result,
         "aero": details,
@@ -534,7 +630,7 @@ def _write_run_summary(
         "best_score": -float(result.fun),
         "reevaluated_best_score": best_report["score"],
         "workers": config.workers,
-        "variables": len(DesignVector.bounds()),
+        "variables": len(_optimizer_bounds(config)),
         "popsize": config.popsize,
         "expected_population_size": population_size,
         "maxiter": maxiter,
@@ -551,11 +647,17 @@ def _write_run_summary(
         "scoring_references": scoring_reference_values(config.scoring_references),
         "bounds": {
             name: bounds
-            for name, bounds in zip(DesignVector.opt_names(), DesignVector.bounds())
+            for name, bounds in zip(
+                _optimizer_variable_names(config),
+                _optimizer_bounds(config),
+            )
         },
         "integrality": {
             name: bool(flag)
-            for name, flag in zip(DesignVector.opt_names(), _integrality_mask())
+            for name, flag in zip(
+                _optimizer_variable_names(config),
+                _integrality_mask(config),
+            )
         },
     }
 
@@ -567,9 +669,13 @@ def _write_run_summary(
     return path
 
 
-def _save_plots(result, output_dir: Path) -> list[Path]:
-    variable_names = DesignVector.opt_names()
-    bounds = DesignVector.bounds()
+def _save_plots(
+    result,
+    output_dir: Path,
+    config: ToplineConfig,
+) -> list[Path]:
+    variable_names = _optimizer_variable_names(config)
+    bounds = _optimizer_bounds(config)
     paths = {
         "generation_convergence": output_dir / "generation_convergence.png",
         "final_population_scores": output_dir / "final_population_scores.png",
@@ -668,7 +774,14 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     print("Top-line differential evolution run")
     print(f"  output: {output_dir}")
     print(f"  workers: {config.workers}")
-    print(f"  variables: {len(DesignVector.bounds())}")
+    if config.optimize_battery_cell_count:
+        print(
+            "  battery: optimized over integer cell counts "
+            f"{config.battery_cell_count_bounds}"
+        )
+    else:
+        print(f"  battery: fixed at {config.battery_cell_count}S")
+    print(f"  variables: {len(_optimizer_bounds(config))}")
     print(f"  population size: {CALLBACK_POPULATION_SIZE}")
     print(f"  maxiter: {_resolved_maxiter(config)}")
     print(f"  target candidate slots: {CALLBACK_TARGET_CANDIDATES}")
@@ -715,9 +828,10 @@ def run_topline_optimization(config: ToplineConfig | None = None):
         result.population,
         result.population_energies,
         int(result.nit),
+        config=config,
     )
 
-    print_best_result(result, DesignVector.opt_names())
+    print_best_result(result, _optimizer_variable_names(config))
     best_report = _best_design_report(result, config, output_dir)
     summary_path = _write_run_summary(
         result,
@@ -729,16 +843,17 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     )
     generation_path = output_dir / "generation_history.csv"
     _write_csv(generation_path, CALLBACK_HISTORY)
-    population_path = _write_final_population(result, output_dir)
-    payload_csv_path, payload_arrays_path = _write_payload_archive(output_dir)
+    population_path = _write_final_population(result, output_dir, config)
+    payload_csv_path, payload_arrays_path = _write_payload_archive(output_dir, config)
     arrays_path = output_dir / "result_arrays.npz"
     np.savez(
         arrays_path,
         x=np.asarray(result.x, dtype=float),
         population=np.asarray(result.population, dtype=float),
         population_energies=np.asarray(result.population_energies, dtype=float),
+        variable_names=np.asarray(_optimizer_variable_names(config)),
     )
-    plot_paths = _save_plots(result, output_dir)
+    plot_paths = _save_plots(result, output_dir, config)
 
     print("\nSaved top-line artifacts:")
     print(f"  summary: {summary_path}")
@@ -751,6 +866,7 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     for path in plot_paths:
         print(f"  plot: {path}")
 
+    result["output_dir"] = output_dir
     return result
 
 

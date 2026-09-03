@@ -177,7 +177,8 @@ other electronics.
 Motor mass is evaluated directly from `DesignVector.motor_kv` in RPM/V and
 `DesignVector.motor_max_power` in W using the supplied quadratic regression.
 Battery mass is evaluated from `DesignVector.batt_capacity` in Ah and
-`ParameterVector.voltage` in V. Propeller mass is evaluated directly from
+the nominal pack voltage derived from `DesignVector.battery_cell_count`.
+Propeller mass is evaluated directly from
 `DesignVector.prop_diameter_in` using the supplied cubic regression.
 
 ```python
@@ -189,8 +190,9 @@ design = DesignVector(
     motor_max_power=875.0,
     prop_diameter_in=17.5,
     batt_capacity=5.5,
+    battery_cell_count=8,
 )
-parameters = ParameterVector()  # nominal battery voltage defaults to 22.2 V
+parameters = ParameterVector()
 result = evaluate_mechanical_module(design, parameter_vector=parameters)
 ```
 

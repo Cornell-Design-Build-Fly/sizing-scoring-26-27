@@ -11,6 +11,7 @@ from src.prop.continuous_prop_database import (
     load_default_continuous_prop_database,
 )
 from src.prop.main_prop import prop_main
+from src.prop.prop_classes import battery_nominal_voltage_v
 from src.vectors import DesignVector, ParameterVector
 
 
@@ -68,8 +69,8 @@ MAX_CURRENT_A = 100.0
 
 # Battery inputs.
 BATTERY_CAPACITY_AH = 4.5
-BATTERY_NOMINAL_V = 22.2
 BATTERY_CELLS = 6
+BATTERY_NOMINAL_V = battery_nominal_voltage_v(BATTERY_CELLS)
 USABLE_BATTERY_FRACTION = 0.85
 
 
@@ -207,25 +208,10 @@ def main() -> None:
     # Create the ParameterVector
     # --------------------------------------------------------
 
-    # ParameterVector currently defines voltage as a class
-    # attribute, so set the class value before constructing
-    # the DesignVectors.
-    ParameterVector.voltage = BATTERY_NOMINAL_V
-
     parameter_vector = ParameterVector()
-
-    # These are the explicit parameter values used by the
-    # prop helper functions.
-    parameter_vector.voltage = (
-        BATTERY_NOMINAL_V
-    )
 
     parameter_vector.max_current = (
         MAX_CURRENT_A
-    )
-
-    parameter_vector.num_battery_cells = (
-        BATTERY_CELLS
     )
 
     parameter_vector.usable_battery_fraction = (
@@ -300,6 +286,7 @@ def main() -> None:
         # but they are not used by prop_main.
         design_vector = DesignVector(
             batt_capacity=BATTERY_CAPACITY_AH,
+            battery_cell_count=BATTERY_CELLS,
             prop_diameter_in=diameter_in,
             prop_pitch_in=pitch_in,
             motor_kv=MOTOR_KV,

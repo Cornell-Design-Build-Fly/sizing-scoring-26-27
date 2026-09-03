@@ -21,6 +21,8 @@ from typing import Iterable
 
 import numpy as np
 
+from src.prop.prop_classes import NOMINAL_CELL_VOLTAGE_V
+
 from src.mech.electronics import (
     ElectronicsLayout,
     ElectronicsPackagingConfig,
@@ -197,7 +199,7 @@ class BatteryMassModel:
 
     slope_g_per_ah: float = 28.4
     intercept_g: float = 0.63
-    cell_nominal_voltage_v: float = 3.7
+    cell_nominal_voltage_v: float = NOMINAL_CELL_VOLTAGE_V
 
     def __post_init__(self) -> None:
         values = (self.slope_g_per_ah, self.intercept_g, self.cell_nominal_voltage_v)

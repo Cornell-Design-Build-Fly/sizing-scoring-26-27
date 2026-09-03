@@ -12,6 +12,8 @@ from src.prop.prop_classes import (
     PropulsionCurveFit,
     MPS_TO_MPH,
     DEFAULT_VELOCITIES_MPS,
+    battery_nominal_voltage_v,
+    normalize_battery_cell_count,
 )
 
 
@@ -115,10 +117,10 @@ def make_battery_from_design(
     """
 
     capacity_ah = float(_get_value(design_vector, "batt_capacity", 4.5))
-    vnom = float(_get_value(parameter_vector, "voltage", 22.2))
-
-    cells_default = max(1, int(round(vnom / 3.7)))
-    cells = int(_get_value(parameter_vector, "num_battery_cells", cells_default))
+    cells = normalize_battery_cell_count(
+        _get_value(design_vector, "battery_cell_count", 6)
+    )
+    vnom = battery_nominal_voltage_v(cells)
 
     useable_fraction = float(_get_value(parameter_vector, "usable_battery_fraction", 0.85))
 
