@@ -21,10 +21,10 @@ def make_realistic_design_vector() -> DesignVector:
         wing_chord=0.28,      # m
         tail_arm=0.75,        # m
         nose_length=0.22,     # m
-        ducks_num=5,
-        pucks_num=2,
-        banner_length=3.0,    # m
-        batt_capacity=5.0,    # Ah
+        extra_shipping_containers=2,
+        sensor_length_m=0.30,
+        sensor_weight_kg=2.0,
+        batt_capacity=4.5,    # Ah
         fuselage_width=0.13,  # m
         fuselage_height=0.13, # m
     )

@@ -7,7 +7,7 @@ from matplotlib.ticker import AutoMinorLocator, MaxNLocator
 import numpy as np
 
 
-INTEGER_VARIABLES = {"ducks_num", "pucks_num"}
+INTEGER_VARIABLES = {"extra_shipping_containers"}
 
 
 def _configure_numeric_x_axis(axis, variable_name=None, tick_count=8):
@@ -490,97 +490,6 @@ def plot_population_score_correlations(
         plt.show()
     else:
         plt.close()
-
-
-def plot_payload_score_heatmap(
-    payload_pairs,
-    scores,
-    variable_names: list[str],
-    bounds: list[tuple[float, float]],
-    *,
-    min_ducks_per_puck: float | None = None,
-    save_path: str | None = None,
-    show: bool = True,
-) -> None:
-    """Plot the best score observed for each duck/puck payload combination."""
-    payload_pairs = np.asarray(payload_pairs, dtype=int)
-    scores = np.asarray(scores, dtype=float)
-    if payload_pairs.ndim != 2 or payload_pairs.shape[1] != 2:
-        print("[opt] Payload pairs have an unexpected shape.")
-        return
-    if scores.shape != (payload_pairs.shape[0],):
-        print("[opt] Payload scores have an unexpected shape.")
-        return
-    if payload_pairs.shape[0] == 0:
-        print("[opt] No payload combinations to plot.")
-        return
-
-    ducks_index = variable_names.index("ducks_num")
-    pucks_index = variable_names.index("pucks_num")
-    ducks_min, ducks_max = (int(round(value)) for value in bounds[ducks_index])
-    pucks_min, pucks_max = (int(round(value)) for value in bounds[pucks_index])
-    score_grid = np.full(
-        (ducks_max - ducks_min + 1, pucks_max - pucks_min + 1),
-        np.nan,
-    )
-    for (ducks, pucks), score in zip(payload_pairs, scores):
-        if not np.isfinite(score):
-            continue
-        if not ducks_min <= ducks <= ducks_max or not pucks_min <= pucks <= pucks_max:
-            continue
-        row = ducks - ducks_min
-        column = pucks - pucks_min
-        previous = score_grid[row, column]
-        if not np.isfinite(previous) or score > previous:
-            score_grid[row, column] = score
-
-    if not np.any(np.isfinite(score_grid)):
-        print("[opt] No finite payload scores to plot.")
-        return
-
-    fig, axis = plt.subplots(figsize=(14, 9), constrained_layout=True)
-    color_map, color_norm = _score_color_scale(scores)
-    color_map.set_bad("0.92")
-    image = axis.imshow(
-        np.ma.masked_invalid(score_grid),
-        origin="lower",
-        aspect="auto",
-        interpolation="nearest",
-        extent=(
-            pucks_min - 0.5,
-            pucks_max + 0.5,
-            ducks_min - 0.5,
-            ducks_max + 0.5,
-        ),
-        cmap=color_map,
-        norm=color_norm,
-    )
-    if min_ducks_per_puck is not None:
-        pucks = np.array([pucks_min, pucks_max], dtype=float)
-        axis.plot(
-            pucks,
-            min_ducks_per_puck * pucks,
-            color="tab:red",
-            linewidth=1.4,
-            label=f"Minimum ratio ({min_ducks_per_puck:g}:1)",
-        )
-        axis.legend(loc="upper left")
-
-    axis.set_xlim(pucks_min - 0.5, pucks_max + 0.5)
-    axis.set_ylim(ducks_min - 0.5, ducks_max + 0.5)
-    axis.xaxis.set_major_locator(MaxNLocator(nbins=12, integer=True))
-    axis.yaxis.set_major_locator(MaxNLocator(nbins=12, integer=True))
-    axis.set_xlabel("Pucks")
-    axis.set_ylabel("Ducks")
-    axis.set_title("Best Score Seen for Each Duck/Puck Combination")
-    axis.grid(False)
-    fig.colorbar(image, ax=axis, label="Best score")
-    if save_path is not None:
-        fig.savefig(save_path, dpi=200, bbox_inches="tight")
-    if show:
-        plt.show()
-    else:
-        plt.close(fig)
 
 
 def plot_population_parallel_coordinates(

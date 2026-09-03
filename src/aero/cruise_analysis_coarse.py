@@ -5,7 +5,7 @@ import aerosandbox.numpy as np
 from aerosandbox import OperatingPoint
 
 from src.aero.custom_classes import CruiseCondition
-from src.aero.drag_model import banner_drag_force, drag_coefficients, fuselage_drag_geometry
+from src.aero.drag_model import sensor_drag_force, drag_coefficients, fuselage_drag_geometry
 from src.vectors import DesignVector, ParameterVector
 
 
@@ -71,7 +71,7 @@ def cruise_analysis_coarse(
     lift = dynamic_pressure * design_vector.wing_area * total_cl
     drag = dynamic_pressure * design_vector.wing_area * cd
     if mission == 3:
-        drag += banner_drag_force(design_vector, parameter_vector, velocity)
+        drag += sensor_drag_force(design_vector, parameter_vector, velocity)
     a, b, c = thrust_velocity
     thrust = a * velocity**2 + b * velocity + c
     weight = mass * parameter_vector.gravity

@@ -52,7 +52,6 @@ from src.vectors import ParameterVector
 # the minimum turn radius for a structurally limited aircraft.
 STRAIGHT_LENGTH_M: float = 152.4         # 500 ft per straight leg [m]
 STRAIGHTS_PER_LAP: int   = 4             # 4 legs × 500 ft = 2000 ft total straight
-LOOP_360_RAD:      float = 2.0 * np.pi   # 360° loop at far (upwind) end [rad]
 TURN_180_COUNT:    int   = 2             # number of 180° reversals per lap
 TURN_180_RAD:      float = np.pi         # each 180° reversal [rad]
 N_ZS:              float = 2.5           # structural limit load factor (civil)
@@ -219,7 +218,7 @@ def _compute_lap_time(
     t_straight = STRAIGHTS_PER_LAP * STRAIGHT_LENGTH_M / cruise_speed
 
     # Turn time: 1 × 360° loop + 2 × 180° reversals = 4π total
-    total_turn_rad = LOOP_360_RAD + TURN_180_COUNT * TURN_180_RAD  # = 4π
+    total_turn_rad = TURN_180_COUNT * TURN_180_RAD
     t_turns = total_turn_rad / omega
 
     return t_straight + t_turns
@@ -238,7 +237,7 @@ def _endurance_values(
     if not np.isfinite(available):
         available = 0.0
     available = max(0.0, available)
-    required = 3.0 * lap_time if mission == 1 else 300.0
+    required = {1: 3.0 * lap_time, 2: 5.0 * lap_time, 3: 300.0}[mission]
     violation = max(0.0, required - available) / required
     return available, required, _log_penalty(violation, ENDURANCE_PENALTY_SCALE)
 

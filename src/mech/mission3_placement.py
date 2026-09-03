@@ -30,7 +30,7 @@ def place_mission3_payload(
     position = base_cg + np.asarray(config.mission3.center_offset_m, dtype=float)
 
     sensor_mass = float(design_vector.sensor_weight_kg)
-    sensor_length = config.sensor.length_m(sensor_mass)
+    sensor_length = design_vector.sensor_length_m
     radius = 0.5 * config.sensor.diameter_m
     axial_inertia = 0.5 * sensor_mass * radius**2
     transverse_inertia = (

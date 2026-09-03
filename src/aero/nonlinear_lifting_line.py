@@ -25,7 +25,7 @@ def run_nonlinear_lifting_line_on_design_vector(
 ) -> AirplaneAnalysisResult:
     """Builds an AeroSandbox airplane from a design vector and runs NonlinearLiftingLine."""
     asb_design_vector = ASBDesignVector.from_design_vector(design_vector)
-    airplane, _, _, _ = asb_design_vector.make_airplane(name=airplane_name)
+    airplane = asb_design_vector.make_airplane(name=airplane_name)
 
     op_point = asb.OperatingPoint(
         velocity=velocity,
@@ -39,7 +39,7 @@ def run_nonlinear_lifting_line_on_design_vector(
     analysis = asb.NonlinearLiftingLine(
         airplane=airplane,
         op_point=op_point,
-        xyz_ref = cg,
+        xyz_ref=xyz_ref,
         spanwise_resolution=spanwise_resolution,
         align_trailing_vortices_with_wind=align_trailing_vortices_with_wind,
         verbose=verbose,

@@ -26,7 +26,7 @@ def run_lifting_line_on_design_vector(
 ) -> AirplaneAnalysisResult:
     """Builds an AeroSandbox airplane from a design vector and runs LiftingLine."""
     asb_design_vector = ASBDesignVector.from_design_vector(design_vector)
-    airplane, _, _, _ = asb_design_vector.make_airplane(name=airplane_name)
+    airplane = asb_design_vector.make_airplane(name=airplane_name)
 
     op_point = asb.OperatingPoint(
         velocity=velocity,

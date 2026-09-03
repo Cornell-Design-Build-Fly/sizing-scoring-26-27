@@ -518,27 +518,16 @@ class AirframeMassConfig:
 class SensorConfig:
     """Shared physical model for the M2/M3 sensor and release mechanism."""
 
-    diameter_m: float = 3.0 * 0.0254
-    steel_density_kg_m3: float = 7850.0
+    diameter_m: float = 5.0 * 0.0254
     release_mechanism_mass_ratio: float = 1.0 / 20.0
 
     def __post_init__(self) -> None:
         values = (
             self.diameter_m,
-            self.steel_density_kg_m3,
             self.release_mechanism_mass_ratio,
         )
         if not np.all(np.isfinite(values)) or np.any(np.asarray(values) <= 0):
             raise ValueError("Sensor configuration values must be finite and positive.")
-
-    def length_m(self, sensor_mass_kg: float) -> float:
-        """Return the length of a solid steel rod with the configured diameter."""
-
-        if not np.isfinite(sensor_mass_kg) or sensor_mass_kg <= 0:
-            raise ValueError("sensor_mass_kg must be finite and positive.")
-        radius_m = 0.5 * self.diameter_m
-        cross_section_m2 = np.pi * radius_m**2
-        return float(sensor_mass_kg / (self.steel_density_kg_m3 * cross_section_m2))
 
     def release_mechanism_mass_kg(self, sensor_mass_kg: float) -> float:
         if not np.isfinite(sensor_mass_kg) or sensor_mass_kg <= 0:

@@ -266,7 +266,7 @@ def build_local_fuselage_assembly(
     """Pack electronics and M2 payload before installation on the airplane."""
 
     airframe = config.airframe
-    sensor_length_m = config.sensor.length_m(design_vector.sensor_weight_kg)
+    sensor_length_m = design_vector.sensor_length_m
     preview = place_mission2_payload(
         total_count=total_container_count,
         sensor_mass_kg=design_vector.sensor_weight_kg,

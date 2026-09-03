@@ -23,24 +23,11 @@ def sensor_drag_force(
 ):
     """Return sensor drag using the projected side area of a cylinder.
 
-    Until ``sensor_length`` is added to ``DesignVector``, ``banner_length`` is
-    used as the sensor length so the existing analysis remains executable.
     Sensor weight does not enter the aerodynamic drag equation directly.
     """
-    sensor_length = (
-        design.sensor_length if hasattr(design, "sensor_length") else design.banner_length
-    )
+    sensor_length = design.sensor_length_m
     sensor_area = 2.0 * SENSOR_RADIUS_M * sensor_length
     return 0.5 * parameters.rho * velocity**2 * SENSOR_CD * sensor_area
-
-
-def banner_drag_force(
-    design: DesignVector,
-    parameters: ParameterVector,
-    velocity,
-):
-    """Compatibility wrapper for callers not yet migrated to the sensor name."""
-    return sensor_drag_force(design, parameters, velocity)
 
 
 @lru_cache(maxsize=4096)

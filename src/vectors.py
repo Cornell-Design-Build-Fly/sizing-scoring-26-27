@@ -17,17 +17,13 @@ FUSELAGE_TIP_SIZE = 0.01
 MAX_EXTRA_SHIPPING_CONTAINERS = 10
 
 OPT_VARS = [
-    ("wing_span", (0.914, 1.524)),
+    ("wing_span", (0.914, 1.8288)),
     ("wing_chord", (0.12, 0.40)),
     ("tail_arm", (0.3, 0.9)),
     ("nose_length", (0.08, 0.3)),
-<<<<<<< HEAD
-    ("ducks_num", (3, 105)),
-    ("pucks_num", (1, 35)),
-    ("banner_length", (0.5, 5.0)),
-=======
     ("extra_shipping_containers", (0, MAX_EXTRA_SHIPPING_CONTAINERS)),
->>>>>>> 56070c4e7dfac343ec5be23bac66a873d5be1183
+    ("sensor_length_m", (6.0 * 0.0254, 36.0 * 0.0254)),
+    ("sensor_weight_kg", (1.0 * 0.45359237, 35.0 * 0.45359237)),
     ("batt_capacity", (1.0, 4.5)),
     ("prop_diameter_in", (10.0, 25.0)),
     ("prop_pitch_in", (5.0, 18.0)),
@@ -54,6 +50,7 @@ class DesignVector:
     # Mission payloads. There is always one sensor shipping container in M2;
     # this variable controls only the additional container simulators.
     extra_shipping_containers: float = 0
+    sensor_length_m: float = 6.0 * 0.0254
     sensor_weight_kg: float = 1.0
 
     # Prop components
@@ -92,12 +89,14 @@ class DesignVector:
             or self.nose_length <= 0
             or self.fuselage_width <= 0
             or self.fuselage_height <= 0
+            or not np.isfinite(self.sensor_length_m)
+            or self.sensor_length_m < 6.0 * 0.0254
             or not np.isfinite(self.sensor_weight_kg)
             or self.sensor_weight_kg <= 0
         ):
             raise ValueError(
                 "All DesignVector primary dimensions and sensor_weight_kg must "
-                "be positive."
+                "be positive, and sensor_length_m must be at least 6 inches."
             )
         if (
             not np.isfinite(self.extra_shipping_containers)
@@ -123,6 +122,8 @@ class DesignVector:
         self.vstab_chord = self.vstab_area / self.vstab_span
 
         self.batt_energy = self.batt_capacity * ParameterVector.voltage
+        if self.batt_energy > 100.0:
+            raise ValueError("Total propulsion battery energy cannot exceed 100 Wh.")
 
     def to_array(self) -> np.ndarray:
         """Returns the optimizer variables in the same order as bounds()."""
@@ -207,6 +208,7 @@ class ASBDesignVector(DesignVector):
             tail_arm=design_vector.tail_arm * unit_scale,
             nose_length=design_vector.nose_length * unit_scale,
             extra_shipping_containers=design_vector.extra_shipping_containers,
+            sensor_length_m=design_vector.sensor_length_m * unit_scale,
             sensor_weight_kg=design_vector.sensor_weight_kg,
             batt_capacity=design_vector.batt_capacity,
             prop_diameter_in=design_vector.prop_diameter_in,
