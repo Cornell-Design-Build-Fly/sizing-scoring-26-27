@@ -49,9 +49,11 @@ missions. It weighs 1/20 of the sensor and is placed at the top of the center
 container stack.
 
 Mission 3 removes the containers and carries only the sensor in addition to
-the permanent airplane. The sensor center is placed at the installed Mission 1
-airplane CG, so adding it does not move the CG. Its intrinsic inertia uses the
-solid-cylinder equations rather than the generic rectangular-prism model.
+the permanent airplane. The sensor is centered in the volume formerly occupied
+by the primary Mission 2 sensor container. Its 3-inch diameter and shorter
+length keep it fully inside that former 5-inch-wide container envelope. Its
+intrinsic inertia uses the solid-cylinder equations rather than the generic
+rectangular-prism model.
 
 ## Outputs
 
