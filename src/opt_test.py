@@ -19,6 +19,7 @@ from tqdm.auto import tqdm
 
 from src.main import main
 from src.mech.main_mech import evaluate_mechanical_module
+from src.opt.score import scoring_reference_values
 from src.opt.view_results import (
     plot_final_population,
     plot_final_population_spread,
@@ -105,6 +106,7 @@ def _write_run_summary(result, elapsed_seconds: float) -> Path:
         "history_recorded": should_record_evaluations(),
         "best_objective": float(result.fun),
         "best_score": -float(result.fun),
+        "scoring_references": scoring_reference_values(),
     }
     with path.open("w", encoding="utf-8") as file:
         json.dump(summary, file, indent=2)
@@ -135,6 +137,7 @@ def save_best_design_visualization(design: DesignVector) -> tuple[Path, Path]:
             {
                 "optimizer_vector": asdict(design),
                 "visualized_resolved_vector": asdict(resolved_design),
+                "scoring_references": scoring_reference_values(),
             },
             indent=2,
         )

@@ -1,0 +1,127 @@
+{
+  "result": {
+    "baseline_airfoil": "naca2412",
+    "optimized_airfoil": {
+      "name": "optimized_airfoil",
+      "lower_weights": [
+        -0.282559907193437,
+        -0.02357222837500238,
+        -0.08115986534882424,
+        -0.19896381867251786,
+        0.12126936734388988,
+        -0.018959553847779177,
+        -0.16312200664650187,
+        0.17396530306233934
+      ],
+      "upper_weights": [
+        0.18851019377953,
+        0.2267686364754583,
+        0.10296923057471635,
+        0.43959605386397915,
+        0.08535529886235962,
+        0.45030803611334574,
+        0.14846289031193613,
+        0.4350403315664558
+      ],
+      "leading_edge_weight": 0.15489897666139227,
+      "TE_thickness": 1.5672366370195579e-10
+    },
+    "alpha_deg": 3.4175627800841206,
+    "target_cl": 0.7268621783975299,
+    "target_cm": -0.22539918382266408,
+    "baseline_cd": 0.07070465374766545,
+    "optimized_cd": 0.06853120419176327,
+    "baseline_cm": -0.22539918382266408,
+    "optimized_cm": -0.22539918617996751,
+    "baseline_l_over_d": 10.280259358762924,
+    "optimized_l_over_d": 10.606295146421651,
+    "drag_reduction_percent": 3.073983734732515,
+    "reynolds_number": 378306.69189604896,
+    "mach": 0.0528954207202151,
+    "baseline_max_thickness": 0.12010379414916822,
+    "optimized_max_thickness": 0.12108933854215982,
+    "runtime_seconds": 5.771168499995838,
+    "output_dir": "data_dump\\opt_airfoil\\run_20260827_213218",
+    "active_bounds": {
+      "lower_weights": [
+        "4: upper"
+      ],
+      "upper_weights": [
+        "3: upper",
+        "5: upper"
+      ],
+      "TE_thickness": [
+        "lower"
+      ]
+    }
+  },
+  "config": {
+    "design_vector": {
+      "wing_span": 1.181,
+      "wing_chord": 0.307,
+      "tail_arm": 0.845,
+      "nose_length": 0.254,
+      "ducks_num": 3,
+      "pucks_num": 1,
+      "banner_length": 3.8,
+      "batt_capacity": 4.5,
+      "prop_diameter_in": 14.0,
+      "prop_pitch_in": 10.0,
+      "motor_kv": 335.0,
+      "motor_max_power": 2200.0,
+      "cruise_throttle": 0.9,
+      "mission3_cruise_throttle": 0.85,
+      "fuselage_width": 0.0762,
+      "fuselage_height": 0.13,
+      "wing_airfoil": "naca2412",
+      "wing_area": 0.36256700000000003,
+      "hstab_area": 0.0658627627218935,
+      "hstab_span": 0.4445090417142046,
+      "hstab_chord": 0.14816968057140154,
+      "vstab_area": 0.018242483517159763,
+      "vstab_span": 0.12741981922084253,
+      "vstab_chord": 0.14316833620319383,
+      "batt_energy": 99.89999999999999
+    },
+    "velocity_mps": 18.0,
+    "baseline_alpha_deg": 6.0,
+    "alpha_bounds_deg": [
+      -4.0,
+      15.0
+    ],
+    "model_size": "small",
+    "include_wave_drag": false,
+    "output_dir": "data_dump\\opt_airfoil",
+    "save_plots": true,
+    "save_dat": true,
+    "coefficient_delta_bound": 0.25,
+    "leading_edge_delta_bound": 0.25,
+    "te_thickness_bounds": [
+      0.0,
+      0.025
+    ],
+    "min_local_thickness": 0.002,
+    "max_local_thickness": 0.22,
+    "thickness_sample_points": 31,
+    "preserve_baseline_thickness_fraction": 0.85,
+    "preserve_thickness_x_bounds": [
+      0.05,
+      0.95
+    ],
+    "minimum_max_thickness_fraction": 1.0,
+    "polar_alpha_bounds_deg": [
+      -6.0,
+      16.0
+    ],
+    "polar_alpha_points": 89,
+    "verbose": false
+  },
+  "assumptions": {
+    "objective": "Minimize full-aircraft AeroBuildup CD while matching the baseline aircraft CL and Cm at the configured baseline alpha.",
+    "baseline_alpha_deg": 6.0,
+    "velocity_mps": 18.0,
+    "airfoil_parameterization": "AeroSandbox 8-weight Kulfan/CST seeded from DesignVector.wing_airfoil.",
+    "geometry_note": "Aircraft planform, reference quantities, tail, and fuselage are unchanged; only the main-wing airfoil changes.",
+    "thickness_note": "The optimized airfoil must keep a configurable fraction of the baseline thickness distribution and at least the baseline sampled maximum thickness."
+  }
+}

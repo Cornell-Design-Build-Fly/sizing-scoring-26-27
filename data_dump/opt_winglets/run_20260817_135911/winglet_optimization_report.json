@@ -1,0 +1,75 @@
+{
+  "result": {
+    "winglet": {
+      "blend_length_m": 0.0666666678451257,
+      "height_m": 0.1000000098395755,
+      "tip_inset_m": -9.558711341141433e-09,
+      "cant_angle_deg": 90.00000018570603,
+      "leading_edge_sweep_m": 0.17999999489895907,
+      "sweep_exponent": 0.1000001058031363,
+      "tip_chord_ratio": 0.2737446369205076,
+      "taper_exponent": 2.499999941007611,
+      "toe_angle_deg": -3.465376137847468,
+      "tip_incidence_deg": -3.4653765023161314,
+      "blend_tension": 2.0000000140344403
+    },
+    "alpha_deg": 5.751451144387506,
+    "target_cl": 0.7268621783975299,
+    "baseline_cd": 0.07070465374766545,
+    "optimized_cd": 0.06011061566903051,
+    "baseline_l_over_d": 10.280259358762924,
+    "optimized_l_over_d": 12.092076753957043,
+    "drag_reduction_percent": 14.983508888175182,
+    "runtime_seconds": 49.05880439997418,
+    "output_dir": "data_dump\\opt_winglets\\run_20260817_135911"
+  },
+  "config": {
+    "design_vector": {
+      "wing_span": 1.181,
+      "wing_chord": 0.307,
+      "tail_arm": 0.845,
+      "nose_length": 0.254,
+      "ducks_num": 3.0,
+      "pucks_num": 1.0,
+      "banner_length": 3.8,
+      "batt_capacity": 4.5,
+      "prop_diameter_in": 14.0,
+      "prop_pitch_in": 10.0,
+      "motor_kv": 335.0,
+      "motor_max_power": 2200.0,
+      "cruise_throttle": 0.9,
+      "mission3_cruise_throttle": 0.85,
+      "fuselage_width": 0.0762,
+      "fuselage_height": 0.13,
+      "wing_airfoil": "naca2412",
+      "wing_area": 0.36256700000000003,
+      "hstab_area": 0.0658627627218935,
+      "hstab_span": 0.4445090417142046,
+      "hstab_chord": 0.14816968057140154,
+      "vstab_area": 0.018242483517159763,
+      "vstab_span": 0.12741981922084253,
+      "vstab_chord": 0.14316833620319383,
+      "batt_energy": 99.89999999999999
+    },
+    "velocity_mps": 18.0,
+    "baseline_alpha_deg": 6.0,
+    "alpha_bounds_deg": [
+      -4.0,
+      15.0
+    ],
+    "model_size": "small",
+    "include_wave_drag": 0.0,
+    "winglet_airfoil": "naca0012",
+    "output_dir": "data_dump\\opt_winglets",
+    "save_visualization": 1.0,
+    "show_interactive_after_optimization": 1.0,
+    "interactive_visualization_backend": "plotly",
+    "verbose": 0.0
+  },
+  "assumptions": {
+    "projected_wingspan_fixed_m": 1.181,
+    "winglet_region_limit_m": 0.25,
+    "objective": "Minimize AeroBuildup CD while matching the baseline CL at the configured baseline alpha.",
+    "note": "The winglet is a monotone-tapered blended curve. Its tip and blend control point stay inside the original wingtip station, so projected wingspan does not increase."
+  }
+}

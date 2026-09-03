@@ -1,0 +1,163 @@
+{
+  "finished_at": "2026-08-10T10:27:17+02:00",
+  "elapsed_seconds": 34.734191000000465,
+  "database_load_seconds_parent": 0.0,
+  "nfev": 5742,
+  "nit": 40,
+  "success": false,
+  "message": "Maximum number of iterations has been exceeded.",
+  "best_objective": -5.365925993936591,
+  "best_score": 5.365925993936591,
+  "reevaluated_best_score": 5.365925993936591,
+  "workers": 12,
+  "variables": 14,
+  "popsize": 12,
+  "expected_population_size": 256,
+  "maxiter": 40,
+  "target_candidate_slots": 10496,
+  "assumed_evals_per_second": 80.0,
+  "target_seconds": 3600.0,
+  "observed_nfev_per_second": 165.31261660880264,
+  "observed_candidate_slots_per_second": 302.180638092301,
+  "scipy_version": "1.17.1",
+  "python_version": "3.12.0",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "cpu_count": 20,
+  "config": {
+    "workers": 12,
+    "popsize": 12,
+    "maxiter": 40,
+    "target_seconds": 3600.0,
+    "assumed_evals_per_second": 80.0,
+    "init": "sobol",
+    "mutation": [
+      0.5,
+      1.0
+    ],
+    "recombination": 0.7,
+    "tol": 1e-05,
+    "atol": 0.0,
+    "polish": false,
+    "seed": 20260829,
+    "output_dir": "data_dump\\opt_sensitivity\\m3_best_banner_m10",
+    "round_payload": true,
+    "suppress_module_output": true,
+    "callback_score_best": true,
+    "save_best_visualization": true,
+    "scoring_references": {
+      "seconds_per_mission": 300.0,
+      "meters_to_feet": 3.28,
+      "meters_to_inches": 39.37,
+      "ducks_time_s": 2.5,
+      "pucks_time_s": 1.5,
+      "banner_time_s": 7.0,
+      "best_gm_time_s": 25.0,
+      "best_m2_profit": 2613,
+      "best_m3_lap_time_s": 46,
+      "best_banner_length_in": 216.9,
+      "best_rac": 0.9
+    }
+  },
+  "scoring_references": {
+    "seconds_per_mission": 300.0,
+    "meters_to_feet": 3.28,
+    "meters_to_inches": 39.37,
+    "ground": {
+      "ducks_time_s": 2.5,
+      "pucks_time_s": 1.5,
+      "banner_time_s": 7.0,
+      "best_time_s": 25.0,
+      "normalization": "min(best_time_s, ground_time_s) / ground_time_s"
+    },
+    "mission_1": {
+      "required_laps": 3.0,
+      "time_limit_s": 300.0
+    },
+    "mission_2": {
+      "best_profit": 2613,
+      "normalization": "max(best_profit, profit)"
+    },
+    "mission_3": {
+      "best_lap_time_s": 46,
+      "best_banner_length_in": 216.9,
+      "best_rac": 0.9,
+      "best_num_laps": 6,
+      "reference_performance": 1446.0,
+      "normalization": "max(reference_performance, performance)"
+    }
+  },
+  "bounds": {
+    "wing_span": [
+      0.914,
+      1.524
+    ],
+    "wing_chord": [
+      0.12,
+      0.4
+    ],
+    "tail_arm": [
+      0.3,
+      0.9
+    ],
+    "nose_length": [
+      0.08,
+      0.3
+    ],
+    "ducks_num": [
+      3,
+      150
+    ],
+    "pucks_num": [
+      1,
+      50
+    ],
+    "banner_length": [
+      0.5,
+      5.0
+    ],
+    "batt_capacity": [
+      1.0,
+      4.5
+    ],
+    "prop_diameter_in": [
+      10.0,
+      25.0
+    ],
+    "prop_pitch_in": [
+      5.0,
+      18.0
+    ],
+    "motor_kv": [
+      200.0,
+      500.0
+    ],
+    "motor_max_power": [
+      1000.0,
+      3000.0
+    ],
+    "cruise_throttle": [
+      0.5,
+      1.0
+    ],
+    "mission3_cruise_throttle": [
+      0.5,
+      1.0
+    ]
+  },
+  "integrality": {
+    "wing_span": false,
+    "wing_chord": false,
+    "tail_arm": false,
+    "nose_length": false,
+    "ducks_num": true,
+    "pucks_num": true,
+    "banner_length": false,
+    "batt_capacity": false,
+    "prop_diameter_in": false,
+    "prop_pitch_in": false,
+    "motor_kv": false,
+    "motor_max_power": false,
+    "cruise_throttle": false,
+    "mission3_cruise_throttle": false
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "case": {
+    "name": "m3_best_lap_time_p10",
+    "label": "m3_best_lap_time +10%",
+    "changed_group": "m3_best_lap_time",
+    "percent_change": 0.1,
+    "scoring_references": {
+      "seconds_per_mission": 300.0,
+      "meters_to_feet": 3.28,
+      "meters_to_inches": 39.37,
+      "ducks_time_s": 2.5,
+      "pucks_time_s": 1.5,
+      "banner_time_s": 7.0,
+      "best_gm_time_s": 25.0,
+      "best_m2_profit": 2613,
+      "best_m3_lap_time_s": 50.6,
+      "best_banner_length_in": 241,
+      "best_rac": 0.9
+    }
+  },
+  "scoring_references": {
+    "seconds_per_mission": 300.0,
+    "meters_to_feet": 3.28,
+    "meters_to_inches": 39.37,
+    "ground": {
+      "ducks_time_s": 2.5,
+      "pucks_time_s": 1.5,
+      "banner_time_s": 7.0,
+      "best_time_s": 25.0,
+      "normalization": "min(best_time_s, ground_time_s) / ground_time_s"
+    },
+    "mission_1": {
+      "required_laps": 3.0,
+      "time_limit_s": 300.0
+    },
+    "mission_2": {
+      "best_profit": 2613,
+      "normalization": "max(best_profit, profit)"
+    },
+    "mission_3": {
+      "best_lap_time_s": 50.6,
+      "best_banner_length_in": 241,
+      "best_rac": 0.9,
+      "best_num_laps": 5,
+      "reference_performance": 1338.888888888889,
+      "normalization": "max(reference_performance, performance)"
+    }
+  }
+}

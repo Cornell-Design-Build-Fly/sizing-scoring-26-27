@@ -11,18 +11,23 @@ V_V  = 0.036   # tail volume coeff; 0.075 was 2× oversize vs actual DF1 (0.036)
 AR_H = 3
 AR_V = 0.89    # actual DF1 fin: 5.20in × 5.83in → span/chord = 0.89; 1.75 was wrong shape
 FUSELAGE_BOX_SIZE = 0.13
-FUSELAGE_START_WIDTH = 0.0762
+FUSELAGE_START_WIDTH = 5.0 * 0.0254
 FUSELAGE_SHAPE = 8.0
 FUSELAGE_TIP_SIZE = 0.01
+MAX_EXTRA_SHIPPING_CONTAINERS = 10
 
 OPT_VARS = [
     ("wing_span", (0.914, 1.524)),
     ("wing_chord", (0.12, 0.40)),
     ("tail_arm", (0.3, 0.9)),
     ("nose_length", (0.08, 0.3)),
+<<<<<<< HEAD
     ("ducks_num", (3, 105)),
     ("pucks_num", (1, 35)),
     ("banner_length", (0.5, 5.0)),
+=======
+    ("extra_shipping_containers", (0, MAX_EXTRA_SHIPPING_CONTAINERS)),
+>>>>>>> 56070c4e7dfac343ec5be23bac66a873d5be1183
     ("batt_capacity", (1.0, 4.5)),
     ("prop_diameter_in", (10.0, 25.0)),
     ("prop_pitch_in", (5.0, 18.0)),
@@ -46,10 +51,10 @@ class DesignVector:
     tail_arm: float = 0.845 # [m]
     nose_length: float = 0.254 # [m]
 
-    # Mission payloads
-    ducks_num: float = 3
-    pucks_num: float = 1
-    banner_length: float = 3.8 # [m]
+    # Mission payloads. There is always one sensor shipping container in M2;
+    # this variable controls only the additional container simulators.
+    extra_shipping_containers: float = 0
+    sensor_weight_kg: float = 1.0
 
     # Prop components
     batt_capacity: float = 4.5 # [Ah]
@@ -60,8 +65,8 @@ class DesignVector:
     cruise_throttle: float = 0.90
     mission3_cruise_throttle: float = 0.85
 
-    # Packaging geometry. ``fuselage_width`` is the starting width for the
-    # mechanical module; it may grow by duck-width increments during M2 sizing.
+    # Packaging geometry. The mechanical module expands this starting
+    # cross-section as needed to enclose the M2 container arrangement.
     # These inputs are not currently included in OPT_VARS.
     fuselage_width: float = FUSELAGE_START_WIDTH
     fuselage_height: float = FUSELAGE_BOX_SIZE
@@ -87,8 +92,25 @@ class DesignVector:
             or self.nose_length <= 0
             or self.fuselage_width <= 0
             or self.fuselage_height <= 0
+            or not np.isfinite(self.sensor_weight_kg)
+            or self.sensor_weight_kg <= 0
         ):
-            raise ValueError("All DesignVector primary dimensions must be positive and expressed in meters.")
+            raise ValueError(
+                "All DesignVector primary dimensions and sensor_weight_kg must "
+                "be positive."
+            )
+        if (
+            not np.isfinite(self.extra_shipping_containers)
+            or not (
+                0
+                <= self.extra_shipping_containers
+                <= MAX_EXTRA_SHIPPING_CONTAINERS
+            )
+        ):
+            raise ValueError(
+                "extra_shipping_containers must lie in "
+                f"[0, {MAX_EXTRA_SHIPPING_CONTAINERS}]."
+            )
 
         self.wing_area   = self.wing_span * self.wing_chord
 
@@ -184,10 +206,15 @@ class ASBDesignVector(DesignVector):
             wing_chord=design_vector.wing_chord * unit_scale,
             tail_arm=design_vector.tail_arm * unit_scale,
             nose_length=design_vector.nose_length * unit_scale,
-            ducks_num=design_vector.ducks_num,
-            pucks_num=design_vector.pucks_num,
-            banner_length=design_vector.banner_length * unit_scale,
+            extra_shipping_containers=design_vector.extra_shipping_containers,
+            sensor_weight_kg=design_vector.sensor_weight_kg,
             batt_capacity=design_vector.batt_capacity,
+            prop_diameter_in=design_vector.prop_diameter_in,
+            prop_pitch_in=design_vector.prop_pitch_in,
+            motor_kv=design_vector.motor_kv,
+            motor_max_power=design_vector.motor_max_power,
+            cruise_throttle=design_vector.cruise_throttle,
+            mission3_cruise_throttle=design_vector.mission3_cruise_throttle,
             fuselage_width=design_vector.fuselage_width * unit_scale,
             fuselage_height=design_vector.fuselage_height * unit_scale,
             wing_airfoil=design_vector.wing_airfoil,
