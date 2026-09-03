@@ -165,9 +165,18 @@ class DesignVector:
         """Returns the optimizer variable names in array order."""
         return [name for name, _ in OPT_VARS]
 
-    def disp_vars(self) -> str:
+    def disp_vars(self, optimization_names: list[str] | None = None) -> str:
         """Returns a formatted display of optimization, fixed, and derived variables."""
-        opt_names = set(self.opt_names())
+        ordered_opt_names = (
+            self.opt_names() if optimization_names is None else optimization_names
+        )
+        unknown_names = set(ordered_opt_names) - set(self.__dataclass_fields__)
+        if unknown_names:
+            raise ValueError(
+                "Unknown optimization variable names: "
+                + ", ".join(sorted(unknown_names))
+            )
+        opt_names = set(ordered_opt_names)
         derived_names = [
             name for name, dataclass_field in self.__dataclass_fields__.items()
             if not dataclass_field.init
@@ -178,7 +187,7 @@ class DesignVector:
         ]
 
         sections = [
-            ("--- Optimization Variables ---", self.opt_names()),
+            ("--- Optimization Variables ---", ordered_opt_names),
             ("--- Fixed Variables ---", fixed_names),
             ("--- Derived Variables ---", derived_names),
         ]
