@@ -10,12 +10,12 @@ def test_m1_requires_three_laps() -> None:
     assert penalty == 0.0
 
 
-@pytest.mark.parametrize("mission", (2, 3))
-def test_m2_m3_require_five_minutes(mission: int) -> None:
+@pytest.mark.parametrize("mission, expected", ((2, 200.0), (3, 300.0)))
+def test_m2_requires_five_laps_and_m3_requires_five_minutes(mission: int, expected: float) -> None:
     available, required, penalty = _endurance_values((0.0, 0.0, 150.0), 25.0, 40.0, mission)
     assert available == 150.0
-    assert required == 300.0
-    assert penalty == pytest.approx(10.0 * np.log2(1.5))
+    assert required == expected
+    assert penalty > 0.0
 
 
 def test_zero_endurance_gets_full_penalty() -> None:

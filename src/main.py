@@ -8,6 +8,7 @@ from src.vectors import DesignVector, ParameterVector
 from src.opt.score import (
     DEFAULT_SCORING_REFERENCES,
     ScoringReferences,
+    total_optimization_score,
     total_score,
 )
 
@@ -19,6 +20,7 @@ def main(
     round_payload: bool = True,
     prop_database: ContinuousPropDatabase | None = None,
     return_details: bool = False,
+    continuous_lap_scoring: bool = False,
     scoring_references: ScoringReferences = DEFAULT_SCORING_REFERENCES,
 ) -> tuple[float, list[float]] | tuple[float, list[float], dict]:
     """Evaluate mechanics, propulsion, and aerodynamics for all missions.
@@ -31,8 +33,7 @@ def main(
     if round_payload:
         scoring_dv = replace(
             dv,
-            ducks_num=round(dv.ducks_num),
-            pucks_num=round(dv.pucks_num),
+            extra_shipping_containers=round(dv.extra_shipping_containers),
         )
 
     mech_result = evaluate_mechanical_module(
@@ -113,11 +114,18 @@ def main(
         debug=False,
     )
 
-    tot_score, breakdown = total_score(
+    score_function = total_optimization_score if continuous_lap_scoring else total_score
+    m2_payload_mass_kg = sum(
+        item.mass_kg
+        for item in m2_properties.items
+        if item.category == "mission_2_payload"
+    )
+    tot_score, breakdown = score_function(
         resolved_dv,
         aero_m1.lap_time,
         aero_m2.lap_time,
         aero_m3.lap_time,
+        m2_payload_mass_kg,
         scoring_references,
     )
     tot_penalty = (
@@ -126,6 +134,12 @@ def main(
         + aero_m2.penalty
         + aero_m3.penalty
     )
+    max_takeoff_mass_kg = max(
+        properties.total_mass_kg
+        for properties in (m1_properties, m2_properties, m3_properties)
+    )
+    if max_takeoff_mass_kg >= 55.0 * 0.45359237:
+        tot_penalty += 10.0
     result = (tot_score - tot_penalty, breakdown)
     if return_details:
         return (*result, {"M1": aero_m1, "M2": aero_m2, "M3": aero_m3})

@@ -3,7 +3,8 @@
 `DesignVector.battery_cell_count` is the battery-pack source of truth. The
 propulsion model derives nominal voltage as `3.7 V * cell_count`; nominal energy,
 pack resistance, and mechanical battery mass all use that same count. The
-default remains 6S.
+default remains 6S. `DesignVector` also enforces the incoming 100 Wh propulsion
+battery limit, so capacity must decrease as cell count increases.
 
 ## Fixed 6S/8S comparison
 

@@ -73,6 +73,7 @@ for alpha in alphas:
     vlm_result = run_vlm_on_design_vector(dv, alpha=float(alpha))
     nll_result = run_nonlinear_lifting_line_on_design_vector(
         dv,
+        xyz_ref=(0.0, 0.0, 0.0),
         alpha=float(alpha),
         spanwise_resolution=3,
     )

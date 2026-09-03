@@ -65,7 +65,8 @@ HISTORY_ARTIFACTS = (
 
 
 pd_constraint = NonlinearConstraint(
-    lambda x: x[9] / x[8],
+    lambda x: x[DesignVector.opt_names().index("prop_pitch_in")]
+    / x[DesignVector.opt_names().index("prop_diameter_in")],
     0.4,   # minimum P/D
     0.8,   # maximum P/D
 )
@@ -120,8 +121,11 @@ def save_best_design_visualization(design: DesignVector) -> tuple[Path, Path]:
 
     scoring_design = replace(
         design,
-        ducks_num=round(design.ducks_num) if ROUND_PAYLOAD else design.ducks_num,
-        pucks_num=round(design.pucks_num) if ROUND_PAYLOAD else design.pucks_num,
+        extra_shipping_containers=(
+            round(design.extra_shipping_containers)
+            if ROUND_PAYLOAD
+            else design.extra_shipping_containers
+        ),
     )
     with _module_output_context():
         mech = evaluate_mechanical_module(scoring_design, parameter_vector=PARAMETER_VECTOR)

@@ -78,9 +78,11 @@ def _summarize_run(run_dir: Path) -> dict[str, Any]:
         "prop_pitch_in": float(vector["prop_pitch_in"]),
         "cruise_throttle": float(vector["cruise_throttle"]),
         "mission3_cruise_throttle": float(vector["mission3_cruise_throttle"]),
-        "ducks_num": int(vector["ducks_num"]),
-        "pucks_num": int(vector["pucks_num"]),
-        "banner_length_m": float(vector["banner_length"]),
+        "extra_shipping_containers": int(
+            round(float(vector["extra_shipping_containers"]))
+        ),
+        "sensor_length_m": float(vector["sensor_length_m"]),
+        "sensor_weight_kg": float(vector["sensor_weight_kg"]),
         "wing_span_m": float(vector["wing_span"]),
         "wing_chord_m": float(vector["wing_chord"]),
         "m1_mass_kg": float(missions["M1"]["total_mass_kg"]),
@@ -96,7 +98,7 @@ def _summarize_run(run_dir: Path) -> dict[str, Any]:
     return row
 
 
-def _sanity_row(cell_count: int, capacity_ah: float = 4.5) -> dict[str, float | int]:
+def _sanity_row(cell_count: int, capacity_ah: float = 3.0) -> dict[str, float | int]:
     """Evaluate pack invariants on the same baseline aircraft."""
 
     design = DesignVector(

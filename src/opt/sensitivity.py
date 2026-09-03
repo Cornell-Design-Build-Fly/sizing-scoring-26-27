@@ -25,18 +25,16 @@ SENSITIVITY_SEED = 20260810
 
 SENSITIVITY_FIELDS: dict[str, tuple[str, ...]] = {
     "mission_time_limit": ("seconds_per_mission",),
-    "ground_best_time": ("best_gm_time_s",),
-    "m2_best_profit": ("best_m2_profit",),
-    "m3_best_lap_time": ("best_m3_lap_time_s",),
-    "m3_best_banner": ("best_banner_length_in",),
+    "ground_best_weight_height": ("best_ground_weight_height_kg_in",),
+    "m2_best_weight_time": ("best_m2_weight_per_time_kg_s",),
+    "m3_best_lap_weight": ("best_m3_lap_weight_kg",),
 }
 
 PRIMARY_REFERENCE_FIELDS = (
     "seconds_per_mission",
-    "best_gm_time_s",
-    "best_m2_profit",
-    "best_m3_lap_time_s",
-    "best_banner_length_in",
+    "best_ground_weight_height_kg_in",
+    "best_m2_weight_per_time_kg_s",
+    "best_m3_lap_weight_kg",
 )
 
 
@@ -140,12 +138,11 @@ def _latest_run_dir(output_dir: Path) -> Path:
 
 
 def _classify_regime(row: dict) -> str:
-    payload_count = row["ducks_num"] + row["pucks_num"]
-    if payload_count >= 40 or row["resolved_fuselage_width_m"] >= 0.18:
-        return "cargo"
-    if payload_count <= 10 and row["banner_length_m"] >= 3.0:
-        return "banner"
-    return "mixed"
+    if row["extra_shipping_containers"] >= 6:
+        return "delivery"
+    if row["sensor_weight_kg"] >= 10.0:
+        return "sensor"
+    return "balanced"
 
 
 def summarize_sensitivity_run(case: SensitivityCase, run_dir: Path) -> dict:
@@ -170,10 +167,9 @@ def summarize_sensitivity_run(case: SensitivityCase, run_dir: Path) -> dict:
         "m1_score": report["breakdown"]["m1"],
         "m2_score": report["breakdown"]["m2"],
         "m3_score": report["breakdown"]["m3"],
-        "ducks_num": int(vector["ducks_num"]),
-        "pucks_num": int(vector["pucks_num"]),
-        "payload_count": int(vector["ducks_num"]) + int(vector["pucks_num"]),
-        "banner_length_m": vector["banner_length"],
+        "extra_shipping_containers": int(vector["extra_shipping_containers"]),
+        "sensor_length_m": vector["sensor_length_m"],
+        "sensor_weight_kg": vector["sensor_weight_kg"],
         "wing_span_m": vector["wing_span"],
         "wing_chord_m": vector["wing_chord"],
         "wing_area_m2": vector["wing_area"],
@@ -205,7 +201,7 @@ def write_summary_csv(rows: list[dict], path: Path) -> Path:
 
 
 def plot_sensitivity_summary(rows: list[dict], path: Path) -> Path:
-    """Create a first-pass plot showing cargo/banner regime movement."""
+    """Plot how scoring references move the sensor/container optimum."""
 
     import matplotlib.pyplot as plt
 
@@ -216,21 +212,20 @@ def plot_sensitivity_summary(rows: list[dict], path: Path) -> Path:
     colors = {
         "baseline": "black",
         "mission_time_limit": "tab:blue",
-        "ground_best_time": "tab:green",
-        "m2_best_profit": "tab:orange",
-        "m3_best_lap_time": "tab:red",
-        "m3_best_banner": "tab:purple",
+        "ground_best_weight_height": "tab:green",
+        "m2_best_weight_time": "tab:orange",
+        "m3_best_lap_weight": "tab:purple",
         "all_refs": "tab:gray",
     }
-    markers = {"cargo": "s", "banner": "^", "mixed": "o"}
+    markers = {"delivery": "s", "sensor": "^", "balanced": "o"}
 
     fig, axes = plt.subplots(2, 2, figsize=(13, 9), constrained_layout=True)
     for row in rows:
         color = colors.get(row["changed_group"], "tab:gray")
         marker = markers.get(row["regime"], "o")
         axes[0, 0].scatter(
-            row["payload_count"],
-            row["banner_length_m"],
+            row["extra_shipping_containers"],
+            row["sensor_weight_kg"],
             s=70,
             c=color,
             marker=marker,
@@ -241,13 +236,13 @@ def plot_sensitivity_summary(rows: list[dict], path: Path) -> Path:
         if row["changed_group"] == "baseline":
             axes[0, 0].annotate(
                 "baseline",
-                (row["payload_count"], row["banner_length_m"]),
+                (row["extra_shipping_containers"], row["sensor_weight_kg"]),
                 xytext=(6, 6),
                 textcoords="offset points",
             )
 
-    axes[0, 0].set_xlabel("Payload count (ducks + pucks)")
-    axes[0, 0].set_ylabel("Banner length [m]")
+    axes[0, 0].set_xlabel("Extra shipping containers")
+    axes[0, 0].set_ylabel("Sensor mass [kg]")
     axes[0, 0].set_title("Optimized Regime Map")
     axes[0, 0].grid(True, alpha=0.25)
 
@@ -260,14 +255,14 @@ def plot_sensitivity_summary(rows: list[dict], path: Path) -> Path:
         color = colors.get(group, "tab:gray")
         axes[0, 1].plot(
             x,
-            [row["payload_count"] for row in group_rows],
+            [row["extra_shipping_containers"] for row in group_rows],
             marker="o",
             label=group,
             color=color,
         )
         axes[1, 0].plot(
             x,
-            [row["banner_length_m"] for row in group_rows],
+            [row["sensor_weight_kg"] for row in group_rows],
             marker="o",
             label=group,
             color=color,
@@ -281,9 +276,9 @@ def plot_sensitivity_summary(rows: list[dict], path: Path) -> Path:
         )
 
     axes[0, 1].set_title("Payload Response")
-    axes[0, 1].set_ylabel("Payload count")
-    axes[1, 0].set_title("Banner Response")
-    axes[1, 0].set_ylabel("Banner length [m]")
+    axes[0, 1].set_ylabel("Extra shipping containers")
+    axes[1, 0].set_title("Sensor Response")
+    axes[1, 0].set_ylabel("Sensor mass [kg]")
     axes[1, 1].set_title("Airframe Size Response")
     axes[1, 1].set_ylabel("Wing span [m]")
     for axis in (axes[0, 1], axes[1, 0], axes[1, 1]):

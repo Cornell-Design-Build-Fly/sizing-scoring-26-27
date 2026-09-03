@@ -7,7 +7,6 @@ from dataclasses import replace
 import numpy as np
 
 from src.mech.main_mech import evaluate_mechanical_module
-from src.opt.score import m2_score
 from src.opt.topline_opt import (
     ToplineConfig,
     _design_vector_from_optimizer,
@@ -29,7 +28,7 @@ def _battery_mass_kg(design: DesignVector) -> float:
 
 
 def main() -> None:
-    design_6s = DesignVector(batt_capacity=4.5, battery_cell_count=6)
+    design_6s = DesignVector(batt_capacity=3.0, battery_cell_count=6)
     design_8s = replace(design_6s, battery_cell_count=8)
     battery_6s = make_battery_from_design(design_6s, ParameterVector())
     battery_8s = make_battery_from_design(design_8s, ParameterVector())
@@ -38,15 +37,12 @@ def main() -> None:
     assert battery_8s.cells == 8
     assert np.isclose(battery_6s.vnom, 22.2)
     assert np.isclose(battery_8s.vnom, 29.6)
-    assert np.isclose(design_6s.batt_energy, 99.9)
-    assert np.isclose(design_8s.batt_energy, 133.2)
-    assert np.isclose(battery_6s.get_Rb(), 0.017333333333333333)
-    assert np.isclose(battery_8s.get_Rb(), 0.02311111111111111)
-    assert np.isclose(_battery_mass_kg(design_6s), 0.77058)
-    assert np.isclose(_battery_mass_kg(design_8s), 1.02744)
-    assert m2_score(design_8s, lap_time_s=50.0) < m2_score(
-        design_6s, lap_time_s=50.0
-    )
+    assert np.isclose(design_6s.batt_energy, 66.6)
+    assert np.isclose(design_8s.batt_energy, 88.8)
+    assert np.isclose(battery_6s.get_Rb(), 0.026)
+    assert np.isclose(battery_8s.get_Rb(), 0.034666666666666665)
+    assert np.isclose(_battery_mass_kg(design_6s), 0.51498)
+    assert np.isclose(_battery_mass_kg(design_8s), 0.68664)
     assert ASBDesignVector.from_design_vector(design_8s).battery_cell_count == 8
 
     optimizer_vector = design_6s.to_array()

@@ -1,83 +1,90 @@
+"""2026-27 DBF flight- and ground-mission scoring."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from decimal import Decimal, ROUND_HALF_UP
+import math
 
-if TYPE_CHECKING:
-    from src.vectors import DesignVector
+from src.vectors import DesignVector
 
 SECONDS_PER_MISSION = 300.0
-METERS_TO_FEET = 3.28
-METERS_TO_INCHES = 39.37
-
-# Ground mission references
-DUCKS_TIME = 2.5
-PUCKS_TIME = 1.5
-BANNER_TIME = 7.0
-BEST_GM_TIME_S = 25.0
-
-# Mission 2 reference
-BEST_M2_PROFIT = 2613
-
-# Mission 3 references
-BEST_M3_LAP_TIME_S = 46
-BEST_BANNER_LENGTH_IN = 241
-BEST_RAC = 0.90
+M1_REQUIRED_LAPS = 3
+M2_REQUIRED_LAPS = 5
+GROUND_DROP_HEIGHT_IN = 60.0
+POUNDS_TO_KG = 0.45359237
+GM_REFERENCE_SENSOR_MASS_KG = 35.0 * POUNDS_TO_KG
+DEFAULT_BEST_M2_WEIGHT_PER_TIME_KG_S = GM_REFERENCE_SENSOR_MASS_KG / 180.0
+DEFAULT_BEST_M3_LAP_WEIGHT_KG = 8.0 * GM_REFERENCE_SENSOR_MASS_KG
 
 
 @dataclass(frozen=True)
 class ScoringReferences:
-    """Reference values that normalize the mission scores."""
+    """Contest-wide maxima (or planning estimates) used for normalization."""
 
+    best_m2_weight_per_time_kg_s: float = DEFAULT_BEST_M2_WEIGHT_PER_TIME_KG_S
+    best_m3_lap_weight_kg: float = DEFAULT_BEST_M3_LAP_WEIGHT_KG
+    best_ground_weight_height_kg_in: float = (
+        GM_REFERENCE_SENSOR_MASS_KG * GROUND_DROP_HEIGHT_IN
+    )
     seconds_per_mission: float = SECONDS_PER_MISSION
-    meters_to_feet: float = METERS_TO_FEET
-    meters_to_inches: float = METERS_TO_INCHES
-    ducks_time_s: float = DUCKS_TIME
-    pucks_time_s: float = PUCKS_TIME
-    banner_time_s: float = BANNER_TIME
-    best_gm_time_s: float = BEST_GM_TIME_S
-    best_m2_profit: float = BEST_M2_PROFIT
-    best_m3_lap_time_s: float = BEST_M3_LAP_TIME_S
-    best_banner_length_in: float = BEST_BANNER_LENGTH_IN
-    best_rac: float = BEST_RAC
+    m3_deployment_time_s: float = 0.0
+    m3_recovery_time_s: float = 0.0
+
+    def __post_init__(self) -> None:
+        values = (
+            self.best_m2_weight_per_time_kg_s,
+            self.best_m3_lap_weight_kg,
+            self.best_ground_weight_height_kg_in,
+            self.seconds_per_mission,
+        )
+        if any(not math.isfinite(value) or value <= 0.0 for value in values):
+            raise ValueError("Scoring references must be finite and positive.")
+        overheads = (self.m3_deployment_time_s, self.m3_recovery_time_s)
+        if any(not math.isfinite(value) or value < 0.0 for value in overheads):
+            raise ValueError(
+                "Mission-3 deployment/recovery times must be finite and nonnegative."
+            )
+        if sum(overheads) >= self.seconds_per_mission:
+            raise ValueError(
+                "Mission-3 deployment/recovery must fit in the flight window."
+            )
 
 
 DEFAULT_SCORING_REFERENCES = ScoringReferences()
 
 
-def scoring_reference_values(refs: ScoringReferences | None = None) -> dict:
-    """Return the score-normalization constants used for this run."""
+def round_half_up(value: float, decimal_places: int = 2) -> float:
+    """Apply the conventional rounding required by the DBF rules."""
 
-    refs = DEFAULT_SCORING_REFERENCES if refs is None else refs
-    best_m3_laps = int(refs.seconds_per_mission // refs.best_m3_lap_time_s)
+    quantum = Decimal(1).scaleb(-decimal_places)
+    return float(Decimal(str(value)).quantize(quantum, rounding=ROUND_HALF_UP))
+
+
+def _official_mass_kg(mass_kg: float) -> float:
+    """Round a scoring weight to 0.01 lb, then return its SI equivalent."""
+
+    return round_half_up(mass_kg / POUNDS_TO_KG) * POUNDS_TO_KG
+
+
+def scoring_reference_values(
+    refs: ScoringReferences = DEFAULT_SCORING_REFERENCES,
+) -> dict[str, object]:
     return {
-        "seconds_per_mission": refs.seconds_per_mission,
-        "meters_to_feet": refs.meters_to_feet,
-        "meters_to_inches": refs.meters_to_inches,
-        "ground": {
-            "ducks_time_s": refs.ducks_time_s,
-            "pucks_time_s": refs.pucks_time_s,
-            "banner_time_s": refs.banner_time_s,
-            "best_time_s": refs.best_gm_time_s,
-            "normalization": "min(best_time_s, ground_time_s) / ground_time_s",
-        },
-        "mission_1": {
-            "required_laps": 3.0,
-            "time_limit_s": refs.seconds_per_mission,
-        },
+        "flight_window_s": refs.seconds_per_mission,
         "mission_2": {
-            "best_profit": refs.best_m2_profit,
-            "normalization": "max(best_profit, profit)",
+            "best_weight_per_time_kg_s": refs.best_m2_weight_per_time_kg_s,
+            "required_laps": M2_REQUIRED_LAPS,
         },
         "mission_3": {
-            "best_lap_time_s": refs.best_m3_lap_time_s,
-            "best_banner_length_in": refs.best_banner_length_in,
-            "best_rac": refs.best_rac,
-            "best_num_laps": best_m3_laps,
-            "reference_performance": (
-                best_m3_laps * refs.best_banner_length_in / refs.best_rac
-            ),
-            "normalization": "max(reference_performance, performance)",
+            "best_lap_weight_kg": refs.best_m3_lap_weight_kg,
+            "deployment_time_s": refs.m3_deployment_time_s,
+            "recovery_time_s": refs.m3_recovery_time_s,
+        },
+        "ground": {
+            "drop_height_in": GROUND_DROP_HEIGHT_IN,
+            "reference_sensor_weight_lb": 35.0,
+            "best_weight_height_kg_in": refs.best_ground_weight_height_kg_in,
         },
     }
 
@@ -86,43 +93,88 @@ def gm_score(
     dv: DesignVector,
     refs: ScoringReferences = DEFAULT_SCORING_REFERENCES,
 ) -> float:
-    """Returns the ground mission score."""
-    time_gm = 2.0 * (
-        dv.ducks_num * refs.ducks_time_s + dv.pucks_num * refs.pucks_time_s
-    ) + refs.banner_time_s
-    normalization_time = min(refs.best_gm_time_s, time_gm)
-    return normalization_time / time_gm
+    """Score a successful fixed-60-inch Ground Mission."""
+
+    performance = _official_mass_kg(dv.sensor_weight_kg) * GROUND_DROP_HEIGHT_IN
+    return 0.5 + min(1.0, performance / refs.best_ground_weight_height_kg_in)
 
 
 def m1_score(
     lap_time_s: float,
     refs: ScoringReferences = DEFAULT_SCORING_REFERENCES,
 ) -> float:
-    """Returns the mission 1 score."""
-    mission_time_s = lap_time_s * 3.0
-    if mission_time_s < refs.seconds_per_mission:
-        return 1.0
-    return 0.0
+    """Return one point when three laps fit in the five-minute window."""
+
+    if not math.isfinite(lap_time_s) or lap_time_s <= 0.0:
+        return 0.0
+    mission_time = round_half_up(M1_REQUIRED_LAPS * lap_time_s)
+    return float(mission_time <= refs.seconds_per_mission)
 
 
-def m2_score(
-    dv: DesignVector,
+def m1_optimization_score(
     lap_time_s: float,
     refs: ScoringReferences = DEFAULT_SCORING_REFERENCES,
 ) -> float:
-    """Returns the mission 2 score."""
-    num_laps = int(refs.seconds_per_mission // lap_time_s)
-    income_passengers = dv.ducks_num * (6.0 + 2.0 * num_laps)
-    income_cargo = dv.pucks_num * (10.0 + 8.0 * num_laps)
-    efficiency_factor = dv.batt_energy / 100.0
-    cost = (
-        num_laps
-        * (10.0 + dv.ducks_num * 0.5 + dv.pucks_num * 2.0)
-        * efficiency_factor
+    if not math.isfinite(lap_time_s) or lap_time_s <= 0.0:
+        return 0.0
+    return min(1.0, refs.seconds_per_mission / (M1_REQUIRED_LAPS * lap_time_s))
+
+
+def m2_score(
+    payload_mass_kg: float,
+    lap_time_s: float,
+    refs: ScoringReferences = DEFAULT_SCORING_REFERENCES,
+) -> float:
+    """Score delivered payload mass divided by the time for exactly five laps."""
+
+    elapsed = round_half_up(M2_REQUIRED_LAPS * lap_time_s)
+    if (
+        not math.isfinite(payload_mass_kg)
+        or payload_mass_kg <= 0.0
+        or not math.isfinite(elapsed)
+        or elapsed <= 0.0
+        or elapsed > refs.seconds_per_mission
+    ):
+        return 0.0
+    performance = _official_mass_kg(payload_mass_kg) / elapsed
+    return 1.0 + min(1.0, performance / refs.best_m2_weight_per_time_kg_s)
+
+
+def m2_optimization_score(
+    payload_mass_kg: float,
+    lap_time_s: float,
+    refs: ScoringReferences = DEFAULT_SCORING_REFERENCES,
+) -> float:
+    official = m2_score(payload_mass_kg, lap_time_s, refs)
+    if official > 0.0:
+        return official
+    if (
+        not math.isfinite(lap_time_s)
+        or lap_time_s <= 0.0
+        or payload_mass_kg <= 0.0
+    ):
+        return 0.0
+    completion = min(
+        1.0,
+        refs.seconds_per_mission / (M2_REQUIRED_LAPS * lap_time_s),
     )
-    profit = (income_passengers + income_cargo) - cost
-    normalization_profit = max(refs.best_m2_profit, profit)
-    return 1.0 + (profit / normalization_profit)
+    performance = payload_mass_kg / (M2_REQUIRED_LAPS * lap_time_s)
+    normalized = min(1.0, performance / refs.best_m2_weight_per_time_kg_s)
+    return completion * (1.0 + normalized)
+
+
+def completed_m3_laps(
+    lap_time_s: float,
+    refs: ScoringReferences = DEFAULT_SCORING_REFERENCES,
+) -> int:
+    if not math.isfinite(lap_time_s) or lap_time_s <= 0.0:
+        return 0
+    lap_window = (
+        refs.seconds_per_mission
+        - refs.m3_deployment_time_s
+        - refs.m3_recovery_time_s
+    )
+    return int(lap_window // lap_time_s)
 
 
 def m3_score(
@@ -130,17 +182,29 @@ def m3_score(
     lap_time_s: float,
     refs: ScoringReferences = DEFAULT_SCORING_REFERENCES,
 ) -> float:
-    """Returns the mission 3 score."""
-    wing_span_ft = dv.wing_span * refs.meters_to_feet
-    rac = 0.05 * wing_span_ft + 0.75
-    num_laps = int(refs.seconds_per_mission // lap_time_s)
-    best_num_laps = int(refs.seconds_per_mission // refs.best_m3_lap_time_s)
-    performance = num_laps * dv.banner_length * refs.meters_to_inches / rac
-    reference_performance = (
-        best_num_laps * refs.best_banner_length_in / refs.best_rac
+    """Score completed laps times sensor mass."""
+
+    laps = completed_m3_laps(lap_time_s, refs)
+    if laps < 1:
+        return 0.0
+    performance = laps * _official_mass_kg(dv.sensor_weight_kg)
+    return 2.0 + min(1.0, performance / refs.best_m3_lap_weight_kg)
+
+
+def m3_optimization_score(
+    dv: DesignVector,
+    lap_time_s: float,
+    refs: ScoringReferences = DEFAULT_SCORING_REFERENCES,
+) -> float:
+    if completed_m3_laps(lap_time_s, refs) < 1:
+        return 0.0
+    lap_window = (
+        refs.seconds_per_mission
+        - refs.m3_deployment_time_s
+        - refs.m3_recovery_time_s
     )
-    normalization_performance = max(reference_performance, performance)
-    return 2.0 + (performance / normalization_performance)
+    performance = (lap_window / lap_time_s) * dv.sensor_weight_kg
+    return 2.0 + min(1.0, performance / refs.best_m3_lap_weight_kg)
 
 
 def total_score(
@@ -148,19 +212,40 @@ def total_score(
     lap_time_m1: float,
     lap_time_m2: float,
     lap_time_m3: float,
+    m2_payload_mass_kg: float,
     refs: ScoringReferences = DEFAULT_SCORING_REFERENCES,
 ) -> tuple[float, list[float]]:
-    """Returns the total score and mission-by-mission breakdown."""
+    """Return GM + M1 + M2 + M3 using the sequential unlock flow."""
+
     gm = gm_score(dv, refs)
     m1 = m1_score(lap_time_m1, refs)
-    m2 = 0.0
-    m3 = 0.0
-
+    m2 = m3 = 0.0
     if m1 > 0.0:
-        m2 = m2_score(dv, lap_time_m2, refs)
+        m2 = m2_score(m2_payload_mass_kg, lap_time_m2, refs)
         if m2 > 0.0:
             m3 = m3_score(dv, lap_time_m3, refs)
-
     breakdown = [gm, m1, m2, m3]
-    # print(f"Score breakdown: GM={gm:.2f}, M1={m1:.2f}, M2={m2:.2f}, M3={m3:.2f}")
-    return gm + m1 + m2 + m3, breakdown
+    return sum(breakdown), breakdown
+
+
+def total_optimization_score(
+    dv: DesignVector,
+    lap_time_m1: float,
+    lap_time_m2: float,
+    lap_time_m3: float,
+    m2_payload_mass_kg: float,
+    refs: ScoringReferences = DEFAULT_SCORING_REFERENCES,
+) -> tuple[float, list[float]]:
+    """Return relaxed progress while preserving official unlock gates."""
+
+    gm = gm_score(dv, refs)
+    official_m1 = m1_score(lap_time_m1, refs)
+    m1 = m1_optimization_score(lap_time_m1, refs)
+    m2 = m3 = 0.0
+    if official_m1 > 0.0:
+        official_m2 = m2_score(m2_payload_mass_kg, lap_time_m2, refs)
+        m2 = m2_optimization_score(m2_payload_mass_kg, lap_time_m2, refs)
+        if official_m2 > 0.0:
+            m3 = m3_optimization_score(dv, lap_time_m3, refs)
+    breakdown = [gm, m1, m2, m3]
+    return sum(breakdown), breakdown

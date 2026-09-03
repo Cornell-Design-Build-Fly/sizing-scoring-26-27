@@ -12,18 +12,22 @@ from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 
 
 MU = 1.81e-5
-BANNER_CD = 0.08
-BANNER_ASPECT_RATIO = 5.0
+SENSOR_CD = 0.137
+SENSOR_RADIUS_M = 2.5 * 0.0254
 
 
-def banner_drag_force(
+def sensor_drag_force(
     design: DesignVector,
     parameters: ParameterVector,
     velocity,
 ):
-    """Return banner drag using area = length^2 / aspect ratio."""
-    banner_area = design.banner_length**2 / BANNER_ASPECT_RATIO
-    return 0.5 * parameters.rho * velocity**2 * BANNER_CD * banner_area
+    """Return sensor drag using the projected side area of a cylinder.
+
+    Sensor weight does not enter the aerodynamic drag equation directly.
+    """
+    sensor_length = design.sensor_length_m
+    sensor_area = 2.0 * SENSOR_RADIUS_M * sensor_length
+    return 0.5 * parameters.rho * velocity**2 * SENSOR_CD * sensor_area
 
 
 @lru_cache(maxsize=4096)

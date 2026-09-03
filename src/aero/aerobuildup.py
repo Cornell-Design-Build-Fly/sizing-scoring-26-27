@@ -4,8 +4,7 @@ from time import perf_counter
 
 import aerosandbox as asb
 
-from src.aero.vlm import AirplaneAnalysisResult
-from src.aero.utils import require_scalar
+from src.aero.vlm import AirplaneAnalysisResult, require_scalar
 from src.vectors import ASBDesignVector, DesignVector
 
 
@@ -41,7 +40,7 @@ def run_aerobuildup_on_design_vector(
         airplane=airplane,
         op_point=op_point,
         xyz_ref=xyz_ref,
-        model_size=model_size,
+        model_size=model_size, # type: ignore
         include_wave_drag=include_wave_drag,
     )
 

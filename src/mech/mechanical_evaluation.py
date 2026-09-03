@@ -41,18 +41,13 @@ def evaluate_mechanical_design(
         warnings=warnings,
     )
 
-    if selection.width_increases:
-        warnings.append(
-            "Mission 2 selected fuselage width "
-            f"{selection.fuselage_width_m:.4f} m after "
-            f"{selection.width_increases} duck-width increase(s)."
-        )
     mission1 = replace(selection.mission1, warnings=tuple(warnings))
     mission2 = replace(selection.mission2, warnings=tuple(warnings))
 
     mission3_payload = place_mission3_payload(
         design_vector=design_vector,
         base_items=selection.base_items,
+        mission2_payload=selection.payload_items,
         electronics_layout=selection.electronics_layout,
         neutral_point_x_m=neutral_point_x,
         config=config,
@@ -99,7 +94,7 @@ def evaluate_mechanical_design(
         input_fuselage_width_m=float(design_vector.fuselage_width),
         input_fuselage_height_m=float(design_vector.fuselage_height),
         resolved_fuselage_width_m=selection.fuselage_width_m,
-        resolved_fuselage_height_m=float(design_vector.fuselage_height),
+        resolved_fuselage_height_m=selection.fuselage_height_m,
         fuselage_width_increases=selection.width_increases,
         all_items=all_items,
         missions={"M1": mission1, "M2": mission2, "M3": mission3},
