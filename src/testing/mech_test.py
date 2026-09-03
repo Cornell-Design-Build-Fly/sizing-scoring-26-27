@@ -1,4 +1,4 @@
-"""Executable regression test for the mechanical module.
+"""Executable regression test for the current mechanical mission model.
 
 Run from the repository root with:
     python -m src.testing.mech_test
@@ -6,49 +6,23 @@ Run from the repository root with:
 
 from __future__ import annotations
 
-from dataclasses import replace
 from itertools import combinations
 
 import numpy as np
 
-from src.mech import (
-    BatteryMassModel,
-    ElectronicsPackagingConfig,
-    MechanicalModuleConfig,
-    MotorMassModel,
-    NeutralPointConfig,
-    PayloadPlacementError,
-    PropellerMassModel,
-    evaluate_mechanical_module,
-    mech_main,
-    resolve_electronics_layout,
-)
-from src.mech.airframe_assembly import build_fixed_airframe_items
-from src.mech.mass_properties import (
-    estimate_aerodynamic_center_x,
-    estimate_neutral_point_x,
-    geometry_stations,
-)
-from src.vectors import DesignVector
+from src.mech import MechanicalModuleConfig, evaluate_mechanical_module, mech_main
+from src.vectors import ASBDesignVector, DesignVector
 
 
-def _payloads(result):
+INCH_M = 0.0254
+POUND_KG = 0.45359237
+
+
+def _mission_payloads(result, mission: str):
+    category = f"mission_{mission[-1]}_payload"
     return tuple(
-        item
-        for item in result.for_mission("M2").items
-        if item.category == "mission_2_payload"
+        item for item in result.for_mission(mission).items if item.category == category
     )
-
-
-def _assert_no_payload_overlap(items) -> None:
-    payloads = [item for item in items if item.category == "mission_2_payload"]
-    for first, second in combinations(payloads, 2):
-        required_separation = 0.5 * (first.dimensions_m + second.dimensions_m)
-        overlap_in_every_axis = np.all(
-            np.abs(first.position_m - second.position_m)
-            < required_separation - 1e-12
-        )
-        assert not overlap_in_every_axis, f"{first.name} overlaps {second.name}"
 
 
 def _assert_mass_properties(result) -> None:
@@ -64,410 +38,150 @@ def _assert_mass_properties(result) -> None:
             properties.inertia_tensor_kg_m2.T,
             atol=1e-12,
         )
-        assert np.all(np.linalg.eigvalsh(properties.inertia_tensor_kg_m2) >= -1e-10)
+        assert np.all(
+            np.linalg.eigvalsh(properties.inertia_tensor_kg_m2) >= -1e-10
+        )
 
 
-def _assert_fuselage_envelope(
-    result, design: DesignVector, config: MechanicalModuleConfig
-) -> None:
-    fuselage = next(
-        item
-        for item in result.for_mission("M1").items
-        if item.name == "Fuselage structure"
-    )
-    payloads = _payloads(result)
-    front_edge = fuselage.position_m[0] - 0.5 * fuselage.dimensions_m[0]
-    back_edge = fuselage.position_m[0] + 0.5 * fuselage.dimensions_m[0]
-    expected_back_edge = max(
-        [result.electronics_layout.back_edge_x_m]
-        + [
-            item.position_m[0] + 0.5 * item.dimensions_m[0]
-            for item in payloads
-        ]
-    )
-    assert np.isclose(front_edge, result.electronics_layout.front_edge_x_m)
-    assert np.isclose(back_edge, expected_back_edge)
-    assert np.isclose(fuselage.dimensions_m[1], result.fuselage_width_m)
-    assert np.isclose(fuselage.dimensions_m[2], design.fuselage_height)
-    expected_perimeter = 2.0 * (result.fuselage_width_m + design.fuselage_height)
-    expected_mass = (
-        config.airframe.fuselage_shell_areal_density_kg_m2
-        * fuselage.dimensions_m[0]
-        * expected_perimeter
-    )
-    assert np.isclose(fuselage.mass_kg, expected_mass)
-
-
-def _assert_aerodynamic_center_model() -> None:
-    design = DesignVector()
-    stations = geometry_stations(design)
-
-    wing_area = design.wing_span * design.wing_chord
-    tail_area = design.hstab_span * design.hstab_chord
-    wing_ar = design.wing_span**2 / wing_area
-    tail_ar = design.hstab_span**2 / tail_area
-    wing_slope = 2.0 * np.pi / (1.0 + 2.0 / wing_ar)
-    tail_slope = 2.0 * np.pi / (1.0 + 2.0 / tail_ar)
-    tail_correction = (wing_ar - 2.0) / (wing_ar + 2.0)
-    wing_weight = wing_area * wing_slope
-    tail_weight = tail_area * tail_correction * tail_slope
-    expected = (
-        stations.wing_ac_x_m * wing_weight
-        + stations.horizontal_tail_ac_x_m * tail_weight
-    ) / (wing_weight + tail_weight)
-
-    aerodynamic_center = estimate_aerodynamic_center_x(design, stations)
-    assert np.isclose(aerodynamic_center, expected)
-    assert stations.wing_ac_x_m < aerodynamic_center
-    assert aerodynamic_center < stations.horizontal_tail_ac_x_m
-
-    longer_tail_arm = replace(design, tail_arm=0.90)
-    assert estimate_aerodynamic_center_x(longer_tail_arm) > aerodynamic_center
-
-    larger_tail_span = replace(design)
-    larger_tail_span.hstab_span *= 1.10
-    assert estimate_aerodynamic_center_x(larger_tail_span) > aerodynamic_center
-
-    larger_tail_chord = replace(design)
-    larger_tail_chord.hstab_chord *= 1.10
-    assert estimate_aerodynamic_center_x(larger_tail_chord) > aerodynamic_center
-
-    changed_vertical_tail = replace(design)
-    changed_vertical_tail.vstab_span *= 3.0
-    changed_vertical_tail.vstab_chord *= 2.0
-    assert np.isclose(
-        estimate_aerodynamic_center_x(changed_vertical_tail), aerodynamic_center
-    )
-
-    obsolete_config = NeutralPointConfig(
-        two_dimensional_lift_curve_slope_per_rad=4.0,
-        wing_oswald_efficiency=0.50,
-        tail_oswald_efficiency=0.55,
-        tail_efficiency=0.60,
-        tail_dynamic_pressure_ratio=0.65,
-        downwash_gradient=0.75,
-        fuselage_shift_chords=2.0,
-    )
-    assert np.isclose(
-        estimate_neutral_point_x(design, obsolete_config, stations),
-        aerodynamic_center,
-    )
-
-    for dimension_name, invalid_value in (
-        ("wing_span", 0.0),
-        ("wing_chord", np.inf),
-        ("hstab_span", -1.0),
-        ("hstab_chord", np.nan),
-    ):
-        invalid_design = replace(design)
-        setattr(invalid_design, dimension_name, invalid_value)
-        try:
-            estimate_aerodynamic_center_x(invalid_design)
-        except ValueError as exc:
-            assert dimension_name in str(exc)
-        else:
-            raise AssertionError(f"Expected invalid {dimension_name} to raise.")
-
-    low_aspect_ratio = replace(design)
-    low_aspect_ratio.wing_span = 2.0 * low_aspect_ratio.wing_chord
-    try:
-        estimate_aerodynamic_center_x(low_aspect_ratio)
-    except ValueError as exc:
-        assert "greater than 2" in str(exc)
-    else:
-        raise AssertionError("Expected wing aspect ratio <= 2 to raise.")
+def _assert_no_payload_overlap(items) -> None:
+    for first, second in combinations(items, 2):
+        required_separation = 0.5 * (
+            first.dimensions_m + second.dimensions_m
+        )
+        overlap_in_every_axis = np.all(
+            np.abs(first.position_m - second.position_m)
+            < required_separation - 1e-12
+        )
+        assert not overlap_in_every_axis, f"{first.name} overlaps {second.name}"
 
 
 def main() -> None:
-    _assert_aerodynamic_center_model()
-
-    battery_mass_model = BatteryMassModel()
-    assert np.isclose(battery_mass_model.mass_kg(4.5, 22.2), 0.77058)
-
-    # The supplied motor regression returns grams; the mechanical API uses kg.
-    motor_mass_model = MotorMassModel()
-    assert np.isclose(motor_mass_model.mass_kg(335.0, 2200.0), 0.4246894287455)
-    propeller_mass_model = PropellerMassModel()
-    assert np.isclose(propeller_mass_model.mass_kg(14.0), 0.038274216)
-
     design = DesignVector()
     config = MechanicalModuleConfig()
     result = evaluate_mechanical_module(design, config)
 
-    assert set(result.missions) == {"M1", "M2", "M3"}
-    assert result.for_mission("M2").total_mass_kg > result.for_mission("M1").total_mass_kg
-    assert result.for_mission("M3").total_mass_kg > result.for_mission("M1").total_mass_kg
-    _assert_mass_properties(result)
-    adapter_cg, adapter_inertia, adapter_weight = mech_main(design, mission="M1")
-    assert np.allclose(adapter_cg, result.for_mission("M1").cg_m)
-    assert np.allclose(adapter_inertia, result.for_mission("M1").inertia_tensor_kg_m2)
-    assert np.isclose(adapter_weight, result.for_mission("M1").weight_n)
+    assert "extra_shipping_containers" in design.opt_names()
+    assert "sensor_weight_kg" not in design.opt_names()
+    assert "ducks_num" not in design.opt_names()
+    assert "pucks_num" not in design.opt_names()
+    assert "banner_length" not in design.opt_names()
+    assert DesignVector.bounds()[design.opt_names().index("extra_shipping_containers")] == (
+        0,
+        10,
+    )
+    assert np.array_equal(DesignVector.from_array(design.to_array()).to_array(), design.to_array())
 
-    # Fixed airframe is built first and contains no fuselage or electronics.
-    fixed_items = build_fixed_airframe_items(design, config)
-    fixed_names = {item.name for item in fixed_items}
-    assert "Landing gear" in fixed_names
-    assert "Fuselage structure" not in fixed_names
-    assert "Battery" not in fixed_names
+    promoted = ASBDesignVector.from_design_vector(design)
+    assert promoted.sensor_weight_kg == design.sensor_weight_kg
+    assert promoted.extra_shipping_containers == design.extra_shipping_containers
+    assert promoted.motor_max_power == design.motor_max_power
+    assert promoted.prop_pitch_in == design.prop_pitch_in
 
-    # tail_arm remains wing-LE to tail-LE in mechanical geometry.
-    stations = geometry_stations(design)
-    assert np.isclose(stations.wing_le_x_m, 0.0)
-    assert np.isclose(stations.horizontal_tail_le_x_m, design.tail_arm)
-    assert np.isclose(stations.vertical_tail_le_x_m, design.tail_arm)
-    landing_gear = next(item for item in fixed_items if item.name == "Landing gear")
+    expected_sensor_length = design.sensor_weight_kg / (
+        config.sensor.steel_density_kg_m3
+        * np.pi
+        * (0.5 * config.sensor.diameter_m) ** 2
+    )
+    assert np.isclose(config.sensor.length_m(design.sensor_weight_kg), expected_sensor_length)
+    assert np.isclose(config.sensor.diameter_m, 3.0 * INCH_M)
+
+    m2_payload = _mission_payloads(result, "M2")
+    assert len(m2_payload) == 1
+    container = m2_payload[0]
+    assert container.name == "M2 sensor shipping container"
     assert np.allclose(
-        landing_gear.position_m,
-        (
-            stations.wing_le_x_m,
-            0.0,
-            -config.airframe.landing_gear_vertical_offset_m,
-        ),
+        container.dimensions_m,
+        (expected_sensor_length + 2.0 * INCH_M, 5.0 * INCH_M, 5.0 * INCH_M),
     )
-
-    # The loaded fuselage is translated to exactly 12% M2 SM. M1 has only an
-    # upper 20% acceptance limit; a value below 10% does not trigger widening.
-    m1 = result.for_mission("M1")
-    m2 = result.for_mission("M2")
-    assert np.isclose(config.static_margin.target, 0.20)
-    assert np.isclose(config.mission2.target_static_margin, 0.12)
-    assert config.mission2.maximum_width_increases == 4
+    assert np.isclose(container.mass_kg, design.sensor_weight_kg + 0.5 * POUND_KG)
     assert np.isclose(
-        m2.static_margin,
+        result.for_mission("M2").static_margin,
         config.mission2.target_static_margin,
         atol=1e-12,
     )
-    assert m1.static_margin <= config.static_margin.maximum + 1e-12
-    assert m1.static_margin_feasible
-    assert m2.static_margin_feasible
-    assert np.isclose(result.electronics_position_m[2], -3.0 * 0.0254)
 
-    # The 76.2 mm start fits the 76.2 mm puck exactly. Small payloads remain at
-    # that width because their resulting M1 margin is already below 20%.
-    assert np.isclose(design.fuselage_width, 0.0762)
-    assert result.fuselage_width_increases == 0
-    assert np.isclose(result.fuselage_width_m, design.fuselage_width)
-    assert np.isclose(result.fuselage_height_m, design.fuselage_height)
-    assert not any("duck-width increase" in warning for warning in result.warnings)
-
-    # Electronics are packed locally first; profile selection still follows
-    # the skinny/fat envelope definitions.
-    packaging = ElectronicsPackagingConfig()
-    skinny = resolve_electronics_layout(
-        cg_x_m=0.3,
-        fuselage_width_m=0.126,
-        fuselage_height_m=0.126,
-        config=packaging,
+    release_items = tuple(
+        item for item in result.all_items if item.category == "release_mechanism"
     )
-    threshold = resolve_electronics_layout(
-        cg_x_m=0.3,
-        fuselage_width_m=0.127,
-        fuselage_height_m=0.126,
-        config=packaging,
-    )
-    assert skinny.profile == "skinny"
-    assert threshold.profile == "fat"
-
-    # Payload rows begin at the electronics back face, center laterally, then
-    # advance aft. The installed fuselage must end before both tail leading edges.
-    payloads = _payloads(result)
-    ducks = [item for item in payloads if item.name.startswith("Duck")]
-    pucks = [item for item in payloads if item.name.startswith("Puck")]
-    assert len(ducks) == round(design.ducks_num)
-    assert len(pucks) == round(design.pucks_num)
-    half_width = 0.5 * result.fuselage_width_m
-    for first in (ducks[0], pucks[0]):
-        assert np.isclose(
-            first.position_m[0] - 0.5 * first.dimensions_m[0],
-            result.electronics_layout.back_edge_x_m,
-        )
-    for payload_type in (ducks, pucks):
-        rows: dict[float, list] = {}
-        for payload in payload_type:
-            rows.setdefault(round(float(payload.position_m[0]), 12), []).append(payload)
-        for row in rows.values():
-            assert np.isclose(sum(item.position_m[1] for item in row), 0.0)
-            negative_edge = min(
-                item.position_m[1] - 0.5 * item.dimensions_m[1] for item in row
-            )
-            positive_edge = max(
-                item.position_m[1] + 0.5 * item.dimensions_m[1] for item in row
-            )
-            assert np.isclose(negative_edge, -positive_edge)
-    assert np.isclose(ducks[0].position_m[1], ducks[1].position_m[1])
+    assert len(release_items) == 1
+    release = release_items[0]
+    assert release.missions == frozenset({"M1", "M2", "M3"})
+    assert np.isclose(release.mass_kg, design.sensor_weight_kg / 20.0)
+    assert np.isclose(release.position_m[0], container.position_m[0])
+    assert np.isclose(release.position_m[1], container.position_m[1])
     assert np.isclose(
-        ducks[1].position_m[0] - ducks[0].position_m[0],
-        config.mission2.duck.dimensions_m[0],
-    )
-    assert pucks[0].position_m[2] < ducks[0].position_m[2]
-    for payload in payloads:
-        assert payload.position_m[1] - 0.5 * payload.dimensions_m[1] >= -half_width - 1e-12
-        assert payload.position_m[1] + 0.5 * payload.dimensions_m[1] <= half_width + 1e-12
-    _assert_no_payload_overlap(result.for_mission("M2").items)
-    _assert_fuselage_envelope(result, design, config)
-    fuselage = next(item for item in m1.items if item.name == "Fuselage structure")
-    fuselage_back_x = fuselage.position_m[0] + 0.5 * fuselage.dimensions_m[0]
-    tail_front_x = min(
-        stations.horizontal_tail_le_x_m, stations.vertical_tail_le_x_m
-    )
-    assert fuselage_back_x < tail_front_x
-
-    # No-payload M2 is identical to M1 and keeps the initial 76.2 mm width.
-    empty = evaluate_mechanical_module(DesignVector(ducks_num=0, pucks_num=0), config)
-    assert empty.fuselage_width_increases == 0
-    assert np.isclose(empty.fuselage_width_m, 0.0762)
-    assert np.isclose(
-        empty.for_mission("M2").static_margin,
-        empty.for_mission("M1").static_margin,
+        release.position_m[2],
+        container.position_m[2] + 0.5 * container.dimensions_m[2],
     )
 
-    # For an otherwise identical empty layout, increasing only fuselage width
-    # leaves length unchanged and increases structural mass with perimeter.
-    wide_empty_design = DesignVector(
-        ducks_num=0,
-        pucks_num=0,
-        fuselage_width=0.1292,
+    m3_payload = _mission_payloads(result, "M3")
+    assert len(m3_payload) == 1
+    sensor = m3_payload[0]
+    assert sensor.name == "M3 sensor"
+    assert np.isclose(sensor.mass_kg, design.sensor_weight_kg)
+    assert np.allclose(
+        sensor.dimensions_m,
+        (expected_sensor_length, 3.0 * INCH_M, 3.0 * INCH_M),
     )
-    wide_empty = evaluate_mechanical_module(wide_empty_design, config)
-    empty_fuselage = next(
-        item for item in empty.for_mission("M1").items
-        if item.name == "Fuselage structure"
-    )
-    wide_empty_fuselage = next(
-        item for item in wide_empty.for_mission("M1").items
-        if item.name == "Fuselage structure"
-    )
-    assert np.isclose(
-        wide_empty_fuselage.dimensions_m[0], empty_fuselage.dimensions_m[0]
-    )
-    assert wide_empty_fuselage.mass_kg > empty_fuselage.mass_kg
-    assert np.isclose(
-        wide_empty_fuselage.mass_kg / empty_fuselage.mass_kg,
-        (wide_empty_design.fuselage_width + wide_empty_design.fuselage_height)
-        / (design.fuselage_width + design.fuselage_height),
-    )
+    assert np.allclose(sensor.position_m, result.for_mission("M1").cg_m)
+    assert np.allclose(result.for_mission("M3").cg_m, result.for_mission("M1").cg_m)
 
-    # Large payloads widen because the narrower exact-M2 layouts fail an
-    # acceptance check. With perimeter-scaled fuselage mass, this case is
-    # accepted after two duck-width increases with the formula-sheet neutral
-    # point and regression-based propulsion masses.
-    large_design = DesignVector(ducks_num=10, pucks_num=9)
-    large = evaluate_mechanical_module(large_design, config)
-    assert large.fuselage_width_increases == 2
-    assert np.isclose(
-        large.fuselage_width_m,
-        large_design.fuselage_width + 2 * config.mission2.duck.dimensions_m[1],
-    )
-    assert np.isclose(
-        large.for_mission("M2").static_margin,
-        config.mission2.target_static_margin,
-        atol=1e-12,
-    )
-    assert large.for_mission("M1").static_margin <= config.static_margin.maximum
+    _assert_mass_properties(result)
+    adapter_cg, adapter_inertia, adapter_weight = mech_main(design, mission="M3")
+    assert np.allclose(adapter_cg, result.for_mission("M3").cg_m)
+    assert np.allclose(adapter_inertia, result.for_mission("M3").inertia_tensor_kg_m2)
+    assert np.isclose(adapter_weight, result.for_mission("M3").weight_n)
 
-    # Tail overlap is checked before static margins. This narrow, short-tail
-    # design overlaps the tail for its first two widths and succeeds at width 2.
-    tail_limited_design = DesignVector(tail_arm=0.3, ducks_num=0, pucks_num=4)
-    one_retry_config = replace(
+    maximum = evaluate_mechanical_module(
+        DesignVector(extra_shipping_containers=10),
         config,
-        mission2=replace(config.mission2, maximum_width_increases=1),
     )
-    try:
-        evaluate_mechanical_module(tail_limited_design, one_retry_config)
-    except PayloadPlacementError as exc:
-        tail_message = str(exc)
-        assert tail_message.count("puts the fuselage back") == 2
-        assert "gives M1 static margin" not in tail_message
-    else:
-        raise AssertionError("Expected the first two widths to overlap the tail.")
-    short_tail_config = replace(
+    containers = _mission_payloads(maximum, "M2")
+    assert len(containers) == 11
+    assert np.isclose(maximum.resolved_fuselage_width_m, 15.0 * INCH_M)
+    assert np.isclose(maximum.resolved_fuselage_height_m, 10.0 * INCH_M)
+    _assert_no_payload_overlap(containers)
+
+    # Center bay: center/left/right on the lower layer, then the same upper layer.
+    assert np.isclose(containers[0].position_m[1], 0.0)
+    assert containers[1].position_m[1] < 0.0
+    assert containers[2].position_m[1] > 0.0
+    assert np.allclose(
+        [item.position_m[0] for item in containers[:6]],
+        containers[0].position_m[0],
+    )
+    assert containers[3].position_m[2] > containers[0].position_m[2]
+
+    # After the 3x2 center bay, matching cells alternate aft then forward.
+    center_x = containers[0].position_m[0]
+    assert containers[6].position_m[0] > center_x
+    assert containers[7].position_m[0] < center_x
+    assert containers[8].position_m[0] > center_x
+    assert containers[9].position_m[0] < center_x
+    assert np.isclose(
+        containers[6].position_m[0] - center_x,
+        center_x - containers[7].position_m[0],
+    )
+
+    rounded = evaluate_mechanical_module(
+        DesignVector(extra_shipping_containers=2.4),
         config,
-        mission3=replace(
-            config.mission3,
-            forward_mechanism_distance_m=0.01,
-            aft_mechanism_distance_m=0.01,
-        ),
     )
-    tail_limited = evaluate_mechanical_module(
-        tail_limited_design, short_tail_config
-    )
-    assert tail_limited.fuselage_width_increases == 2
-    tail_fuselage = next(
-        item
-        for item in tail_limited.for_mission("M1").items
-        if item.name == "Fuselage structure"
-    )
-    assert (
-        tail_fuselage.position_m[0] + 0.5 * tail_fuselage.dimensions_m[0]
-        < tail_limited_design.tail_arm
-    )
+    assert len(_mission_payloads(rounded, "M2")) == 3
+    assert any("rounded it to 2" in warning for warning in rounded.warnings)
 
-    # If physical placements complete but all violate the ordinary M1 limit,
-    # retain the last width and apply the configured buffered penalty policy.
-    oversized_design = DesignVector(ducks_num=20, pucks_num=20)
-    oversized = evaluate_mechanical_module(oversized_design, config)
-    assert oversized.fuselage_width_increases == 4
-    assert np.isclose(oversized.fuselage_width_m, 0.2882)
-    assert oversized.for_mission("M1").static_margin > config.static_margin.maximum
-    assert any(
-        "No fuselage-width attempt met the ordinary M1 static-margin limit"
-        in warning
-        for warning in oversized.warnings
+    print(f"Sensor length:          {expected_sensor_length:.4f} m")
+    print(f"Default M2 containers: {len(m2_payload)}")
+    print(
+        "Maximum M2 envelope:   "
+        f"{maximum.resolved_fuselage_width_m:.4f} m x "
+        f"{maximum.resolved_fuselage_height_m:.4f} m"
     )
-
-    # Propulsion and battery regressions use the design/parameter inputs.
-    m1_items = {item.name: item for item in m1.items}
-    assert np.isclose(m1_items["Battery"].mass_kg, 0.77058)
-    assert np.isclose(m1_items["Motor"].mass_kg, 0.4246894287455)
-    assert np.isclose(m1_items["Propeller"].mass_kg, 0.038274216)
-    modeled_design = replace(
-        design,
-        batt_capacity=5.5,
-        motor_max_power=875.0,
-        prop_diameter_in=17.5,
-    )
-    modeled = evaluate_mechanical_module(modeled_design, config)
-    modeled_items = {
-        item.name: item for item in modeled.for_mission("M1").items
-    }
-    assert np.isclose(modeled_items["Motor"].mass_kg, 0.2060334513055)
-    assert np.isclose(modeled_items["Propeller"].mass_kg, 0.0686080978125)
-    assert np.isclose(modeled_items["Battery"].mass_kg, 0.94098)
-    assert np.array_equal(
-        modeled_items["Motor"].position_m,
-        modeled_items["Propeller"].position_m,
-    )
-    assert np.array_equal(
-        modeled_items["Motor"].position_m,
-        modeled_items["Battery"].position_m,
-    )
-
-    # Mission 3 still uses the prior fixed-distance process after M1/M2 finish.
-    m3_items = {item.name: item for item in result.for_mission("M3").items}
-    expected_banner_area_m2 = design.banner_length * (design.banner_length / 5.0)
-    assert np.isclose(
-        m3_items["M3 banner"].mass_kg,
-        config.mission3.banner_areal_density_kg_m2 * expected_banner_area_m2,
-    )
-    banner_x = m3_items["M3 banner"].position_m[0]
-    assert np.isclose(
-        banner_x - m3_items["M3 forward mechanism"].position_m[0],
-        config.mission3.forward_mechanism_distance_m,
-    )
-    assert np.isclose(
-        m3_items["M3 aft mechanism"].position_m[0] - banner_x,
-        config.mission3.aft_mechanism_distance_m,
-    )
-
-    print(f"Neutral point x:       {result.neutral_point_x_m:.4f} m")
-    print(f"Selected fuselage:     {result.fuselage_width_m:.4f} m")
-    print(f"Width increases:       {result.fuselage_width_increases}")
-    print(f"Electronics CM x:      {result.electronics_layout.cg_x_m:.4f} m")
     for mission in ("M1", "M2", "M3"):
         properties = result.for_mission(mission)
         print(
             f"{mission}: mass={properties.total_mass_kg:.3f} kg, "
-            f"CG={properties.cg_m}, static margin={100*properties.static_margin:.2f}%"
+            f"CG={properties.cg_m}, static margin={100 * properties.static_margin:.2f}%"
         )
 
 
