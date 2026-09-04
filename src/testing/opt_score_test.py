@@ -10,13 +10,23 @@ from src.opt.score import (
     m3_score,
     round_half_up,
 )
-from src.vectors import DesignVector
+from src.vectors import MAX_SENSOR_LENGTH_M, DesignVector
 
 
 def test_ground_mission_uses_60_inches_and_35_lb_reference() -> None:
     assert GROUND_DROP_HEIGHT_IN == 60.0
-    assert gm_score(DesignVector(sensor_weight_kg=35.0 * POUNDS_TO_KG)) == 1.5
-    assert gm_score(DesignVector(sensor_weight_kg=17.5 * POUNDS_TO_KG)) == 1.0
+    assert gm_score(
+        DesignVector(
+            sensor_length_m=MAX_SENSOR_LENGTH_M,
+            sensor_weight_kg=35.0 * POUNDS_TO_KG,
+        )
+    ) == 1.5
+    assert gm_score(
+        DesignVector(
+            sensor_length_m=MAX_SENSOR_LENGTH_M,
+            sensor_weight_kg=17.5 * POUNDS_TO_KG,
+        )
+    ) == 1.0
 
 
 def test_mission_two_uses_weight_over_exactly_five_lap_time() -> None:
@@ -29,6 +39,7 @@ def test_mission_two_uses_weight_over_exactly_five_lap_time() -> None:
 
 def test_mission_three_uses_integer_laps_times_sensor_weight() -> None:
     design = DesignVector(
+        sensor_length_m=12.0 * 0.0254,
         sensor_weight_kg=7.0,
         mission3_sensor_weight_kg=6.0,
     )

@@ -124,10 +124,15 @@ class StaticMarginConfig:
     its own exact placement target in :class:`Mission2Config`.
     """
 
-    minimum: float = 0.10
+    # Acceptable band requested by the team: 5% to 35% MAC, ideally 20-25%.
+    # The band is deliberately wide because the team can trim with ballast on
+    # the day, so designs inside it must not be penalized at all.
+    minimum: float = 0.05
     target: float = 0.20
-    maximum: float = 0.23
-    optimizer_penalty_buffer: float = 0.15
+    maximum: float = 0.35
+    # No extra buffer: the band above is already the tolerant one, and a buffer
+    # on top of it would push the unpenalized region past 35%.
+    optimizer_penalty_buffer: float = 0.0
     optimizer_penalty_scale: float = 0.15
     # Hard lower edge of the unpenalized band. The buffer may not push the
     # acceptable range below this value, so a CG behind the neutral point
@@ -576,11 +581,15 @@ class Mission2Config:
     container_width_m: float = 5.0 * 0.0254
     container_height_m: float = 5.0 * 0.0254
     container_length_padding_m: float = 2.0 * 0.0254
+    # The shipping container stays rules-representative even when the
+    # simulation is allowed a shorter-than-legal sensor.
+    minimum_container_length_m: float = 8.0 * 0.0254
     empty_container_mass_kg: float = 0.5 * 0.45359237
     containers_across: int = 3
     maximum_stack: int = 2
     maximum_extra_containers: int = 10
-    target_static_margin: float = 0.12
+    # Placed at the middle of the team's preferred 20-25% band.
+    target_static_margin: float = 0.20
     clearance_m: float = 0.0
     electronics_aft_clearance_m: float = 0.0
     tail_leading_edge_clearance_m: float = 0.0
@@ -619,7 +628,12 @@ class Mission2Config:
         if not np.isfinite(sensor_length_m) or sensor_length_m <= 0:
             raise ValueError("sensor_length_m must be finite and positive.")
         return (
-            float(sensor_length_m + self.container_length_padding_m),
+            float(
+                max(
+                    sensor_length_m + self.container_length_padding_m,
+                    self.minimum_container_length_m,
+                )
+            ),
             self.container_width_m,
             self.container_height_m,
         )

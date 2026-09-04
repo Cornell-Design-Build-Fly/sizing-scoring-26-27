@@ -16,7 +16,8 @@ from aerosandbox.dynamics.flight_dynamics.airplane import get_modes
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from src.aero.aero_score import SPIRAL_RATE_MAX
+from src.aero.aero_score import SPIRAL_DOUBLING_TIME_MIN_S
+from src.aero.stability_criteria import time_to_double_s
 from src.aero.cruise_analysis import cruise_analysis
 from src.aero.stability_analysis_coarse import (
     estimate_stability_derivatives,
@@ -61,7 +62,9 @@ def gates(cma: float, cnb: float, margin: float, spiral: float) -> dict[str, boo
         "longitudinal": cma < 0,
         "directional": cnb > 0,
         "static_margin": margin > 0,
-        "spiral": spiral <= SPIRAL_RATE_MAX,
+        # Spiral is judged on time to double bank angle; the raw eigenvalue
+        # is not comparable across models (see src/aero/stability_criteria.py).
+        "spiral": time_to_double_s(spiral) >= SPIRAL_DOUBLING_TIME_MIN_S,
     }
     return {**values, "overall": all(values.values())}
 

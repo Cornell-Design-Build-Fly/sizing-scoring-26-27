@@ -26,19 +26,37 @@ INCH_M = 0.0254
 POUND_KG = 0.45359237
 SENSOR_DIAMETER_M = 3.0 * INCH_M
 SENSOR_STEEL_DENSITY_KG_M3 = 7850.0
-MIN_SENSOR_LENGTH_M = 6.0 * INCH_M
-MIN_SENSOR_WEIGHT_KG = (
-    SENSOR_STEEL_DENSITY_KG_M3
-    * np.pi
-    * (0.5 * SENSOR_DIAMETER_M) ** 2
-    * MIN_SENSOR_LENGTH_M
-)
+# Simulation-only geometric floor. The rules require a 6-inch sensor, but the
+# solid-steel proxy that derived length from weight forced a 12.03 lb MINIMUM
+# sensor, which put ~80% of the sampled design space over the 55 lb limit and
+# made light sensors unreachable. Length and weight are now independent, as
+# they were before the 2026-27 rules update, so the optimizer can explore the
+# full light-to-heavy range. Restore this to 6 inches for a rules-legal study.
+MIN_SENSOR_LENGTH_M = 1.0 * INCH_M
+MAX_SENSOR_LENGTH_M = 24.0 * INCH_M
+MIN_SENSOR_WEIGHT_KG = 0.05
 MAX_SENSOR_WEIGHT_KG = 35.0 * POUND_KG
 MIN_MISSION3_SENSOR_WEIGHT_KG = MIN_SENSOR_WEIGHT_KG
 
 
+def maximum_sensor_weight_kg(sensor_length_m: float) -> float:
+    """Heaviest physically realizable sensor of a given length.
+
+    Weight and length are free, but the sensor cannot be denser than the solid
+    steel rod it is modelled on. Without this bound the optimizer would take
+    maximum weight at minimum length -- Mission 3 and the Ground Mission both
+    reward weight -- and get an arbitrarily small, arbitrarily heavy payload.
+    """
+
+    sensor_length_m = float(sensor_length_m)
+    if not np.isfinite(sensor_length_m) or sensor_length_m <= 0.0:
+        raise ValueError("sensor_length_m must be finite and positive.")
+    cross_section_m2 = np.pi * (0.5 * SENSOR_DIAMETER_M) ** 2
+    return float(SENSOR_STEEL_DENSITY_KG_M3 * cross_section_m2 * sensor_length_m)
+
+
 def sensor_length_from_weight_kg(sensor_weight_kg: float) -> float:
-    """Return the length of the 3-inch solid-steel sensor proxy."""
+    """Length of a solid-steel sensor of the given weight (legacy helper)."""
 
     sensor_weight_kg = float(sensor_weight_kg)
     if not np.isfinite(sensor_weight_kg) or sensor_weight_kg <= 0.0:
@@ -52,6 +70,7 @@ OPT_VARS = [
     ("tail_arm", (0.3, 0.9)),
     ("nose_length", (0.08, 0.3)),
     ("extra_shipping_containers", (0, MAX_EXTRA_SHIPPING_CONTAINERS)),
+    ("sensor_length_m", (MIN_SENSOR_LENGTH_M, MAX_SENSOR_LENGTH_M)),
     ("sensor_weight_kg", (MIN_SENSOR_WEIGHT_KG, MAX_SENSOR_WEIGHT_KG)),
     ("mission3_sensor_weight_kg", (MIN_MISSION3_SENSOR_WEIGHT_KG, MAX_SENSOR_WEIGHT_KG)),
     ("batt_capacity", (1.0, 4.5)),
@@ -83,7 +102,8 @@ class DesignVector:
     # the Ground Mission. Mission 3 may fly at any positive weight up to that
     # declared maximum. Both lengths follow from their respective weights.
     extra_shipping_containers: float = 0
-    sensor_weight_kg: float = MIN_SENSOR_WEIGHT_KG
+    sensor_length_m: float = 6.0 * INCH_M
+    sensor_weight_kg: float = 1.0
     mission3_sensor_weight_kg: float | None = None
 
     # Prop components
@@ -116,7 +136,11 @@ class DesignVector:
     vstab_chord:      float = field(init=False)
     battery_nominal_voltage_v: float = field(init=False)
     batt_energy:      float = field(init=False)
-    sensor_length_m:  float = field(init=False)
+    # Mission 3 flies the SAME physical sensor at a possibly lower weight, so
+    # its length is the declared length. Rules 3.1.1 require the sensor to keep
+    # the same external geometry for every mission and any added weight to be
+    # internal, so deriving a shorter M3 body from a lighter M3 weight (as the
+    # previous solid-rod model did) was not physical.
     mission3_sensor_length_m: float = field(init=False)
 
 
@@ -133,11 +157,18 @@ class DesignVector:
             or self.fuselage_box_back_x_m < 0
             or not np.isfinite(self.sensor_weight_kg)
             or self.sensor_weight_kg < MIN_SENSOR_WEIGHT_KG
+            or not np.isfinite(self.sensor_length_m)
+            or self.sensor_length_m < MIN_SENSOR_LENGTH_M
         ):
             raise ValueError(
-                "All DesignVector primary dimensions must be positive, and "
-                "sensor_weight_kg must be at least the weight of a 6-inch-long, "
-                "3-inch-diameter solid steel rod."
+                "All DesignVector primary dimensions must be positive, "
+                f"sensor_weight_kg must be at least {MIN_SENSOR_WEIGHT_KG} kg, "
+                f"and sensor_length_m at least {MIN_SENSOR_LENGTH_M} m."
+            )
+        if self.sensor_weight_kg > maximum_sensor_weight_kg(self.sensor_length_m):
+            raise ValueError(
+                "sensor_weight_kg exceeds a solid steel rod of the declared "
+                "length and diameter; the sensor would be denser than steel."
             )
         if self.mission3_sensor_weight_kg is None:
             self.mission3_sensor_weight_kg = float(self.sensor_weight_kg)
@@ -150,10 +181,7 @@ class DesignVector:
                 "mission3_sensor_weight_kg must represent at least a 6-inch "
                 "sensor and cannot exceed the maximum declared sensor_weight_kg."
             )
-        self.sensor_length_m = sensor_length_from_weight_kg(self.sensor_weight_kg)
-        self.mission3_sensor_length_m = sensor_length_from_weight_kg(
-            self.mission3_sensor_weight_kg
-        )
+        self.mission3_sensor_length_m = float(self.sensor_length_m)
         if (
             not np.isfinite(self.extra_shipping_containers)
             or not (
@@ -281,6 +309,7 @@ class ASBDesignVector(DesignVector):
             tail_arm=design_vector.tail_arm * unit_scale,
             nose_length=design_vector.nose_length * unit_scale,
             extra_shipping_containers=design_vector.extra_shipping_containers,
+            sensor_length_m=design_vector.sensor_length_m * unit_scale,
             sensor_weight_kg=design_vector.sensor_weight_kg,
             mission3_sensor_weight_kg=design_vector.mission3_sensor_weight_kg,
             batt_capacity=design_vector.batt_capacity,
@@ -298,7 +327,6 @@ class ASBDesignVector(DesignVector):
             ),
             wing_airfoil=design_vector.wing_airfoil,
         )
-        promoted.sensor_length_m = design_vector.sensor_length_m * unit_scale
         promoted.mission3_sensor_length_m = (
             design_vector.mission3_sensor_length_m * unit_scale
         )

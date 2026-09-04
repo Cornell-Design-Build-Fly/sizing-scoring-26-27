@@ -49,7 +49,12 @@ from src.prop.prop_classes import (
     normalize_battery_cell_count,
 )
 from src.prop.prop_helper_functions import make_battery_from_design
-from src.vectors import ASBDesignVector, DesignVector, ParameterVector
+from src.vectors import (
+    ASBDesignVector,
+    DesignVector,
+    ParameterVector,
+    maximum_sensor_weight_kg,
+)
 
 
 BAD_OBJECTIVE = 1.0e6
@@ -80,7 +85,10 @@ class ToplineConfig:
 
     workers: int = -1
     popsize: int = 25
-    maxiter: int | None = 100
+    # 300, not 100: decoupling sensor length took the design vector from 15 to
+    # 16 variables, and 100 generations no longer converges. Same seed and
+    # config, 100 gen -> 7.1232 while 300 gen -> 7.4917 (2026-09-04 study).
+    maxiter: int | None = 300
     target_seconds: float = TARGET_RUN_SECONDS
     assumed_evals_per_second: float = TARGET_EVALS_PER_SECOND
     init: str = "sobol"
@@ -188,6 +196,23 @@ MISSION3_SENSOR_WEIGHT_CONSTRAINT = NonlinearConstraint(
 )
 
 
+def _sensor_density_margin(x: np.ndarray) -> float:
+    """Solid-steel weight for the declared length minus the declared weight."""
+
+    names = DesignVector.opt_names()
+    return float(
+        maximum_sensor_weight_kg(x[names.index("sensor_length_m")])
+        - x[names.index("sensor_weight_kg")]
+    )
+
+
+SENSOR_DENSITY_CONSTRAINT = NonlinearConstraint(
+    _sensor_density_margin,
+    0.0,
+    np.inf,
+)
+
+
 def _allowed_battery_cell_counts(config: ToplineConfig) -> tuple[int, ...]:
     """Return the discrete cell counts available to individual candidates."""
 
@@ -224,7 +249,11 @@ def _candidate_battery_energy_wh(
 
 
 def _optimizer_constraints(config: ToplineConfig) -> tuple[NonlinearConstraint, ...]:
-    constraints = [PD_CONSTRAINT, MISSION3_SENSOR_WEIGHT_CONSTRAINT]
+    constraints = [
+        PD_CONSTRAINT,
+        MISSION3_SENSOR_WEIGHT_CONSTRAINT,
+        SENSOR_DENSITY_CONSTRAINT,
+    ]
     if config.optimize_battery_cell_count:
         choices = _allowed_battery_cell_counts(config)
         constraints.append(
@@ -355,6 +384,13 @@ def _initial_population(
     population[:, container_index] = np.minimum(
         low + (unit_population[:, container_index] * (high - low + 1)).astype(int),
         high,
+    )
+    length_index = names.index("sensor_length_m")
+    population[:, max_sensor_weight_index] = np.minimum(
+        population[:, max_sensor_weight_index],
+        np.array(
+            [maximum_sensor_weight_kg(value) for value in population[:, length_index]]
+        ),
     )
     m3_weight_lower = bounds[m3_sensor_weight_index, 0]
     population[:, m3_sensor_weight_index] = m3_weight_lower + unit_population[

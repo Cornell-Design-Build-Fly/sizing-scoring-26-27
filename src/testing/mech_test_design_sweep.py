@@ -61,6 +61,7 @@ DESIGN_CASES = (
         label="Medium payload",
         design_vector=DesignVector(
             extra_shipping_containers=4,
+            sensor_length_m=12.0 * 0.0254,
             sensor_weight_kg=10.0,
             mission3_sensor_weight_kg=6.0,
         ),
@@ -70,6 +71,7 @@ DESIGN_CASES = (
         label="Large payload", 
         design_vector=DesignVector(
             extra_shipping_containers=10,
+            sensor_length_m=24.0 * 0.0254,
             sensor_weight_kg=MAX_SENSOR_WEIGHT_KG,
             mission3_sensor_weight_kg=10.0,
         ),

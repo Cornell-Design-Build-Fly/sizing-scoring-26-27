@@ -1,6 +1,12 @@
 import aerosandbox as asb
+import numpy as np
 from src.aero.custom_classes import CruiseCondition, StabilityResult
 from src.aero.utils import dict_to_mode_result, require_scalar
+from src.aero.stability_criteria import (
+    lateral_modes,
+    lateral_state_matrix,
+    time_to_double_s,
+)
 from src.vectors import ASBDesignVector, DesignVector
 from aerosandbox.dynamics.flight_dynamics.airplane import get_modes
 from aerosandbox.weights.mass_properties import MassProperties
@@ -75,6 +81,34 @@ def stability_analysis(
 
     static_margin = (x_np - x_cg) / c_ref
 
+    _lateral = lateral_modes(
+        lateral_state_matrix(
+            CYb=require_scalar(stability_dict["CYb"]),
+            CYr=require_scalar(stability_dict["CYr"]),
+            Clb=require_scalar(stability_dict["Clb"]),
+            Clp=require_scalar(stability_dict["Clp"]),
+            Clr=require_scalar(stability_dict["Clr"]),
+            Cnb=require_scalar(stability_dict["Cnb"]),
+            Cnr=require_scalar(stability_dict["Cnr"]),
+            CL=require_scalar(stability_dict["CL"]),
+            dynamic_pressure_pa=require_scalar(
+                cruise_condition.operating_point.dynamic_pressure()
+            ),
+            wing_area_m2=require_scalar(airplane.s_ref),
+            wing_span_m=require_scalar(airplane.b_ref),
+            mass_kg=require_scalar(mass_props.mass),
+            Ixx=require_scalar(mass_props.Ixx),
+            Izz=require_scalar(mass_props.Izz),
+            velocity_m_s=require_scalar(cruise_condition.operating_point.velocity),
+            gravity_m_s2=9.806,
+        )
+    )
+    stability_modes["spiral"] = {
+        "eigenvalue_real": _lateral.spiral_eigenvalue_real,
+        "eigenvalue_imag": 0.0,
+        "damping_ratio": -np.sign(_lateral.spiral_eigenvalue_real),
+    }
+
     return StabilityResult(
         phugoid=dict_to_mode_result(stability_modes["phugoid"]),
         short_period=dict_to_mode_result(stability_modes["short_period"]),
@@ -85,4 +119,5 @@ def stability_analysis(
         Cnb=require_scalar(stability_dict["Cnb"]),
         static_margin=static_margin,
         neutral_point_x_m=x_np,
+        spiral_time_to_double_s=time_to_double_s(_lateral.spiral_eigenvalue_real),
     )

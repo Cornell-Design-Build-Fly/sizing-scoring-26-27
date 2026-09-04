@@ -11,73 +11,22 @@ element_id,name,category,missions,mass_kg,x_m,y_m,z_m,length_x_m,width_y_m,heigh
 10,Boom spar,airframe,"M1,M2,M3",0.117462945318,0.650084840286,0,0,0.686169680571,0.02,0.02,
 11,Tail integration,integration,"M1,M2,M3",0.025,0.919084840286,0,0,0.06,0.06,0.05,
 12,Landing gear,airframe,"M1,M2,M3",0.22,0,0,-0.1016,0.08,0.18,0.08,"Installed directly below the main-wing leading edge, with its center 4 inches below the wing plane."
-13,Fuselage structure,airframe,"M1,M2,M3",0.879356849015,0.142276650584,0,-0.065,0.917,0.2352,0.13,Fuselage-local uniform shell-area-density approximation from the electronics front edge to the aft-most Mission-2 payload edge; mass scales with length and cross-sectional perimeter.
-14,Battery,propulsion_and_electronics,"M1,M2,M3",0.77058,-0.197223349416,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
-15,Motor,propulsion_and_electronics,"M1,M2,M3",0.424689428745,-0.197223349416,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
-16,Propeller,propulsion_and_electronics,"M1,M2,M3",0.038274216,-0.197223349416,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
-17,ESC,propulsion_and_electronics,"M1,M2,M3",0.118,-0.197223349416,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
-18,Other electronics,propulsion_and_electronics,"M1,M2,M3",0.05,-0.197223349416,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
-19,Duck 1,mission_2_payload,M2,0.018,-0.0617233494164,-0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 0, column 0."
-20,Duck 2,mission_2_payload,M2,0.018,-0.0617233494164,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 0, column 1."
-21,Duck 3,mission_2_payload,M2,0.018,-0.0617233494164,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 0, column 2."
-22,Duck 4,mission_2_payload,M2,0.018,-0.0617233494164,0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 0, column 3."
-23,Duck 5,mission_2_payload,M2,0.018,-0.00872334941638,-0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 1, column 0."
-24,Duck 6,mission_2_payload,M2,0.018,-0.00872334941638,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 1, column 1."
-25,Duck 7,mission_2_payload,M2,0.018,-0.00872334941638,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 1, column 2."
-26,Duck 8,mission_2_payload,M2,0.018,-0.00872334941638,0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 1, column 3."
-27,Duck 9,mission_2_payload,M2,0.018,0.0442766505836,-0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 2, column 0."
-28,Duck 10,mission_2_payload,M2,0.018,0.0442766505836,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 2, column 1."
-29,Duck 11,mission_2_payload,M2,0.018,0.0442766505836,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 2, column 2."
-30,Duck 12,mission_2_payload,M2,0.018,0.0442766505836,0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 2, column 3."
-31,Duck 13,mission_2_payload,M2,0.018,0.0972766505836,-0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 3, column 0."
-32,Duck 14,mission_2_payload,M2,0.018,0.0972766505836,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 3, column 1."
-33,Duck 15,mission_2_payload,M2,0.018,0.0972766505836,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 3, column 2."
-34,Duck 16,mission_2_payload,M2,0.018,0.0972766505836,0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 3, column 3."
-35,Duck 17,mission_2_payload,M2,0.018,0.150276650584,-0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 4, column 0."
-36,Duck 18,mission_2_payload,M2,0.018,0.150276650584,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 4, column 1."
-37,Duck 19,mission_2_payload,M2,0.018,0.150276650584,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 4, column 2."
-38,Duck 20,mission_2_payload,M2,0.018,0.150276650584,0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 4, column 3."
-39,Duck 21,mission_2_payload,M2,0.018,0.203276650584,-0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 5, column 0."
-40,Duck 22,mission_2_payload,M2,0.018,0.203276650584,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 5, column 1."
-41,Duck 23,mission_2_payload,M2,0.018,0.203276650584,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 5, column 2."
-42,Duck 24,mission_2_payload,M2,0.018,0.203276650584,0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 5, column 3."
-43,Duck 25,mission_2_payload,M2,0.018,0.256276650584,-0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 6, column 0."
-44,Duck 26,mission_2_payload,M2,0.018,0.256276650584,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 6, column 1."
-45,Duck 27,mission_2_payload,M2,0.018,0.256276650584,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 6, column 2."
-46,Duck 28,mission_2_payload,M2,0.018,0.256276650584,0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 6, column 3."
-47,Duck 29,mission_2_payload,M2,0.018,0.309276650584,-0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 7, column 0."
-48,Duck 30,mission_2_payload,M2,0.018,0.309276650584,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 7, column 1."
-49,Duck 31,mission_2_payload,M2,0.018,0.309276650584,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 7, column 2."
-50,Duck 32,mission_2_payload,M2,0.018,0.309276650584,0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 7, column 3."
-51,Duck 33,mission_2_payload,M2,0.018,0.362276650584,-0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 8, column 0."
-52,Duck 34,mission_2_payload,M2,0.018,0.362276650584,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 8, column 1."
-53,Duck 35,mission_2_payload,M2,0.018,0.362276650584,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 8, column 2."
-54,Duck 36,mission_2_payload,M2,0.018,0.362276650584,0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 8, column 3."
-55,Duck 37,mission_2_payload,M2,0.018,0.415276650584,-0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 9, column 0."
-56,Duck 38,mission_2_payload,M2,0.018,0.415276650584,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 9, column 1."
-57,Duck 39,mission_2_payload,M2,0.018,0.415276650584,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 9, column 2."
-58,Duck 40,mission_2_payload,M2,0.018,0.415276650584,0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 9, column 3."
-59,Duck 41,mission_2_payload,M2,0.018,0.468276650584,-0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 10, column 0."
-60,Duck 42,mission_2_payload,M2,0.018,0.468276650584,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 10, column 1."
-61,Duck 43,mission_2_payload,M2,0.018,0.468276650584,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 10, column 2."
-62,Duck 44,mission_2_payload,M2,0.018,0.468276650584,0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 10, column 3."
-63,Duck 45,mission_2_payload,M2,0.018,0.521276650584,-0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 11, column 0."
-64,Duck 46,mission_2_payload,M2,0.018,0.521276650584,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 11, column 1."
-65,Duck 47,mission_2_payload,M2,0.018,0.521276650584,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 11, column 2."
-66,Duck 48,mission_2_payload,M2,0.018,0.521276650584,0.0795,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 11, column 3."
-67,Duck 49,mission_2_payload,M2,0.018,0.574276650584,-0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 12, column 0."
-68,Duck 50,mission_2_payload,M2,0.018,0.574276650584,0.0265,-0.0762,0.053,0.053,0.053,"Fuselage-local front-to-back placement; centered lateral row 12, column 1."
-69,Puck 1,mission_2_payload,M2,0.17,-0.0501233494164,-0.0762,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; centered lateral row 0, column 0."
-70,Puck 2,mission_2_payload,M2,0.17,-0.0501233494164,-1.38777878078e-17,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; centered lateral row 0, column 1."
-71,Puck 3,mission_2_payload,M2,0.17,-0.0501233494164,0.0762,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; centered lateral row 0, column 2."
-72,Puck 4,mission_2_payload,M2,0.17,0.0260766505836,-0.0762,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; centered lateral row 1, column 0."
-73,Puck 5,mission_2_payload,M2,0.17,0.0260766505836,-1.38777878078e-17,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; centered lateral row 1, column 1."
-74,Puck 6,mission_2_payload,M2,0.17,0.0260766505836,0.0762,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; centered lateral row 1, column 2."
-75,Puck 7,mission_2_payload,M2,0.17,0.102276650584,-0.0762,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; centered lateral row 2, column 0."
-76,Puck 8,mission_2_payload,M2,0.17,0.102276650584,-1.38777878078e-17,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; centered lateral row 2, column 1."
-77,Puck 9,mission_2_payload,M2,0.17,0.102276650584,0.0762,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; centered lateral row 2, column 2."
-78,Puck 10,mission_2_payload,M2,0.17,0.178476650584,-0.0381,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; centered lateral row 3, column 0."
-79,Puck 11,mission_2_payload,M2,0.17,0.178476650584,0.0381,-0.1154,0.0762,0.0762,0.0254,"Fuselage-local front-to-back placement; centered lateral row 3, column 1."
-80,M3 forward mechanism,mission_3_payload,M3,0.1,0.00117040088142,0,0,0.05,0.05,0.05,
-81,M3 banner,mission_3_payload,M3,0.401724137931,0.0761704008814,0,0,0.1,0.06,0.06,
-82,M3 aft mechanism,mission_3_payload,M3,0.1,0.151170400881,0,0,0.05,0.05,0.05,
+13,Fuselage structure,airframe,"M1,M2,M3",3.68361137856,-0.259601,0,-0.127,2.2092,0.381,0.254,Fuselage-local uniform shell-area-density approximation from the forward-most electronics/payload edge to the aft-most edge; mass scales with length and cross-sectional perimeter.
+14,Battery,propulsion_and_electronics,"M1,M2,M3",0.77058,-1.245201,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+15,Motor,propulsion_and_electronics,"M1,M2,M3",0.424689428745,-1.245201,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+16,Propeller,propulsion_and_electronics,"M1,M2,M3",0.038274216,-1.245201,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+17,ESC,propulsion_and_electronics,"M1,M2,M3",0.118,-1.245201,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+18,Other electronics,propulsion_and_electronics,"M1,M2,M3",0.05,-1.245201,0,-0.0762,0.228,0,0,"Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation."
+19,Sensor release mechanism,release_mechanism,"M1,M2,M3",0.7937866475,-0.145601,0,0,0,0,0,Permanent mechanism modeled as a point mass at the top of the center container stack; mass is 1/20 of sensor mass.
+20,M2 sensor shipping container,mission_2_payload,M2,16.102529135,-0.145601,0,-0.1905,0.6604,0.127,0.127,Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.
+21,M2 shipping container simulator 1,mission_2_payload,M2,16.102529135,-0.145601,-0.127,-0.1905,0.6604,0.127,0.127,Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.
+22,M2 shipping container simulator 2,mission_2_payload,M2,16.102529135,-0.145601,0.127,-0.1905,0.6604,0.127,0.127,Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.
+23,M2 shipping container simulator 3,mission_2_payload,M2,16.102529135,-0.145601,0,-0.0635,0.6604,0.127,0.127,Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.
+24,M2 shipping container simulator 4,mission_2_payload,M2,16.102529135,-0.145601,-0.127,-0.0635,0.6604,0.127,0.127,Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.
+25,M2 shipping container simulator 5,mission_2_payload,M2,16.102529135,-0.145601,0.127,-0.0635,0.6604,0.127,0.127,Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.
+26,M2 shipping container simulator 6,mission_2_payload,M2,16.102529135,0.514799,0,-0.1905,0.6604,0.127,0.127,Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.
+27,M2 shipping container simulator 7,mission_2_payload,M2,16.102529135,-0.806001,0,-0.1905,0.6604,0.127,0.127,Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.
+28,M2 shipping container simulator 8,mission_2_payload,M2,16.102529135,0.514799,-0.127,-0.1905,0.6604,0.127,0.127,Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.
+29,M2 shipping container simulator 9,mission_2_payload,M2,16.102529135,-0.806001,-0.127,-0.1905,0.6604,0.127,0.127,Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.
+30,M2 shipping container simulator 10,mission_2_payload,M2,16.102529135,0.514799,0.127,-0.1905,0.6604,0.127,0.127,Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.
+31,M3 sensor,mission_3_payload,M3,10,-0.145601,0,-0.1905,0.6096,0.0762,0.0762,"Three-inch-diameter sensor centered inside the volume formerly occupied by the primary M2 sensor container, with cylindrical intrinsic inertia. Its length is derived from the M3 flown weight and cannot exceed the M2 container envelope."

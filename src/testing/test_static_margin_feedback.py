@@ -53,16 +53,17 @@ FLYABLE = dict(
     tail_arm=0.7675520608196428,
     nose_length=0.28965551943374684,
     extra_shipping_containers=0,
+    sensor_length_m=0.4070959970591752,
     sensor_weight_kg=14.573582130610939,
     mission3_sensor_weight_kg=12.973052914518941,
     batt_capacity=2.6115012009206993,
     battery_cell_count=8,
-    prop_diameter_in=15.717464888095260,
-    prop_pitch_in=8.9767276689519560,
-    motor_kv=294.36581357421875,
-    motor_max_power=2314.6015625,
-    cruise_throttle=0.9605384893417358,
-    mission3_cruise_throttle=0.8791480660438538,
+    prop_diameter_in=16.69771989623217,
+    prop_pitch_in=13.178447039500849,
+    motor_kv=317.45732873612707,
+    motor_max_power=2787.4563046979274,
+    cruise_throttle=0.8307756650925899,
+    mission3_cruise_throttle=0.7044518959200647,
 )
 
 
@@ -160,14 +161,18 @@ def test_legacy_cma_static_margin_is_retained_as_a_diagnostic() -> None:
 # ---------------------------------------------------------------------------
 
 def test_negative_static_margin_is_always_penalized() -> None:
-    config = StaticMarginConfig()
-    # Buffer (0.15) exceeds minimum (0.10); without the floor the unpenalized
-    # band would reach -0.05 and this would return 0.0.
+    # A buffer wider than the minimum would push the unpenalized band below
+    # zero, letting a CG behind the neutral point escape penalty. The floor
+    # prevents that regardless of how the band is configured.
+    config = StaticMarginConfig(optimizer_penalty_buffer=0.15)
     assert config.minimum - config.optimizer_penalty_buffer < 0.0
+    assert config.optimizer_penalty_floor == 0.0
     assert buffered_static_margin_penalty(-0.01, config) > 0.0
     assert buffered_static_margin_penalty(-0.20, config) > (
         buffered_static_margin_penalty(-0.01, config)
     )
+    # And the shipped default band must also reject a negative margin.
+    assert buffered_static_margin_penalty(-0.01, StaticMarginConfig()) > 0.0
 
 
 def test_buffered_penalty_is_zero_inside_the_band_and_monotone_outside() -> None:

@@ -71,3 +71,4 @@ urllib3==2.7.0
 vtk==9.3.1
 wslink==2.5.6
 yarl==1.23.0
+pytest>=8.0

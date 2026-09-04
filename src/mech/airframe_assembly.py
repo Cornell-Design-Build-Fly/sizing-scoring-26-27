@@ -266,14 +266,10 @@ def build_local_fuselage_assembly(
     """Pack electronics and M2 payload before installation on the airplane."""
 
     airframe = config.airframe
-    sensor_length_m = config.sensor.length_from_max_weight_m(
-        design_vector.sensor_weight_kg
-    )
-    if not np.isclose(sensor_length_m, design_vector.sensor_length_m, atol=1e-12):
-        raise ValueError(
-            "The design-vector sensor geometry is inconsistent with the "
-            "mechanical sensor model."
-        )
+    # Sensor length is now an independent design variable rather than a value
+    # derived from weight, so the mechanical module simply uses the declared
+    # length. The solid-steel density bound is enforced in DesignVector.
+    sensor_length_m = float(design_vector.sensor_length_m)
     preview = place_mission2_payload(
         total_count=total_container_count,
         sensor_mass_kg=design_vector.sensor_weight_kg,

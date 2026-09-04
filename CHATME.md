@@ -54,6 +54,221 @@ Aero solver expectations:
 
 ## Session Log
 
+### 2026-09-04e - Claude
+Changed (cleanup only, no behaviour change except the default below):
+- **Fixed a break I introduced**: `src/testing/compare_stability_models.py`
+  imported `SPIRAL_RATE_MAX`, which no longer exists. Its spiral gate now uses
+  `time_to_double_s(...) >= SPIRAL_DOUBLING_TIME_MIN_S`.
+- `ToplineConfig.maxiter` default **100 -> 300**, encoding the convergence
+  finding (100 gen -> 7.1232, 300 gen -> 7.4917 on the same seed).
+- Removed the now-unused `SPIRAL_PENALTY_SCALE`; rewrote the stale `aero_score`
+  module docstring (it still described the old 4 s / MIL-SPEC eigenvalue rule).
+- Added `pytest` to `requirements.txt`; removed the `scratchpad` symlink from
+  the repo root.
+
+Open notes:
+- **Pre-existing, NOT mine**: `src/testing/compare_stability_models.py` also
+  imports `load_default_prop_database`, which does not exist in
+  `src/prop/prop_database.py` at HEAD either. Candidates are
+  `load_catalog_prop_database` / `load_default_catalog_prop_database`; left
+  alone rather than guessing intent. The file cannot be imported until it is
+  fixed.
+- `src/testing/aero_score_test.py` still references `SPIRAL_RATE_MAX` and was
+  already failing before this work on stale constructor signatures. It needs a
+  rewrite against the current API.
+- ~97 MB of untracked run artifacts under `data_dump/opt_topline_postfix`,
+  `opt_topline_v3`, `opt_topline_v4`, `opt_seedsweep`, `opt_longrun`. The last
+  two are the evidence behind the convergence study; the first three are
+  superseded intermediates and are safe to delete.
+
+### 2026-09-04d - Claude
+Changed:
+- Nothing in `src/`. Convergence study only.
+
+Learned (this closes the "did we regress?" question):
+- **The ~7.1 ceiling was purely a search-budget limit.** Same seed, same config,
+  only `maxiter` changed:
+    100 generations -> 7.1232
+    300 generations -> **7.4917**, comfortably above the 7.2200 reference.
+- 3-seed sweep at 100 generations: 7.1232 / 7.0259 / 7.0651, spread 0.097.
+  Seed 20260808 reproduced exactly, so the pipeline is deterministic.
+- The design vector went from 15 to 16 variables when sensor length was
+  decoupled; 100 generations is no longer enough. Use >= 300, or let
+  `maxiter=None` size it from `target_seconds`.
+- A hypothesis that was tested and REJECTED: the prior optimum sits at exactly
+  100.0% of the solid-steel density bound (an artifact of the old coupled model
+  that derived length from weight). Proximity to that bound does not predict
+  score - the best 100-gen seed was the least dense at 76.7%.
+- **The 35 lb sensor cap is now the binding constraint, not TOGW.** The 300-gen
+  optimum declares 34.7 lb of a 35.0 lb maximum (99.2% of `MAX_SENSOR_WEIGHT_KG`)
+  while sitting at 44.7 lb of the 55 lb TOGW limit. There is ~10 lb of takeoff
+  weight headroom left; M3 and GM both scale with sensor weight, so raising that
+  cap would raise the score.
+
+Artifacts:
+- `data_dump/opt_longrun/run_20260904_130752` - **7.4917**, every penalty zero.
+  M2 SM 0.200, M3 SM 0.201 (both in the preferred 20-25% band), spiral T2
+  43.6 / 19.9 / 16.5 s, Cnb positive on all three missions, all three trim,
+  mass 20.27 kg (44.7 lb). Sensor 18.6 in, 15.74 kg, 93% of solid steel.
+- `data_dump/opt_seedsweep/` - the three 100-generation seeds.
+
+Open notes:
+- Still unreviewed by the team: whether an 18.6 in / 34.7 lb sensor is something
+  they would actually build. If not, `MAX_SENSOR_WEIGHT_KG` or
+  `MAX_SENSOR_LENGTH_M` is the bound to tighten.
+- `Cma` still carries its own affine calibration and drives the longitudinal
+  modes. Untouched.
+- `pytest` is installed in `venv` but absent from `requirements.txt`.
+
+### 2026-09-04c - Claude
+Changed:
+- **Spiral is now judged on time to double bank angle**, per the team's
+  criterion: >= 2.5 s acceptable, 10 s target, below 2.5 s unstable.
+  `SPIRAL_DOUBLING_TIME_MIN_S = 2.5`, `SPIRAL_DOUBLING_TIME_IDEAL_S = 10.0`,
+  `_spiral_penalty` in `aero_score.py` (0 at/above 10 s, linear in divergence
+  rate to 2.0 at the 2.5 s bound, log escalation to the cap below it).
+- New `src/aero/stability_criteria.py` solves the **4-state lateral system**
+  `[beta, p, r, phi]` for the spiral root. Both `stability_analysis_coarse` and
+  `stability_analysis` now override `get_modes`' spiral with it.
+- `StabilityResult.spiral_time_to_double_s` replaces the short-lived
+  `spiral_parameter` field from entry 2026-09-04b.
+- `src/testing/test_spiral_criterion.py` (9 tests, mutation-checked).
+
+Learned:
+- Root cause of the +/-2000 /s spiral roots, confirmed in the ASB source:
+  `get_modes` uses FVA Eq. 9.66, `Cnr - Cnb*Clr/Clb`, which **divides by Clb**.
+  With zero wing dihedral Clb ~ -0.0005 (normal is -0.05..-0.10) so the term
+  reaches ~1174. The formula is correct; it is singular for this airframe.
+- The 4-state solve is well conditioned and gives physical roots: spiral T2
+  0.06 to 42 s, roll subsidence -22 to -53 /s.
+- `Cnp` and `CYp` are not produced by either derivative model. `Cnp = -CL/8`
+  (straight-wing estimate), `CYp = 0`, `Ixz` neglected. **Sensitivity checked**:
+  sweeping `Cnp` from `-CL/4` to `0` moves spiral T2 by under 3%, so the result
+  is not driven by that assumption.
+- Spiral T2 is now bimodal across the population, tracking the sign of Clb:
+  235/500 at zero penalty (T2 >= 10 s), 258/500 saturated (T2 < 1.25 s). Real
+  signal with a gradient path, not the saturated constant it was before.
+
+**CORRECTION to entry 2026-09-04b**: that entry claimed the previous 7.2231
+optimum scored 5.2200 under the corrected objective and that the optimizer had
+"beaten it by 0.75 on equal terms". That was an artifact of the interim
+normalized `Clb*Cnr - Cnb*Clr` criterion, which charged it 1.0 per mission.
+Under the time-to-double criterion the design is **penalty-free at 7.2200**
+(M1/M2/M3 spiral T2 = 37.1 / 19.1 / 11.9 s, all Cnb-stable, mass 19.0 kg). The
+corrections do NOT invalidate that design. Disregard the 5.22 figure.
+
+Artifacts:
+- `data_dump/opt_topline_v4/run_20260904_...` - best **7.0983**, every penalty
+  zero, M2 SM 0.200, M3 SM 0.219, T2 = 44.1 / 21.9 / 13.9 s, mass 20.0 kg.
+
+Open notes:
+- Current standings on the corrected model: prior optimum **7.2200**, v4 search
+  best **7.1232**, both fully penalty-free. The search has not recovered the old
+  optimum within 100 generations, now with 16 variables instead of 15. That is a
+  search-budget question, not a scoring one - try more generations or seeds.
+- No dihedral is planned, per the team; the zero-dihedral Clb is therefore a
+  real property of the airframe and not a modelling gap to close.
+- `Cma` still carries its own affine calibration (corr 0.538 vs ASB, sign 40/40)
+  and still feeds `get_modes` for the longitudinal modes. Untouched.
+
+### 2026-09-04b - Claude
+Changed (acting on the team's answers to the open design questions):
+- **Cnb**: replaced `0.0390501 - 14.3090*cnb_est - ...` with a physics-shaped
+  model in `stability_analysis_coarse._directional_stability`: vertical-tail
+  term minus a DATCOM-style fuselage-volume term,
+  `FUSELAGE_YAW_COEFFICIENT = 1.70`, fitted against
+  `asb.AeroBuildup.run_with_stability_derivatives()` over 117 real candidates.
+- **Spiral**: new `src/aero/stability_criteria.spiral_parameter`, the normalized
+  classical criterion `Clb*Cnr - Cnb*Clr`, used instead of the spiral
+  eigenvalue for gating and penalty.
+- **Aero penalty weights** rebalanced to what actually binds; `p_endurance`
+  moved inside the weighted sum (it previously had an effective weight of 1.0).
+- **Static margin band** -> [0.05, 0.35], buffer 0.0, M2 placement target
+  0.12 -> 0.20 (team's stated preference: 5-35%, ideally 20-25%).
+- **Sensor** length decoupled from weight and re-added to `OPT_VARS`; minimum
+  length 1 in, minimum weight 0.05 kg, with a solid-steel density bound as a
+  new optimizer constraint. Shipping container floored at 8 in.
+  `mission3_sensor_length_m` now equals the declared length (rules 3.1.1: same
+  external geometry every mission).
+
+Learned:
+- The coarse derivatives were NOT fabricated wholesale. Against ASB ground
+  truth: Cmq 0.988, Cnr 0.994, Clr 0.993, Clb 0.968, CYb 0.925, Clp 0.878,
+  CLa 0.872, all sign-correct. **Cnb was the only bad one** (corr 0.494, sign
+  29/40); it is now corr 0.979, sign 38/40.
+- The fuselage, not the fin, dominates Cnb here: `-2*Vf/(S*b)` alone correlates
+  0.975 with ASB. The old model had no fuselage term at all, so payload growth
+  was directionally free.
+- **The spiral eigenvalue is unusable**: `get_modes` returns roots from -8700 to
+  +2000 /s where physical is 0.01-1 /s. The FULL AeroBuildup model reproduces
+  this, so it is not a coarse artifact. Root cause: `make_airplane` builds the
+  wing with **zero dihedral** (root z == tip z), so Clb ~ -0.0005 against a
+  normal -0.05..-0.10, and the spiral approximation divides by it.
+- Score is NOT comparable across this change; the objective moved. On the
+  corrected objective the previous 7.2295 optimum scores **5.2200** (mission
+  scores essentially unchanged, 2.00 of new spiral penalty) and the new run
+  finds **5.9712** at 0.11 penalty. The optimizer beat the old design by 0.75
+  on equal terms.
+- v3 top-500 static margin: M2 0.200 exact 500/500, M3 0.166-0.369 with 492/500
+  inside [0.05, 0.35], M1 0.123-0.959 (unpenalized by request).
+
+Artifacts:
+- `data_dump/opt_topline_v3/run_20260904_113630/`
+- `data_dump/opt_topline_postfix/run_20260904_104813/` (previous arm)
+
+Open notes:
+- **CORRECTION to the 2026-09-03 entry**: the `FLYABLE` fixture in
+  `test_static_margin_feedback.py` originally carried *fabricated* propulsion
+  values (prop pitch, kv, power, throttles) that were never read from the
+  report. Corrected to the real values. The tests were relational so they still
+  passed, but any absolute claim made against that fixture before this entry is
+  void.
+- **The real remaining blocker is wing dihedral.** With zero dihedral no design
+  can be spirally stable, so `W_SPIRAL` is close to a constant offset. Adding a
+  dihedral design variable is the fix; it touches geometry, mass and aero.
+- `Cma` still carries its own affine calibration and still feeds `get_modes`;
+  correlation against ASB is only 0.538 (sign 40/40). Not touched.
+- Old 15-variable design vectors now silently take the 6-inch default sensor
+  length and then fail the density bound. Pass `sensor_length_m` explicitly
+  when replaying archived vectors.
+
+### 2026-09-04 - Claude
+Changed:
+- Nothing in `src/`. Ran a matched A/B of the fixes (identical config and seed
+  to the 7.223 baseline): `data_dump/opt_topline_postfix/run_20260904_104813`.
+
+Learned (this reframes the problem):
+- **Static margin was never the binding constraint.** In the post-fix top-500,
+  `gate_sm` passes 500/500 for both M2 and M3, and M3 SM is outside the
+  buffered penalty band 0/500 times. The definition fix was necessary and
+  correct, but the penalty is currently inert.
+- **The spiral penalty is a saturated step.** Where it fires it is pinned at
+  exactly 10.0 in 215/217 (M2) and 196/198 (M3) cases - zero gradient, worth
+  0.20 * 10 = 2.0 points, firing on ~43% of the converged population.
+- **Cnb is the other real binding constraint**: fails 235/500 (M2), 200/500
+  (M3). Still carries the suspect `-14.309` coefficient.
+- Penalty weights are mis-allocated: `W_SM = 0.40` is the largest weight in
+  `aero_score.py` but `p_sm` is nonzero 0/500. Spiral (0.20) and Cnb (0.15) do
+  all the work. `p_endurance` is added outside the weighted sum (effective
+  weight 1.0) and can contribute 10 alone.
+- **M1 static margin is the wild one**: 0.099 to 0.701, with 373/500 outside
+  the design band [0.10, 0.23] and 125/500 outside even the buffered penalty
+  band. It is excluded by the default `penalized_missions = ("M2", "M3")`.
+- A/B result: post-fix best 6.9389 vs pre-fix 7.2231. The pre-fix optimum still
+  scores 7.2295 under the new code, so achievable performance did not regress -
+  the search landed elsewhere. One run per arm cannot separate that 4% from
+  seed noise; needs ~3 seeds per arm to answer.
+- Both optima are penalty-free, so the fixes did not cost score at the optimum.
+
+Artifacts:
+- `data_dump/opt_topline_postfix/run_20260904_104813/`
+
+Open notes:
+- Ranked by what actually costs score now: spiral saturation > Cnb > sensor
+  mass model > inert SM band > M1 SM unconstrained.
+- Do not read the `[topline] gen=N score=...` console line as global progress;
+  it reports the *current island's* best and bounces between islands.
+
 ### 2026-09-03 - Claude
 Changed (restores static-margin feedback lost in `5e9bb57`):
 - `stability_analysis_coarse` now reports the **geometric** static margin,

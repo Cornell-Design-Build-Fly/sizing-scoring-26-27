@@ -22,6 +22,7 @@ def make_realistic_design_vector() -> DesignVector:
         tail_arm=0.75,        # m
         nose_length=0.22,     # m
         extra_shipping_containers=2,
+        sensor_length_m=12.0 * 0.0254,
         sensor_weight_kg=6.0,
         mission3_sensor_weight_kg=6.0,
         batt_capacity=4.5,    # Ah

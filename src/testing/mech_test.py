@@ -56,12 +56,16 @@ def _assert_no_payload_overlap(items) -> None:
 
 
 def main() -> None:
-    design = DesignVector(sensor_weight_kg=10.0, mission3_sensor_weight_kg=6.0)
+    design = DesignVector(
+        sensor_length_m=12.0 * INCH_M,
+        sensor_weight_kg=10.0,
+        mission3_sensor_weight_kg=6.0,
+    )
     config = MechanicalModuleConfig()
     result = evaluate_mechanical_module(design, config)
 
     assert "extra_shipping_containers" in design.opt_names()
-    assert "sensor_length_m" not in design.opt_names()
+    assert "sensor_length_m" in design.opt_names()
     assert "sensor_weight_kg" in design.opt_names()
     assert "mission3_sensor_weight_kg" in design.opt_names()
     assert "ducks_num" not in design.opt_names()
