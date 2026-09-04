@@ -35,7 +35,6 @@ SENSOR_STEEL_DENSITY_KG_M3 = 7850.0
 MIN_SENSOR_LENGTH_M = 1.0 * INCH_M
 MAX_SENSOR_LENGTH_M = 24.0 * INCH_M
 MIN_SENSOR_WEIGHT_KG = 0.05
-MAX_SENSOR_WEIGHT_KG = 35.0 * POUND_KG
 MIN_MISSION3_SENSOR_WEIGHT_KG = MIN_SENSOR_WEIGHT_KG
 
 
@@ -55,6 +54,13 @@ def maximum_sensor_weight_kg(sensor_length_m: float) -> float:
     return float(SENSOR_STEEL_DENSITY_KG_M3 * cross_section_m2 * sensor_length_m)
 
 
+# Differential evolution requires finite box bounds. This is not an
+# independent sensor-weight cap: it is the density limit evaluated at the
+# largest sensor length the optimizer can select. The nonlinear density
+# constraint below tightens the bound for every shorter sensor.
+OPTIMIZER_SENSOR_WEIGHT_UPPER_KG = maximum_sensor_weight_kg(MAX_SENSOR_LENGTH_M)
+
+
 def sensor_length_from_weight_kg(sensor_weight_kg: float) -> float:
     """Length of a solid-steel sensor of the given weight (legacy helper)."""
 
@@ -71,8 +77,14 @@ OPT_VARS = [
     ("nose_length", (0.08, 0.3)),
     ("extra_shipping_containers", (0, MAX_EXTRA_SHIPPING_CONTAINERS)),
     ("sensor_length_m", (MIN_SENSOR_LENGTH_M, MAX_SENSOR_LENGTH_M)),
-    ("sensor_weight_kg", (MIN_SENSOR_WEIGHT_KG, MAX_SENSOR_WEIGHT_KG)),
-    ("mission3_sensor_weight_kg", (MIN_MISSION3_SENSOR_WEIGHT_KG, MAX_SENSOR_WEIGHT_KG)),
+    (
+        "sensor_weight_kg",
+        (MIN_SENSOR_WEIGHT_KG, OPTIMIZER_SENSOR_WEIGHT_UPPER_KG),
+    ),
+    (
+        "mission3_sensor_weight_kg",
+        (MIN_MISSION3_SENSOR_WEIGHT_KG, OPTIMIZER_SENSOR_WEIGHT_UPPER_KG),
+    ),
     ("batt_capacity", (1.0, 4.5)),
     ("prop_diameter_in", (10.0, 25.0)),
     ("prop_pitch_in", (5.0, 18.0)),
