@@ -7,7 +7,7 @@ from typing import Iterable
 
 import numpy as np
 
-from src.mech.models import MassItem, NeutralPointConfig
+from src.mech.models import MassItem, NeutralPointConfig, StaticMarginConfig
 from src.vectors import DesignVector
 
 
@@ -202,3 +202,34 @@ def static_margin(
         raise ValueError("Mean aerodynamic chord must be positive.")
     # x is positive aft, so a CG forward of the neutral point is positive margin.
     return float((neutral_point_x_m - cg_x_m) / mean_aerodynamic_chord_m)
+
+
+def buffered_static_margin_penalty(
+    static_margin_value: float,
+    config: "StaticMarginConfig",
+) -> float:
+    """Return a finite 0-10 penalty outside the buffered acceptable SM range.
+
+    The buffer widens the acceptable band so the optimizer is not punished for
+    being marginally outside the design target. The lower edge is additionally
+    floored at ``optimizer_penalty_floor``: without that floor a buffer larger
+    than ``minimum`` pushes the unpenalized band below zero, which would let a
+    design with the CG *behind* the neutral point escape penalty entirely.
+    """
+
+    if not np.isfinite(static_margin_value):
+        return 10.0
+    lower = max(
+        config.minimum - config.optimizer_penalty_buffer,
+        config.optimizer_penalty_floor,
+    )
+    upper = config.maximum + config.optimizer_penalty_buffer
+    violation = max(lower - static_margin_value, static_margin_value - upper, 0.0)
+    if violation <= 0.0:
+        return 0.0
+    return float(
+        min(
+            10.0,
+            10.0 * np.log2(1.0 + violation / config.optimizer_penalty_scale),
+        )
+    )

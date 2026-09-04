@@ -6,6 +6,11 @@ from aerosandbox.weights.mass_properties import MassProperties
 
 from src.aero.custom_classes import CruiseCondition, StabilityResult
 from src.aero.utils import dict_to_mode_result, require_scalar
+# Single source of truth for the neutral point. The mechanical module places the
+# CG against this same estimate, so importing it here keeps the quantity the
+# optimizer penalizes identical to the quantity the placement solves for.
+# (src.mech does not import src.aero, so this introduces no import cycle.)
+from src.mech.mass_properties import estimate_aerodynamic_center_x
 from src.vectors import DesignVector
 
 
@@ -64,11 +69,19 @@ def estimate_stability_derivatives(
     clp = 0.263378 + 1.46526 * (-aw / 8)
     clr = 0.0341476 + 0.619521 * (cl / 4)
 
+    # Neutral point from geometry alone. It must not depend on the CG: the
+    # calibrated Cma regression above scales dCma/dx_cg by its slope
+    # coefficient, so `xcg - cma / cla * c` yields a "neutral point" that moves
+    # with the CG. Use the shared geometric estimator instead.
+    x_np = estimate_aerodynamic_center_x(design_vector)
+
     return {
         "CL": cl, "CD": cd, "Cma": cma, "Cmq": cmq,
         "CYb": cyb, "CYr": cyr, "Clb": clb, "Clp": clp,
         "Clr": clr, "Cnb": cnb, "Cnr": cnr, "CLa": cla,
-        "x_np": xcg - cma / cla * c,
+        "x_np": x_np,
+        # Legacy diagnostic; see StabilityResult.static_margin_from_cma.
+        "x_np_from_cma": xcg - cma / cla * c,
     }
 
 
@@ -83,6 +96,7 @@ def stability_analysis_coarse(
     airplane = SimpleNamespace(s_ref=s, c_ref=c, b_ref=b)
     modes = get_modes(airplane, cruise_condition.operating_point, mass_props, aero)
 
+    x_cg = require_scalar(mass_props.x_cg)
     return StabilityResult(
         phugoid=dict_to_mode_result(modes["phugoid"]),
         short_period=dict_to_mode_result(modes["short_period"]),
@@ -91,5 +105,7 @@ def stability_analysis_coarse(
         roll_subsidence=dict_to_mode_result(modes["roll_subsidence"]),
         Cma=float(aero["Cma"]),
         Cnb=float(aero["Cnb"]),
-        static_margin=float(-aero["Cma"] / aero["CLa"]),
+        static_margin=float((aero["x_np"] - x_cg) / c),
+        neutral_point_x_m=float(aero["x_np"]),
+        static_margin_from_cma=float(-aero["Cma"] / aero["CLa"]),
     )

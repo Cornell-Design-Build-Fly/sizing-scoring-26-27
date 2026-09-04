@@ -1072,11 +1072,37 @@ def _best_design_report(
         "official_score": float(score),
         "optimization_score": float(-result.population_energies[official_best_index]),
         "optimization_objective": float(result.population_energies[official_best_index]),
+        # `breakdown` is the un-penalized mission score. The reported `score` is
+        # that sum minus `penalties.total`, so the two only agree when the
+        # design is penalty-free; both are recorded to make that explicit.
         "breakdown": {
             "ground": float(breakdown[0]),
             "m1": float(breakdown[1]),
             "m2": float(breakdown[2]),
             "m3": float(breakdown[3]),
+            "sum_before_penalties": float(sum(breakdown)),
+        },
+        "penalties": {
+            "total": float(details.get("penalty_total", 0.0)),
+            "mechanical": float(details.get("penalty_mechanical", 0.0)),
+            "mechanical_static_margin": float(mech_result.penalty_static_margin),
+            "mechanical_static_margin_by_mission": dict(
+                mech_result.penalty_static_margin_by_mission
+            ),
+            "mechanical_placement": float(mech_result.penalty_placement),
+            "aero_m2": float(details.get("penalty_aero_m2", 0.0)),
+            "aero_m3": float(details.get("penalty_aero_m3", 0.0)),
+            "overweight": float(details.get("penalty_overweight", 0.0)),
+            "max_takeoff_mass_kg": float(details.get("max_takeoff_mass_kg", 0.0)),
+        },
+        "static_margin": {
+            "neutral_point_x_m": float(mech_result.neutral_point_x_m),
+            **{
+                mission.lower(): float(
+                    mech_result.for_mission(mission).static_margin
+                )
+                for mission in ("M1", "M2", "M3")
+            },
         },
         "optimizer_vector": asdict(best_design),
         "scoring_vector": asdict(scoring_design),

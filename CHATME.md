@@ -54,6 +54,78 @@ Aero solver expectations:
 
 ## Session Log
 
+### 2026-09-03 - Claude
+Changed (restores static-margin feedback lost in `5e9bb57`):
+- `stability_analysis_coarse` now reports the **geometric** static margin,
+  `(x_np - x_cg) / c`, using the same `estimate_aerodynamic_center_x` the
+  mechanical module places against. The old `-Cma/CLa` value is kept as
+  `StabilityResult.static_margin_from_cma` (diagnostic only).
+- `buffered_static_margin_penalty` moved to `src/mech/mass_properties.py` (one
+  implementation) and gained `StaticMarginConfig.optimizer_penalty_floor`.
+- `mechanical_evaluation` applies that penalty across
+  `StaticMarginConfig.penalized_missions` (default `("M2", "M3")`), taking the
+  worst mission so the total stays on the 0-10 scale.
+- Mission-2 placement is now **clamped** to keep the body ahead of the tail and
+  penalized by the static-margin error, instead of raising
+  `PayloadPlacementError`. It still raises when the block cannot fit at any
+  placement.
+- Non-convergent cruise returns `penalty=MAX_PENALTY` instead of 0.
+- The 55 lb overweight penalty is graded (`10 + 0.5/kg` over the limit).
+- `best_design_report.json` gained `penalties` and `static_margin` blocks;
+  `breakdown.sum_before_penalties - penalties.total` now equals `score` exactly.
+
+Learned:
+- `-Cma/CLa` was never a static margin. `cma = -0.867205 + 0.448798 * cma_est`
+  scales `dCma/dx_cg` by 0.4488, breaking the identity `dCma/dx_cg = CLa / c`,
+  so the implied neutral point **moved with the CG** (0.186 -> 0.219 m over a
+  +/-6 cm sweep). Measured aero slope was -1.1337 /m against the geometric
+  -2.5368 /m (= -1/chord). The full `stability_analysis.py` was already
+  geometric; only the coarse model was wrong.
+- Static margin produced **zero** penalty across 901 real designs before this:
+  mech penalty hardcoded 0, M2 SM pinned to exactly 0.1200 by construction
+  (std 0.0), M3 SM a free float (0.117 -> 1.062), aero `SM > 0` never tripping.
+- Placement is one rigid translation for {fuselage, electronics, release
+  mechanism, containers}; SM is exactly linear in it at -1/chord, so 1 cm of
+  block travel = 2.5% MAC. **One DOF cannot independently set three mission
+  static margins** - the M1-M2 spread (~0.10 MAC) is structural.
+- `MechanicalModuleConfig` already validates that
+  `Mission2Config.target_static_margin` (0.12) lies inside
+  `StaticMarginConfig` [minimum, maximum]; only the nominal `target` (0.20)
+  differs, so the two are range-consistent, not contradictory.
+- Regression over 300 fixed designs: best known design unchanged at 7.2295,
+  134/150 of the converged population unchanged, 16 dropped by exactly 10.0
+  (non-convergent cruise now costing what it should), 28 previously-rejected
+  designs now scored and ranked instead of tying at `BAD_OBJECTIVE`.
+
+Artifacts:
+- No new `data_dump` outputs. `src/testing/test_static_margin_feedback.py`
+  covers all five fixes; each was mutation-checked by reverting the fix and
+  confirming the test fails.
+
+Open notes:
+- **Not changed, needs a decision.** The solid-steel sensor model
+  (`src/vectors.py:40`) forces `MIN_SENSOR_WEIGHT_KG = 5.456 kg (12.03 lb)` and
+  ties length to weight; last year both were independent with a 1 lb floor.
+  This 12x jump in minimum payload is what drives the 55 lb overruns.
+- **Not changed.** `cnb_est` is multiplied by -14.309
+  (`stability_analysis_coarse.py:59`); the `Cnb > 0` gate fails ~90% of the time
+  off the converged region. Same class of regression problem as the Cma slope.
+- `Cma` itself still carries the -0.867/0.4488 calibration and still feeds
+  `get_modes`, so the dynamic modes are unchanged by this session. Correcting
+  Cma would shift short-period/phugoid/spiral and needs its own validation.
+- Placement still has one DOF. Adding a second (sliding the battery/electronics
+  relative to the containers) is the next real gain.
+- Pre-existing, unrelated: `test_continuous_lap_scoring.py::test_successful_m2_
+  waives_m1_and_unlocks_m3` fails under pytest (passes on original code too).
+  `relaxed_total` sits 4.6e-5 below `official_total` because `_official_mass_kg`
+  rounds sensor mass to 0.01 lb while the relaxed path does not.
+- Pre-existing, unrelated: `src/testing/aero_score_test.py` errors on stale
+  `CruiseCondition` / `StabilityResult` constructor signatures.
+- Running `python -m src.testing.<name>` on a pytest-style file only imports it
+  and runs nothing. Use `pytest` for those.
+- `pytest` was installed into `venv` for this work; it is not in
+  `requirements.txt`.
+
 ### 2026-09-03 - Codex
 Changed:
 - Centralized battery cell-count validation and nominal-voltage/energy

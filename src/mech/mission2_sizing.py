@@ -21,6 +21,11 @@ from src.mech.payload_placement import (
 )
 from src.vectors import DesignVector, ParameterVector
 
+# Keeps the clamped fuselage strictly ahead of the tail leading edge rather than
+# exactly touching it, so downstream geometry builders that require a strict
+# inequality (ASBDesignVector.make_fuselage) still succeed.
+PLACEMENT_EPSILON_M = 1.0e-6
+
 
 @dataclass(frozen=True)
 class Mission2Selection:
@@ -35,25 +40,7 @@ class Mission2Selection:
     fuselage_height_m: float
     width_increases: int
     target_cg_x_m: float
-    static_margin_penalty: float = 0.0
-
-
-def _buffered_static_margin_penalty(
-    static_margin: float,
-    config: MechanicalModuleConfig,
-) -> float:
-    """Return a finite 0-10 penalty outside the buffered acceptable SM range."""
-
-    margin_config = config.static_margin
-    lower = margin_config.minimum - margin_config.optimizer_penalty_buffer
-    upper = margin_config.maximum + margin_config.optimizer_penalty_buffer
-    violation = max(lower - static_margin, static_margin - upper, 0.0)
-    if violation == 0.0:
-        return 0.0
-    return min(
-        10.0,
-        10.0 * np.log2(1.0 + violation / margin_config.optimizer_penalty_scale),
-    )
+    placement_penalty: float = 0.0
 
 
 def select_mission2_fuselage(
@@ -98,19 +85,37 @@ def select_mission2_fuselage(
         / group_mass
     )
 
+    # Clamp the placement so a block that would reach the tail is still scored,
+    # with a penalty proportional to the static-margin error it is forced into,
+    # instead of being rejected outright. A hard rejection here turned a smooth
+    # trade into a cliff: the optimizer saw BAD_OBJECTIVE with no direction back
+    # toward feasibility, and neighbouring container counts alternated between
+    # accepted and rejected.
+    local_fuselage = next(
+        item for item in local_base if item.name == "Fuselage structure"
+    )
+    local_back_x = local_fuselage.position_m[0] + 0.5 * local_fuselage.dimensions_m[0]
+    permitted_back_x = min(
+        stations.horizontal_tail_le_x_m,
+        stations.vertical_tail_le_x_m,
+    ) - config.mission2.tail_leading_edge_clearance_m
+    maximum_translation_x = permitted_back_x - local_back_x - PLACEMENT_EPSILON_M
+    requested_translation_x = translation_x
+    translation_x = min(translation_x, maximum_translation_x)
+    placement_clamped = translation_x < requested_translation_x - 1e-12
+
     installed_base = fixed_items + translate_mass_items_x(local_base, translation_x)
     installed_payload = translate_mass_items_x(local_payload, translation_x)
     electronics_layout = translate_electronics_layout_x(local_layout, translation_x)
     fuselage = next(item for item in installed_base if item.name == "Fuselage structure")
     fuselage_back_x = fuselage.position_m[0] + 0.5 * fuselage.dimensions_m[0]
-    permitted_back_x = min(
-        stations.horizontal_tail_le_x_m,
-        stations.vertical_tail_le_x_m,
-    ) - config.mission2.tail_leading_edge_clearance_m
-    if fuselage_back_x >= permitted_back_x - 1e-12:
+    if fuselage_back_x >= permitted_back_x:
+        # The block is longer than the space between the nose and the tail, so
+        # no translation can fit it. This is a genuine geometric impossibility
+        # rather than a trim shortfall.
         raise PayloadPlacementError(
-            "The installed Mission-2 fuselage reaches the tail: back edge "
-            f"x={fuselage_back_x:.4f} m, permitted limit "
+            "The Mission-2 fuselage cannot fit ahead of the tail at any "
+            f"placement: back edge x={fuselage_back_x:.4f} m, permitted limit "
             f"x={permitted_back_x:.4f} m."
         )
 
@@ -121,7 +126,7 @@ def select_mission2_fuselage(
         neutral_point_x_m=neutral_point_x_m,
         config=config,
     )
-    if not np.isclose(
+    if not placement_clamped and not np.isclose(
         mission2.static_margin,
         config.mission2.target_static_margin,
         rtol=0.0,
@@ -131,7 +136,14 @@ def select_mission2_fuselage(
             "Installing the completed fuselage did not achieve the exact "
             "Mission-2 static-margin target."
         )
-    mission2 = replace(mission2, static_margin_feasible=True)
+    mission2 = replace(
+        mission2,
+        static_margin_feasible=(
+            config.static_margin.minimum - 1e-12
+            <= mission2.static_margin
+            <= config.static_margin.maximum + 1e-12
+        ),
+    )
 
     mission1 = calculate_mission_properties(
         mission="M1",
@@ -147,13 +159,40 @@ def select_mission2_fuselage(
         ),
     )
     # A successful M2 flight also satisfies M1 under the rules, so M1's
-    # payload-free static margin is diagnostic and must not penalize a design.
-    penalty = 0.0
+    # payload-free static margin is diagnostic here. The static-margin penalty
+    # itself is applied centrally in mechanical_evaluation across the missions
+    # named by StaticMarginConfig.penalized_missions.
     if not mission1.static_margin_feasible:
         warnings.append(
             f"M1 static margin is {100 * mission1.static_margin:.2f}%, above "
             f"the configured {100 * config.static_margin.maximum:.2f}% limit; "
             "no penalty is applied because a successful M2 flight satisfies M1."
+        )
+
+    # Penalize how far the clamped placement missed its static-margin target,
+    # on the same log scale used for the static-margin band itself.
+    penalty = 0.0
+    if placement_clamped:
+        target_error = abs(
+            mission2.static_margin - config.mission2.target_static_margin
+        )
+        penalty = float(
+            min(
+                10.0,
+                10.0
+                * np.log2(
+                    1.0
+                    + target_error / config.static_margin.optimizer_penalty_scale
+                ),
+            )
+        )
+        warnings.append(
+            "The Mission-2 fuselage placement was clamped to keep the body "
+            f"ahead of the tail: requested translation "
+            f"{requested_translation_x:.4f} m, applied {translation_x:.4f} m. "
+            f"Static margin is {100 * mission2.static_margin:.2f}% against a "
+            f"{100 * config.mission2.target_static_margin:.2f}% target; "
+            f"penalty {penalty:.3f}."
         )
 
     return Mission2Selection(
@@ -166,7 +205,7 @@ def select_mission2_fuselage(
         fuselage_height_m=float(fuselage.dimensions_m[2]),
         width_increases=0,
         target_cg_x_m=target_cg_x,
-        static_margin_penalty=penalty,
+        placement_penalty=penalty,
     )
 
 

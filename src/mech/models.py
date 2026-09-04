@@ -129,6 +129,16 @@ class StaticMarginConfig:
     maximum: float = 0.23
     optimizer_penalty_buffer: float = 0.15
     optimizer_penalty_scale: float = 0.15
+    # Hard lower edge of the unpenalized band. The buffer may not push the
+    # acceptable range below this value, so a CG behind the neutral point
+    # (negative static margin) is always penalized.
+    optimizer_penalty_floor: float = 0.0
+    # Missions whose static margin feeds the optimizer penalty. M2 and M3 are
+    # the configurations actually flown for score: under the 2026-27 M1 waiver
+    # (rules 3.3.3) a successful M2 also scores M1, and the scoring model in
+    # src/opt/score.py assumes that waiver path, so M1's payload-free static
+    # margin stays diagnostic. Add "M1" here to constrain it as well.
+    penalized_missions: tuple[str, ...] = ("M2", "M3")
 
     def __post_init__(self) -> None:
         if not np.all(
@@ -153,6 +163,17 @@ class StaticMarginConfig:
             raise ValueError("Static-margin optimizer penalty buffer cannot be negative.")
         if self.optimizer_penalty_scale <= 0:
             raise ValueError("Static-margin optimizer penalty scale must be positive.")
+        if not np.isfinite(self.optimizer_penalty_floor):
+            raise ValueError("Static-margin optimizer penalty floor must be finite.")
+        if self.optimizer_penalty_floor > self.maximum:
+            raise ValueError(
+                "Static-margin optimizer penalty floor cannot exceed the maximum."
+            )
+        unknown = set(self.penalized_missions) - set(ALL_MISSIONS)
+        if unknown:
+            raise ValueError(
+                f"Unknown penalized missions: {sorted(unknown)}."
+            )
 
 
 @dataclass(frozen=True)
@@ -673,6 +694,10 @@ class MechanicalResult:
     warnings: tuple[str, ...] = ()
     penalty: float = 0.0
     penalty_static_margin: float = 0.0
+    # Penalty from a Mission-2 placement that had to be clamped to stay inside
+    # the airframe instead of reaching its exact static-margin target.
+    penalty_placement: float = 0.0
+    penalty_static_margin_by_mission: dict[str, float] = field(default_factory=dict)
 
     @property
     def fuselage_width_m(self) -> float:

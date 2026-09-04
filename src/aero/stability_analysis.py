@@ -84,4 +84,5 @@ def stability_analysis(
         Cma=require_scalar(stability_dict["Cma"]),
         Cnb=require_scalar(stability_dict["Cnb"]),
         static_margin=static_margin,
+        neutral_point_x_m=x_np,
     )

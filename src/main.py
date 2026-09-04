@@ -13,6 +13,26 @@ from src.opt.score import (
 )
 
 
+POUNDS_TO_KG = 0.45359237
+# AMA / rules 3.2.1: TOGW with payload must be under 55 lb.
+MAX_TAKEOFF_MASS_KG = 55.0 * POUNDS_TO_KG
+OVERWEIGHT_BASE_PENALTY = 10.0
+# Extra penalty per kilogram over the limit. A flat step left ~80% of the
+# sampled design space on a single plateau of exactly -10, so differential
+# evolution saw mostly ties and had no direction to descend. The base step is
+# kept because the limit is a hard legality cliff, not a soft preference.
+OVERWEIGHT_PENALTY_PER_KG = 0.5
+
+
+def overweight_penalty(max_takeoff_mass_kg: float) -> float:
+    """Return the takeoff-weight penalty, graded above the 55 lb limit."""
+
+    overshoot_kg = max_takeoff_mass_kg - MAX_TAKEOFF_MASS_KG
+    if overshoot_kg < 0.0:
+        return 0.0
+    return OVERWEIGHT_BASE_PENALTY + OVERWEIGHT_PENALTY_PER_KG * overshoot_kg
+
+
 def resolved_aerodynamic_design_vector(
     design_vector: DesignVector,
     mech_result,
@@ -156,9 +176,21 @@ def main(
         properties.total_mass_kg
         for properties in (m1_properties, m2_properties, m3_properties)
     )
-    if max_takeoff_mass_kg >= 55.0 * 0.45359237:
-        tot_penalty += 10.0
+    tot_penalty += overweight_penalty(max_takeoff_mass_kg)
     result = (tot_score - tot_penalty, breakdown)
     if return_details:
-        return (*result, {"M1": aero_m1, "M2": aero_m2, "M3": aero_m3})
+        return (
+            *result,
+            {
+                "M1": aero_m1,
+                "M2": aero_m2,
+                "M3": aero_m3,
+                "penalty_total": tot_penalty,
+                "penalty_mechanical": mech_result.penalty,
+                "penalty_aero_m2": aero_m2.penalty,
+                "penalty_aero_m3": aero_m3.penalty,
+                "penalty_overweight": overweight_penalty(max_takeoff_mass_kg),
+                "max_takeoff_mass_kg": max_takeoff_mass_kg,
+            },
+        )
     return result

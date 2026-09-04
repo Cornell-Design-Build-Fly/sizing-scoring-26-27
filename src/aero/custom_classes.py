@@ -64,7 +64,15 @@ class StabilityResult:
     roll_subsidence: ModeResult
     Cma: float
     Cnb: float
+    # Geometric static margin, (x_np - x_cg) / c_ref. This is the single
+    # definition used by the flyability gates, the mechanical placement target,
+    # and the optimizer penalty.
     static_margin: float | None = None
+    neutral_point_x_m: float | None = None
+    # Diagnostic only: the legacy -Cma/CLa value. It is NOT a static margin,
+    # because the calibrated Cma regression does not preserve the identity
+    # dCma/dx_cg = CLa / c_ref. Retained so the two can be compared.
+    static_margin_from_cma: float | None = None
 
 @dataclass(frozen=True)
 class AeroOutput:

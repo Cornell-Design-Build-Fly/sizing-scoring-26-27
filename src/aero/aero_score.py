@@ -83,6 +83,10 @@ CNB_PENALTY_SCALE:    float = 0.10          # [1/rad]
 SPIRAL_PENALTY_SCALE: float = SPIRAL_RATE_MAX  # [s⁻¹]
 ENDURANCE_PENALTY_SCALE: float = 1.0
 
+# Upper bound on any single aero penalty, and the value assigned to a design
+# that cannot be trimmed at all.
+MAX_PENALTY: float = 10.0
+
 # Weights applied to each component penalty before summing.
 # Must sum to 1.0 so the weighted total stays in [0, 10].
 W_SM:     float = 0.40   # static margin — most critical single metric
