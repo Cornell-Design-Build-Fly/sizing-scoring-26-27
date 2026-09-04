@@ -22,6 +22,7 @@ from typing import Iterable
 import numpy as np
 
 from src.prop.prop_classes import NOMINAL_CELL_VOLTAGE_V
+from src.vectors import SENSOR_DIAMETER_M, SENSOR_STEEL_DENSITY_KG_M3
 
 from src.mech.electronics import (
     ElectronicsLayout,
@@ -520,16 +521,26 @@ class AirframeMassConfig:
 class SensorConfig:
     """Shared physical model for the M2/M3 sensor and release mechanism."""
 
-    diameter_m: float = 5.0 * 0.0254
+    diameter_m: float = SENSOR_DIAMETER_M
+    steel_density_kg_m3: float = SENSOR_STEEL_DENSITY_KG_M3
     release_mechanism_mass_ratio: float = 1.0 / 20.0
 
     def __post_init__(self) -> None:
         values = (
             self.diameter_m,
+            self.steel_density_kg_m3,
             self.release_mechanism_mass_ratio,
         )
         if not np.all(np.isfinite(values)) or np.any(np.asarray(values) <= 0):
             raise ValueError("Sensor configuration values must be finite and positive.")
+
+    def length_from_max_weight_m(self, sensor_mass_kg: float) -> float:
+        """Return the length of the fixed-diameter solid-steel sensor proxy."""
+
+        if not np.isfinite(sensor_mass_kg) or sensor_mass_kg <= 0:
+            raise ValueError("sensor_mass_kg must be finite and positive.")
+        area_m2 = np.pi * (0.5 * self.diameter_m) ** 2
+        return float(sensor_mass_kg / (self.steel_density_kg_m3 * area_m2))
 
     def release_mechanism_mass_kg(self, sensor_mass_kg: float) -> float:
         if not np.isfinite(sensor_mass_kg) or sensor_mass_kg <= 0:

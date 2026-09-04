@@ -22,6 +22,29 @@ FUSELAGE_START_WIDTH = 5.0 * 0.0254
 FUSELAGE_SHAPE = 8.0
 FUSELAGE_TIP_SIZE = 0.01
 MAX_EXTRA_SHIPPING_CONTAINERS = 10
+INCH_M = 0.0254
+POUND_KG = 0.45359237
+SENSOR_DIAMETER_M = 3.0 * INCH_M
+SENSOR_STEEL_DENSITY_KG_M3 = 7850.0
+MIN_SENSOR_LENGTH_M = 6.0 * INCH_M
+MIN_SENSOR_WEIGHT_KG = (
+    SENSOR_STEEL_DENSITY_KG_M3
+    * np.pi
+    * (0.5 * SENSOR_DIAMETER_M) ** 2
+    * MIN_SENSOR_LENGTH_M
+)
+MAX_SENSOR_WEIGHT_KG = 35.0 * POUND_KG
+MIN_MISSION3_SENSOR_WEIGHT_KG = MIN_SENSOR_WEIGHT_KG
+
+
+def sensor_length_from_weight_kg(sensor_weight_kg: float) -> float:
+    """Return the length of the 3-inch solid-steel sensor proxy."""
+
+    sensor_weight_kg = float(sensor_weight_kg)
+    if not np.isfinite(sensor_weight_kg) or sensor_weight_kg <= 0.0:
+        raise ValueError("sensor_weight_kg must be finite and positive.")
+    cross_section_m2 = np.pi * (0.5 * SENSOR_DIAMETER_M) ** 2
+    return float(sensor_weight_kg / (SENSOR_STEEL_DENSITY_KG_M3 * cross_section_m2))
 
 OPT_VARS = [
     ("wing_span", (0.914, 1.8288)),
@@ -29,8 +52,8 @@ OPT_VARS = [
     ("tail_arm", (0.3, 0.9)),
     ("nose_length", (0.08, 0.3)),
     ("extra_shipping_containers", (0, MAX_EXTRA_SHIPPING_CONTAINERS)),
-    ("sensor_length_m", (6.0 * 0.0254, 36.0 * 0.0254)),
-    ("sensor_weight_kg", (1.0 * 0.45359237, 35.0 * 0.45359237)),
+    ("sensor_weight_kg", (MIN_SENSOR_WEIGHT_KG, MAX_SENSOR_WEIGHT_KG)),
+    ("mission3_sensor_weight_kg", (MIN_MISSION3_SENSOR_WEIGHT_KG, MAX_SENSOR_WEIGHT_KG)),
     ("batt_capacity", (1.0, 4.5)),
     ("prop_diameter_in", (10.0, 25.0)),
     ("prop_pitch_in", (5.0, 18.0)),
@@ -56,9 +79,12 @@ class DesignVector:
 
     # Mission payloads. There is always one sensor shipping container in M2;
     # this variable controls only the additional container simulators.
+    # ``sensor_weight_kg`` is the maximum declared sensor weight used by M2 and
+    # the Ground Mission. Mission 3 may fly at any positive weight up to that
+    # declared maximum. Both lengths follow from their respective weights.
     extra_shipping_containers: float = 0
-    sensor_length_m: float = 6.0 * 0.0254
-    sensor_weight_kg: float = 1.0
+    sensor_weight_kg: float = MIN_SENSOR_WEIGHT_KG
+    mission3_sensor_weight_kg: float | None = None
 
     # Prop components
     batt_capacity: float = 4.5 # [Ah]
@@ -75,6 +101,9 @@ class DesignVector:
     # These inputs are not currently included in OPT_VARS.
     fuselage_width: float = FUSELAGE_START_WIDTH
     fuselage_height: float = FUSELAGE_BOX_SIZE
+    # A nonpositive value means the constant-width body ends at the wing TE.
+    # Mechanical packaging resolves this to its actual aft edge downstream.
+    fuselage_box_back_x_m: float = 0.0
     wing_airfoil: str = "naca2412"
 
     # Derived, do not set manually
@@ -87,6 +116,8 @@ class DesignVector:
     vstab_chord:      float = field(init=False)
     battery_nominal_voltage_v: float = field(init=False)
     batt_energy:      float = field(init=False)
+    sensor_length_m:  float = field(init=False)
+    mission3_sensor_length_m: float = field(init=False)
 
 
     def __post_init__(self):
@@ -98,15 +129,31 @@ class DesignVector:
             or self.nose_length <= 0
             or self.fuselage_width <= 0
             or self.fuselage_height <= 0
-            or not np.isfinite(self.sensor_length_m)
-            or self.sensor_length_m < 6.0 * 0.0254
+            or not np.isfinite(self.fuselage_box_back_x_m)
+            or self.fuselage_box_back_x_m < 0
             or not np.isfinite(self.sensor_weight_kg)
-            or self.sensor_weight_kg <= 0
+            or self.sensor_weight_kg < MIN_SENSOR_WEIGHT_KG
         ):
             raise ValueError(
-                "All DesignVector primary dimensions and sensor_weight_kg must "
-                "be positive, and sensor_length_m must be at least 6 inches."
+                "All DesignVector primary dimensions must be positive, and "
+                "sensor_weight_kg must be at least the weight of a 6-inch-long, "
+                "3-inch-diameter solid steel rod."
             )
+        if self.mission3_sensor_weight_kg is None:
+            self.mission3_sensor_weight_kg = float(self.sensor_weight_kg)
+        if (
+            not np.isfinite(self.mission3_sensor_weight_kg)
+            or self.mission3_sensor_weight_kg < MIN_MISSION3_SENSOR_WEIGHT_KG
+            or self.mission3_sensor_weight_kg > self.sensor_weight_kg
+        ):
+            raise ValueError(
+                "mission3_sensor_weight_kg must represent at least a 6-inch "
+                "sensor and cannot exceed the maximum declared sensor_weight_kg."
+            )
+        self.sensor_length_m = sensor_length_from_weight_kg(self.sensor_weight_kg)
+        self.mission3_sensor_length_m = sensor_length_from_weight_kg(
+            self.mission3_sensor_weight_kg
+        )
         if (
             not np.isfinite(self.extra_shipping_containers)
             or not (
@@ -228,14 +275,14 @@ class ASBDesignVector(DesignVector):
         unit_scale: float = 1.0,
     ) -> "ASBDesignVector":
         """Promotes any existing design vector into an ASB-ready one."""
-        return cls(
+        promoted = cls(
             wing_span=design_vector.wing_span * unit_scale,
             wing_chord=design_vector.wing_chord * unit_scale,
             tail_arm=design_vector.tail_arm * unit_scale,
             nose_length=design_vector.nose_length * unit_scale,
             extra_shipping_containers=design_vector.extra_shipping_containers,
-            sensor_length_m=design_vector.sensor_length_m * unit_scale,
             sensor_weight_kg=design_vector.sensor_weight_kg,
+            mission3_sensor_weight_kg=design_vector.mission3_sensor_weight_kg,
             batt_capacity=design_vector.batt_capacity,
             battery_cell_count=design_vector.battery_cell_count,
             prop_diameter_in=design_vector.prop_diameter_in,
@@ -246,8 +293,16 @@ class ASBDesignVector(DesignVector):
             mission3_cruise_throttle=design_vector.mission3_cruise_throttle,
             fuselage_width=design_vector.fuselage_width * unit_scale,
             fuselage_height=design_vector.fuselage_height * unit_scale,
+            fuselage_box_back_x_m=(
+                design_vector.fuselage_box_back_x_m * unit_scale
+            ),
             wing_airfoil=design_vector.wing_airfoil,
         )
+        promoted.sensor_length_m = design_vector.sensor_length_m * unit_scale
+        promoted.mission3_sensor_length_m = (
+            design_vector.mission3_sensor_length_m * unit_scale
+        )
+        return promoted
 
     def make_airplane(
         self,
@@ -372,7 +427,10 @@ class ASBDesignVector(DesignVector):
 
         nose_tip_x = wing_le_x - self.nose_length
         nose_transition_x = nose_tip_x + 0.35 * self.nose_length
-        aft_mid_x = wing_te_x + 0.65 * (tail_te_x - wing_te_x)
+        box_back_x = max(wing_te_x, self.fuselage_box_back_x_m)
+        if box_back_x >= tail_te_x:
+            raise ValueError("The constant-width fuselage must end before the tail tip.")
+        aft_mid_x = box_back_x + 0.65 * (tail_te_x - box_back_x)
 
         return asb.Fuselage(
             name="Fuselage",
@@ -390,7 +448,7 @@ class ASBDesignVector(DesignVector):
                     shape=FUSELAGE_SHAPE,
                 ),
                 asb.FuselageXSec(
-                    xyz_c=[wing_te_x, 0.0,  -self.fuselage_height / 2.0],
+                    xyz_c=[box_back_x, 0.0,  -self.fuselage_height / 2.0],
                     width=self.fuselage_width,
                     height=self.fuselage_height,
                     shape=FUSELAGE_SHAPE,

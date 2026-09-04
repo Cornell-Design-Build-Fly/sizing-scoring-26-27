@@ -13,6 +13,29 @@ from src.opt.score import (
 )
 
 
+def resolved_aerodynamic_design_vector(
+    design_vector: DesignVector,
+    mech_result,
+) -> DesignVector:
+    """Expand the aerodynamic fuselage to contain the mechanical assembly."""
+
+    fuselage = next(
+        item for item in mech_result.all_items if item.name == "Fuselage structure"
+    )
+    forward_edge_x_m = fuselage.position_m[0] - 0.5 * fuselage.dimensions_m[0]
+    back_edge_x_m = fuselage.position_m[0] + 0.5 * fuselage.dimensions_m[0]
+    return replace(
+        design_vector,
+        nose_length=max(float(design_vector.nose_length), -float(forward_edge_x_m)),
+        fuselage_width=mech_result.resolved_fuselage_width_m,
+        fuselage_height=mech_result.resolved_fuselage_height_m,
+        fuselage_box_back_x_m=max(
+            float(design_vector.wing_chord),
+            float(back_edge_x_m),
+        ),
+    )
+
+
 def main(
     dv: DesignVector,
     pv: ParameterVector,
@@ -44,11 +67,7 @@ def main(
 
     # Use mech's resolved geometry downstream without changing the caller's
     # design vector or its starting-width input.
-    resolved_dv = replace(
-        scoring_dv,
-        fuselage_width=mech_result.resolved_fuselage_width_m,
-        fuselage_height=mech_result.resolved_fuselage_height_m,
-    )
+    resolved_dv = resolved_aerodynamic_design_vector(scoring_dv, mech_result)
 
     # M1 run
     m1_thrust_curve, m1_flight_time_fit = prop_main(
@@ -130,7 +149,6 @@ def main(
     )
     tot_penalty = (
         mech_result.penalty
-        + aero_m1.penalty
         + aero_m2.penalty
         + aero_m3.penalty
     )

@@ -56,13 +56,14 @@ def _assert_no_payload_overlap(items) -> None:
 
 
 def main() -> None:
-    design = DesignVector()
+    design = DesignVector(sensor_weight_kg=10.0, mission3_sensor_weight_kg=6.0)
     config = MechanicalModuleConfig()
     result = evaluate_mechanical_module(design, config)
 
     assert "extra_shipping_containers" in design.opt_names()
-    assert "sensor_length_m" in design.opt_names()
+    assert "sensor_length_m" not in design.opt_names()
     assert "sensor_weight_kg" in design.opt_names()
+    assert "mission3_sensor_weight_kg" in design.opt_names()
     assert "ducks_num" not in design.opt_names()
     assert "pucks_num" not in design.opt_names()
     assert "banner_length" not in design.opt_names()
@@ -79,7 +80,7 @@ def main() -> None:
     assert promoted.prop_pitch_in == design.prop_pitch_in
 
     expected_sensor_length = design.sensor_length_m
-    assert np.isclose(config.sensor.diameter_m, 5.0 * INCH_M)
+    assert np.isclose(config.sensor.diameter_m, 3.0 * INCH_M)
 
     m2_payload = _mission_payloads(result, "M2")
     assert len(m2_payload) == 1
@@ -114,10 +115,10 @@ def main() -> None:
     assert len(m3_payload) == 1
     sensor = m3_payload[0]
     assert sensor.name == "M3 sensor"
-    assert np.isclose(sensor.mass_kg, design.sensor_weight_kg)
+    assert np.isclose(sensor.mass_kg, design.mission3_sensor_weight_kg)
     assert np.allclose(
         sensor.dimensions_m,
-        (expected_sensor_length, 5.0 * INCH_M, 5.0 * INCH_M),
+        (design.mission3_sensor_length_m, 3.0 * INCH_M, 3.0 * INCH_M),
     )
     assert np.allclose(sensor.position_m, container.position_m)
     assert np.all(sensor.dimensions_m <= container.dimensions_m)

@@ -24,11 +24,15 @@ def test_mission_two_uses_weight_over_exactly_five_lap_time() -> None:
     refs = ScoringReferences(best_m2_weight_per_time_kg_s=rounded_payload_kg / 200.0)
     assert m2_score(20.0, 40.0, refs) == pytest.approx(2.0)
     assert m2_score(20.0, 61.0, refs) == 0.0
+    assert m2_score(20.0, float("inf"), refs) == 0.0
 
 
 def test_mission_three_uses_integer_laps_times_sensor_weight() -> None:
-    design = DesignVector(sensor_weight_kg=5.0)
-    refs = ScoringReferences(best_m3_lap_weight_kg=25.0)
+    design = DesignVector(
+        sensor_weight_kg=7.0,
+        mission3_sensor_weight_kg=6.0,
+    )
+    refs = ScoringReferences(best_m3_lap_weight_kg=30.0)
     assert m3_score(design, 60.0, refs) == pytest.approx(3.0, abs=1e-3)
     assert m3_score(design, 301.0, refs) == 0.0
 

@@ -48,7 +48,10 @@ def main() -> None:
     optimizer_vector = design_6s.to_array()
     rebuilt_8s = _design_vector_from_optimizer(
         optimizer_vector,
-        ToplineConfig(battery_cell_count=8),
+        ToplineConfig(
+            battery_cell_count=8,
+            optimize_battery_cell_count=False,
+        ),
     )
     assert rebuilt_8s.battery_cell_count == 8
     assert np.isclose(rebuilt_8s.battery_nominal_voltage_v, 29.6)
@@ -56,13 +59,24 @@ def main() -> None:
     joint_config = ToplineConfig(
         optimize_battery_cell_count=True,
         battery_cell_count_bounds=(6, 8),
+        battery_cell_count_choices=(6, 8),
     )
-    joint_vector = np.append(optimizer_vector, 7.0)
-    rebuilt_7s = _design_vector_from_optimizer(joint_vector, joint_config)
-    assert rebuilt_7s.battery_cell_count == 7
+    joint_vector = np.append(optimizer_vector, 8.0)
+    rebuilt_joint_8s = _design_vector_from_optimizer(joint_vector, joint_config)
+    assert rebuilt_joint_8s.battery_cell_count == 8
     assert _optimizer_variable_names(joint_config)[-1] == "battery_cell_count"
     assert _optimizer_bounds(joint_config)[-1] == (6.0, 8.0)
     assert _integrality_mask(joint_config)[-1]
+
+    try:
+        _design_vector_from_optimizer(
+            np.append(optimizer_vector, 7.0),
+            joint_config,
+        )
+    except ValueError as exc:
+        assert "must be one of (6, 8)" in str(exc)
+    else:
+        raise AssertionError("Joint optimizer accepted disallowed 7S battery.")
 
     for invalid_count in (0, -1, 6.5, np.nan, True):
         try:

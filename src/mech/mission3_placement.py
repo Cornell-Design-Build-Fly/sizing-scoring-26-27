@@ -29,8 +29,8 @@ def place_mission3_payload(
         dtype=float,
     )
 
-    sensor_mass = float(design_vector.sensor_weight_kg)
-    sensor_length = design_vector.sensor_length_m
+    sensor_mass = float(design_vector.mission3_sensor_weight_kg)
+    sensor_length = design_vector.mission3_sensor_length_m
     radius = 0.5 * config.sensor.diameter_m
     sensor_dimensions = np.asarray(
         (sensor_length, config.sensor.diameter_m, config.sensor.diameter_m),
@@ -63,9 +63,10 @@ def place_mission3_payload(
             category="mission_3_payload",
             intrinsic_inertia_kg_m2=intrinsic_inertia,
             notes=(
-                "Solid 3-inch-diameter steel rod centered inside the volume "
+                "Three-inch-diameter sensor centered inside the volume "
                 "formerly occupied by the primary M2 sensor container, with "
-                "exact cylindrical intrinsic inertia."
+                "cylindrical intrinsic inertia. Its length is derived from the "
+                "M3 flown weight and cannot exceed the M2 container envelope."
             ),
         ),
     )

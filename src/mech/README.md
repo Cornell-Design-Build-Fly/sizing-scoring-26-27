@@ -8,7 +8,8 @@ from src.mech import evaluate_mechanical_module
 from src.vectors import DesignVector
 
 design = DesignVector(
-    sensor_weight_kg=1.0,
+    sensor_weight_kg=10.0,
+    mission3_sensor_weight_kg=6.0,
     extra_shipping_containers=4,
 )
 result = evaluate_mechanical_module(design)
@@ -39,6 +40,8 @@ Containers are loaded in this order:
 4. Repeat at the next fore/aft distance if more bays are required.
 
 The fuselage cross-section expands to enclose the occupied rows and layers.
+Its aerodynamic nose and full-width aft station are also expanded to match the
+installed mechanical fuselage envelope.
 The electronics, fuselage shell, permanent release mechanism, and Mission 2
 containers are first assembled in local coordinates. The completed loaded
 assembly is then translated onto the fixed airplane to make Mission 2 static
@@ -49,10 +52,13 @@ missions. It weighs 1/20 of the sensor and is placed at the top of the center
 container stack.
 
 Mission 3 removes the containers and carries only the sensor in addition to
-the permanent airplane. The sensor is centered in the volume formerly occupied
-by the primary Mission 2 sensor container. Its 3-inch diameter and shorter
-length keep it fully inside that former 5-inch-wide container envelope. Its
-intrinsic inertia uses the solid-cylinder equations rather than the generic
+the permanent airplane. `sensor_weight_kg` is the maximum declared weight used
+to size the sensor and score the Ground Mission; `mission3_sensor_weight_kg` is
+the weight actually flown in Mission 3 and cannot exceed that maximum. Each
+weight determines its corresponding 3-inch steel-rod length. The M3 sensor
+remains centered in the volume formerly occupied by the primary Mission 2
+container, so the lighter/shorter rod stays inside that envelope. Its intrinsic
+inertia uses the solid-cylinder equations rather than the generic
 rectangular-prism model.
 
 ## Outputs

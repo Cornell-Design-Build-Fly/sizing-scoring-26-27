@@ -8,12 +8,17 @@ from aerosandbox.aerodynamics.aero_3D.aero_buildup_submodels.fuselage_aerodynami
     fuselage_form_factor,
 )
 
-from src.vectors import ASBDesignVector, DesignVector, ParameterVector
+from src.vectors import (
+    ASBDesignVector,
+    DesignVector,
+    ParameterVector,
+    SENSOR_DIAMETER_M,
+)
 
 
 MU = 1.81e-5
 SENSOR_CD = 0.137
-SENSOR_RADIUS_M = 2.5 * 0.0254
+SENSOR_RADIUS_M = 0.5 * SENSOR_DIAMETER_M
 
 
 def sensor_drag_force(
@@ -23,9 +28,9 @@ def sensor_drag_force(
 ):
     """Return sensor drag using the projected side area of a cylinder.
 
-    Sensor weight does not enter the aerodynamic drag equation directly.
+    The M3 flown weight determines rod length; diameter remains fixed.
     """
-    sensor_length = design.sensor_length_m
+    sensor_length = design.mission3_sensor_length_m
     sensor_area = 2.0 * SENSOR_RADIUS_M * sensor_length
     return 0.5 * parameters.rho * velocity**2 * SENSOR_CD * sensor_area
 

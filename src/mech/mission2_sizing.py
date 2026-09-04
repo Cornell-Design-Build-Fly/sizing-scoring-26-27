@@ -146,12 +146,14 @@ def select_mission2_fuselage(
             mission1.static_margin <= config.static_margin.maximum + 1e-12
         ),
     )
-    penalty = _buffered_static_margin_penalty(mission1.static_margin, config)
+    # A successful M2 flight also satisfies M1 under the rules, so M1's
+    # payload-free static margin is diagnostic and must not penalize a design.
+    penalty = 0.0
     if not mission1.static_margin_feasible:
         warnings.append(
             f"M1 static margin is {100 * mission1.static_margin:.2f}%, above "
             f"the configured {100 * config.static_margin.maximum:.2f}% limit; "
-            f"optimizer penalty is {penalty:.4f}."
+            "no penalty is applied because a successful M2 flight satisfies M1."
         )
 
     return Mission2Selection(

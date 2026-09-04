@@ -54,6 +54,8 @@ STRAIGHT_LENGTH_M: float = 152.4         # 500 ft per straight leg [m]
 STRAIGHTS_PER_LAP: int   = 4             # 4 legs × 500 ft = 2000 ft total straight
 TURN_180_COUNT:    int   = 2             # number of 180° reversals per lap
 TURN_180_RAD:      float = np.pi         # each 180° reversal [rad]
+TURN_360_COUNT:    int   = 1             # number of 360° loops per lap
+TURN_360_RAD:      float = 2.0 * np.pi   # each 360° loop [rad]
 N_ZS:              float = 2.5           # structural limit load factor (civil)
 
 # ── Flyability Thresholds ──────────────────────────────────────────────────
@@ -218,7 +220,10 @@ def _compute_lap_time(
     t_straight = STRAIGHTS_PER_LAP * STRAIGHT_LENGTH_M / cruise_speed
 
     # Turn time: 1 × 360° loop + 2 × 180° reversals = 4π total
-    total_turn_rad = TURN_180_COUNT * TURN_180_RAD
+    total_turn_rad = (
+        TURN_180_COUNT * TURN_180_RAD
+        + TURN_360_COUNT * TURN_360_RAD
+    )
     t_turns = total_turn_rad / omega
 
     return t_straight + t_turns

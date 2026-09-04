@@ -83,6 +83,12 @@ def _summarize_run(run_dir: Path) -> dict[str, Any]:
         ),
         "sensor_length_m": float(vector["sensor_length_m"]),
         "sensor_weight_kg": float(vector["sensor_weight_kg"]),
+        "mission3_sensor_weight_kg": float(
+            vector["mission3_sensor_weight_kg"]
+        ),
+        "mission3_sensor_length_m": float(
+            vector["mission3_sensor_length_m"]
+        ),
         "wing_span_m": float(vector["wing_span"]),
         "wing_chord_m": float(vector["wing_chord"]),
         "m1_mass_kg": float(missions["M1"]["total_mass_kg"]),
@@ -171,7 +177,10 @@ def _cross_evaluate_fixed_designs(
         for evaluation_cell_count in cell_counts:
             objective = _objective(
                 optimizer_array,
-                config=ToplineConfig(battery_cell_count=evaluation_cell_count),
+                config=ToplineConfig(
+                    battery_cell_count=evaluation_cell_count,
+                    optimize_battery_cell_count=False,
+                ),
             )
             rows.append(
                 {
@@ -206,6 +215,7 @@ def run_comparison(args: argparse.Namespace) -> Path:
                 seed=args.seed,
                 output_dir=comparison_dir / f"{cell_count}S",
                 battery_cell_count=cell_count,
+                optimize_battery_cell_count=False,
                 save_best_visualization=not args.no_visualization,
             )
             result = run_topline_optimization(config)
@@ -229,6 +239,7 @@ def run_comparison(args: argparse.Namespace) -> Path:
             output_dir=comparison_dir / "joint",
             optimize_battery_cell_count=True,
             battery_cell_count_bounds=bounds,
+            battery_cell_count_choices=tuple(cell_counts),
             save_best_visualization=not args.no_visualization,
         )
         result = run_topline_optimization(config)
@@ -297,8 +308,8 @@ def _parser() -> argparse.ArgumentParser:
         choices=("fixed", "joint", "both"),
         default="fixed",
         help=(
-            "Run fixed cases, one joint integer optimization, or both. Joint mode "
-            "allows every integer between the minimum and maximum --cells values."
+            "Run fixed cases, one joint discrete optimization, or both. Joint "
+            "mode allows exactly the values supplied through --cells."
         ),
     )
     parser.add_argument("--maxiter", type=_nonnegative_int, default=300)

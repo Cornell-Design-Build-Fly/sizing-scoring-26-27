@@ -170,6 +170,8 @@ def summarize_sensitivity_run(case: SensitivityCase, run_dir: Path) -> dict:
         "extra_shipping_containers": int(vector["extra_shipping_containers"]),
         "sensor_length_m": vector["sensor_length_m"],
         "sensor_weight_kg": vector["sensor_weight_kg"],
+        "mission3_sensor_weight_kg": vector["mission3_sensor_weight_kg"],
+        "mission3_sensor_length_m": vector["mission3_sensor_length_m"],
         "wing_span_m": vector["wing_span"],
         "wing_chord_m": vector["wing_chord"],
         "wing_area_m2": vector["wing_area"],

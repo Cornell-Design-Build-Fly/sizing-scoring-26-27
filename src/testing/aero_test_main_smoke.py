@@ -22,8 +22,8 @@ def make_realistic_design_vector() -> DesignVector:
         tail_arm=0.75,        # m
         nose_length=0.22,     # m
         extra_shipping_containers=2,
-        sensor_length_m=0.30,
-        sensor_weight_kg=2.0,
+        sensor_weight_kg=6.0,
+        mission3_sensor_weight_kg=6.0,
         batt_capacity=4.5,    # Ah
         fuselage_width=0.13,  # m
         fuselage_height=0.13, # m

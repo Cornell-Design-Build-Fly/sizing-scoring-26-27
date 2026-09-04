@@ -127,14 +127,15 @@ def m2_score(
 ) -> float:
     """Score delivered payload mass divided by the time for exactly five laps."""
 
-    elapsed = round_half_up(M2_REQUIRED_LAPS * lap_time_s)
     if (
         not math.isfinite(payload_mass_kg)
         or payload_mass_kg <= 0.0
-        or not math.isfinite(elapsed)
-        or elapsed <= 0.0
-        or elapsed > refs.seconds_per_mission
+        or not math.isfinite(lap_time_s)
+        or lap_time_s <= 0.0
     ):
+        return 0.0
+    elapsed = round_half_up(M2_REQUIRED_LAPS * lap_time_s)
+    if elapsed > refs.seconds_per_mission:
         return 0.0
     performance = _official_mass_kg(payload_mass_kg) / elapsed
     return 1.0 + min(1.0, performance / refs.best_m2_weight_per_time_kg_s)
@@ -187,7 +188,7 @@ def m3_score(
     laps = completed_m3_laps(lap_time_s, refs)
     if laps < 1:
         return 0.0
-    performance = laps * _official_mass_kg(dv.sensor_weight_kg)
+    performance = laps * _official_mass_kg(dv.mission3_sensor_weight_kg)
     return 2.0 + min(1.0, performance / refs.best_m3_lap_weight_kg)
 
 
@@ -203,7 +204,7 @@ def m3_optimization_score(
         - refs.m3_deployment_time_s
         - refs.m3_recovery_time_s
     )
-    performance = (lap_window / lap_time_s) * dv.sensor_weight_kg
+    performance = (lap_window / lap_time_s) * dv.mission3_sensor_weight_kg
     return 2.0 + min(1.0, performance / refs.best_m3_lap_weight_kg)
 
 
@@ -215,15 +216,13 @@ def total_score(
     m2_payload_mass_kg: float,
     refs: ScoringReferences = DEFAULT_SCORING_REFERENCES,
 ) -> tuple[float, list[float]]:
-    """Return GM + M1 + M2 + M3 using the sequential unlock flow."""
+    """Return GM + M1 + M2 + M3, including the successful-M2 M1 waiver."""
 
     gm = gm_score(dv, refs)
-    m1 = m1_score(lap_time_m1, refs)
-    m2 = m3 = 0.0
-    if m1 > 0.0:
-        m2 = m2_score(m2_payload_mass_kg, lap_time_m2, refs)
-        if m2 > 0.0:
-            m3 = m3_score(dv, lap_time_m3, refs)
+    standalone_m1 = m1_score(lap_time_m1, refs)
+    m2 = m2_score(m2_payload_mass_kg, lap_time_m2, refs)
+    m1 = 1.0 if m2 > 0.0 else standalone_m1
+    m3 = m3_score(dv, lap_time_m3, refs) if m2 > 0.0 else 0.0
     breakdown = [gm, m1, m2, m3]
     return sum(breakdown), breakdown
 
@@ -239,13 +238,17 @@ def total_optimization_score(
     """Return relaxed progress while preserving official unlock gates."""
 
     gm = gm_score(dv, refs)
-    official_m1 = m1_score(lap_time_m1, refs)
-    m1 = m1_optimization_score(lap_time_m1, refs)
-    m2 = m3 = 0.0
-    if official_m1 > 0.0:
-        official_m2 = m2_score(m2_payload_mass_kg, lap_time_m2, refs)
-        m2 = m2_optimization_score(m2_payload_mass_kg, lap_time_m2, refs)
-        if official_m2 > 0.0:
-            m3 = m3_optimization_score(dv, lap_time_m3, refs)
+    official_m2 = m2_score(m2_payload_mass_kg, lap_time_m2, refs)
+    m1 = (
+        1.0
+        if official_m2 > 0.0
+        else m1_optimization_score(lap_time_m1, refs)
+    )
+    m2 = m2_optimization_score(m2_payload_mass_kg, lap_time_m2, refs)
+    m3 = (
+        m3_optimization_score(dv, lap_time_m3, refs)
+        if official_m2 > 0.0
+        else 0.0
+    )
     breakdown = [gm, m1, m2, m3]
     return sum(breakdown), breakdown

@@ -58,6 +58,7 @@ BATTERY_CELL_COUNT_BOUNDS = (5, 8)
 OPTIMIZER_CONFIG = ToplineConfig(
     optimize_battery_cell_count=True,
     battery_cell_count_bounds=BATTERY_CELL_COUNT_BOUNDS,
+    battery_cell_count_choices=None,
 )
 EVALUATION_HISTORY: list[dict] = []
 PROGRESS_BAR = None

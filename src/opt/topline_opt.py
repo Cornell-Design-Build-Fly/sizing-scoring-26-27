@@ -21,7 +21,7 @@ from scipy.optimize import NonlinearConstraint, OptimizeResult, differential_evo
 from scipy.stats import qmc
 from tqdm.auto import tqdm
 
-from src.main import main as score_aircraft
+from src.main import main as score_aircraft, resolved_aerodynamic_design_vector
 from src.opt.score import (
     DEFAULT_SCORING_REFERENCES,
     ScoringReferences,
@@ -45,6 +45,7 @@ from src.prop.continuous_prop_database import (
 from src.prop.prop_classes import (
     DEFAULT_BATTERY_CELL_COUNT,
     DEFAULT_BATTERY_CELL_COUNT_BOUNDS,
+    battery_nominal_voltage_v,
     normalize_battery_cell_count,
 )
 from src.prop.prop_helper_functions import make_battery_from_design
@@ -77,9 +78,9 @@ PROGRESS_BAR = None
 class ToplineConfig:
     """Settings for the long, SciPy-managed top-line DE run."""
 
-    workers: int = 8
+    workers: int = -1
     popsize: int = 25
-    maxiter: int | None = 300
+    maxiter: int | None = 100
     target_seconds: float = TARGET_RUN_SECONDS
     assumed_evals_per_second: float = TARGET_EVALS_PER_SECOND
     init: str = "sobol"
@@ -101,8 +102,9 @@ class ToplineConfig:
     save_best_visualization: bool = True
     scoring_references: ScoringReferences = DEFAULT_SCORING_REFERENCES
     battery_cell_count: int = DEFAULT_BATTERY_CELL_COUNT
-    optimize_battery_cell_count: bool = False
+    optimize_battery_cell_count: bool = True
     battery_cell_count_bounds: tuple[int, int] = DEFAULT_BATTERY_CELL_COUNT_BOUNDS
+    battery_cell_count_choices: tuple[int, ...] | None = (6, 8)
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -117,6 +119,23 @@ class ToplineConfig:
         if lower > upper:
             raise ValueError("Battery cell-count lower bound cannot exceed upper bound.")
         object.__setattr__(self, "battery_cell_count_bounds", (lower, upper))
+        if self.battery_cell_count_choices is not None:
+            choices = tuple(
+                sorted(
+                    {
+                        normalize_battery_cell_count(value)
+                        for value in self.battery_cell_count_choices
+                    }
+                )
+            )
+            if not choices:
+                raise ValueError("battery_cell_count_choices cannot be empty.")
+            if choices[0] < lower or choices[-1] > upper:
+                raise ValueError(
+                    "Every battery cell-count choice must lie inside "
+                    "battery_cell_count_bounds."
+                )
+            object.__setattr__(self, "battery_cell_count_choices", choices)
 
 
 ACTIVE_TOPLINE_CONFIG: ToplineConfig | None = None
@@ -150,6 +169,79 @@ def _pd_ratio(x: np.ndarray) -> float:
 
 
 PD_CONSTRAINT = NonlinearConstraint(_pd_ratio, PD_MIN, PD_MAX)
+
+
+def _mission3_sensor_weight_margin(x: np.ndarray) -> float:
+    """Return declared maximum sensor weight minus the M3 flown weight."""
+
+    names = DesignVector.opt_names()
+    return float(
+        x[names.index("sensor_weight_kg")]
+        - x[names.index("mission3_sensor_weight_kg")]
+    )
+
+
+MISSION3_SENSOR_WEIGHT_CONSTRAINT = NonlinearConstraint(
+    _mission3_sensor_weight_margin,
+    0.0,
+    np.inf,
+)
+
+
+def _allowed_battery_cell_counts(config: ToplineConfig) -> tuple[int, ...]:
+    """Return the discrete cell counts available to individual candidates."""
+
+    if config.battery_cell_count_choices is not None:
+        return config.battery_cell_count_choices
+    lower, upper = config.battery_cell_count_bounds
+    return tuple(range(lower, upper + 1))
+
+
+def _battery_cell_choice_distance(
+    x: np.ndarray,
+    choices: tuple[int, ...],
+) -> float:
+    """Return zero exactly at an allowed battery cell count."""
+
+    cell_count = float(x[-1])
+    return min(abs(cell_count - choice) for choice in choices)
+
+
+def _candidate_battery_energy_wh(
+    x: np.ndarray,
+    config: ToplineConfig,
+) -> float:
+    """Return nominal battery energy for an optimizer candidate."""
+
+    names = _optimizer_variable_names(config)
+    capacity_ah = float(x[names.index("batt_capacity")])
+    cell_count = (
+        float(x[names.index("battery_cell_count")])
+        if config.optimize_battery_cell_count
+        else config.battery_cell_count
+    )
+    return capacity_ah * battery_nominal_voltage_v(cell_count)
+
+
+def _optimizer_constraints(config: ToplineConfig) -> tuple[NonlinearConstraint, ...]:
+    constraints = [PD_CONSTRAINT, MISSION3_SENSOR_WEIGHT_CONSTRAINT]
+    if config.optimize_battery_cell_count:
+        choices = _allowed_battery_cell_counts(config)
+        constraints.append(
+            NonlinearConstraint(
+                partial(_battery_cell_choice_distance, choices=choices),
+                0.0,
+                0.0,
+            )
+        )
+    constraints.append(
+        NonlinearConstraint(
+            partial(_candidate_battery_energy_wh, config=config),
+            0.0,
+            100.0,
+        )
+    )
+    return tuple(constraints)
 
 
 def _optimizer_variable_names(config: ToplineConfig | None = None) -> list[str]:
@@ -190,6 +282,14 @@ def _design_vector_from_optimizer(
         if config.optimize_battery_cell_count
         else config.battery_cell_count
     )
+    if (
+        config.optimize_battery_cell_count
+        and cell_count not in _allowed_battery_cell_counts(config)
+    ):
+        raise ValueError(
+            f"battery_cell_count must be one of "
+            f"{_allowed_battery_cell_counts(config)}; got {cell_count}."
+        )
     design = DesignVector.from_array(values[:base_count])
     return replace(design, battery_cell_count=cell_count)
 
@@ -246,6 +346,8 @@ def _initial_population(
 
     names = _optimizer_variable_names(config)
     container_index = names.index("extra_shipping_containers")
+    max_sensor_weight_index = names.index("sensor_weight_kg")
+    m3_sensor_weight_index = names.index("mission3_sensor_weight_kg")
     diameter_index = names.index("prop_diameter_in")
     pitch_index = names.index("prop_pitch_in")
 
@@ -254,13 +356,31 @@ def _initial_population(
         low + (unit_population[:, container_index] * (high - low + 1)).astype(int),
         high,
     )
+    m3_weight_lower = bounds[m3_sensor_weight_index, 0]
+    population[:, m3_sensor_weight_index] = m3_weight_lower + unit_population[
+        :, m3_sensor_weight_index
+    ] * (population[:, max_sensor_weight_index] - m3_weight_lower)
     if config.optimize_battery_cell_count:
         cell_index = names.index("battery_cell_count")
-        low, high = bounds[cell_index].astype(int)
-        population[:, cell_index] = np.minimum(
-            low + (unit_population[:, cell_index] * (high - low + 1)).astype(int),
-            high,
+        choices = np.asarray(_allowed_battery_cell_counts(config), dtype=int)
+        choice_indices = np.minimum(
+            (unit_population[:, cell_index] * len(choices)).astype(int),
+            len(choices) - 1,
         )
+        population[:, cell_index] = choices[choice_indices]
+
+    capacity_index = names.index("batt_capacity")
+    if config.optimize_battery_cell_count:
+        cell_counts = population[:, names.index("battery_cell_count")]
+    else:
+        cell_counts = np.full(population_size, config.battery_cell_count)
+    maximum_capacity_ah = 100.0 / (
+        cell_counts * battery_nominal_voltage_v(1)
+    )
+    population[:, capacity_index] = np.minimum(
+        population[:, capacity_index],
+        maximum_capacity_ah,
+    )
 
     # Project propeller pitch into the P/D-feasible interval so population
     # slots are spent comparing aircraft rather than known constraint failures.
@@ -501,7 +621,7 @@ def _differential_evolution_kwargs(
     kwargs = {
         "func": partial(_objective, config=config),
         "bounds": _optimizer_bounds(config),
-        "constraints": (PD_CONSTRAINT,),
+        "constraints": _optimizer_constraints(config),
         "maxiter": _resolved_maxiter(config) if maxiter is None else maxiter,
         "popsize": config.popsize,
         "polish": config.polish,
@@ -941,10 +1061,9 @@ def _best_design_report(
         scoring_design,
         parameter_vector=PARAMETER_VECTOR,
     )
-    resolved_design = replace(
+    resolved_design = resolved_aerodynamic_design_vector(
         scoring_design,
-        fuselage_width=mech_result.resolved_fuselage_width_m,
-        fuselage_height=mech_result.resolved_fuselage_height_m,
+        mech_result,
     )
     battery = make_battery_from_design(scoring_design, PARAMETER_VECTOR)
 
@@ -1180,8 +1299,8 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     print(f"  variables: {len(_optimizer_bounds(config))}")
     if config.optimize_battery_cell_count:
         print(
-            "  battery: optimized as an integer within "
-            f"{config.battery_cell_count_bounds}"
+            "  battery: optimized per candidate from "
+            f"{_allowed_battery_cell_counts(config)}S"
         )
     else:
         print(f"  battery: fixed at {config.battery_cell_count}S")
