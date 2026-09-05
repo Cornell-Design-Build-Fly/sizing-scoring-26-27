@@ -28,6 +28,9 @@ def _performance(**overrides) -> MissionPropulsionPerformance:
         "takeoff_time_s": 3.0,
         "climb_speed_mps": 16.0,
         "climb_rate_mps": 3.0,
+        "climb_gradient": 0.50,
+        "climb_distance_required_m": 121.9,
+        "climb_distance_allowed_m": 152.4,
         "maximum_propeller_tip_mach": 0.6,
         "cruise_power_w": 700.0,
         "takeoff_energy_wh": 2.0,
@@ -39,6 +42,7 @@ def _performance(**overrides) -> MissionPropulsionPerformance:
         "energy_margin_wh": 21.0,
         "takeoff_distance_margin_m": 30.0,
         "climb_rate_margin_mps": 1.0,
+        "climb_distance_margin_m": 30.5,
         "limiting_constraint": "takeoff_distance",
     }
     values.update(overrides)
@@ -53,23 +57,52 @@ def test_battery_current_limit_uses_capacity_and_c_rating() -> None:
 
 def test_propulsion_penalty_identifies_takeoff_climb_and_energy_failures() -> None:
     requirements = PropulsionRequirements()
-    assert _penalty_and_limit(60.0, 2.0, 70.0, 80.0, 0.7, requirements)[0] == 0.0
+    assert _penalty_and_limit(60.0, 2.0, 100.0, 152.4, 70.0, 80.0, 0.7, requirements)[0] == 0.0
     takeoff_penalty, takeoff_limit = _penalty_and_limit(
-        120.0, 2.0, 70.0, 80.0, 0.7, requirements
+        120.0, 2.0, 100.0, 152.4, 70.0, 80.0, 0.7, requirements
     )
     assert takeoff_penalty > PROPULSION_INFEASIBLE_BASE_PENALTY
     assert takeoff_limit == "takeoff_distance"
-    assert _penalty_and_limit(60.0, 0.0, 70.0, 80.0, 0.7, requirements)[1] == "climb_rate"
-    assert _penalty_and_limit(60.0, 2.0, 160.0, 80.0, 0.7, requirements)[1] == "mission_energy"
+    assert _penalty_and_limit(60.0, 0.0, 100.0, 152.4, 70.0, 80.0, 0.7, requirements)[1] == "climb_rate"
+    assert _penalty_and_limit(60.0, 2.0, 100.0, 152.4, 160.0, 80.0, 0.7, requirements)[1] == "mission_energy"
     assert _penalty_and_limit(
         60.0,
         2.0,
+        100.0,
+        152.4,
         70.0,
         80.0,
         0.7,
         requirements,
         operating_point_failed=True,
     )[1] == "propulsion_operating_point"
+
+
+def test_climb_to_pattern_altitude_is_a_binding_constraint() -> None:
+    """200 ft within 500 ft is what physically limits takeoff weight."""
+    requirements = PropulsionRequirements()
+    assert requirements.climb_altitude_m == 60.96      # 200 ft
+    assert requirements.climb_distance_m == 152.4      # 500 ft
+    assert abs(requirements.required_climb_gradient - 0.4) < 1e-12
+
+    # Needs more than the available 500 ft -> flagged as the limiting constraint.
+    penalty, limit = _penalty_and_limit(
+        60.0, 2.0, 400.0, 152.4, 70.0, 80.0, 0.7, requirements
+    )
+    assert penalty > PROPULSION_INFEASIBLE_BASE_PENALTY
+    assert limit == "climb_to_pattern_altitude"
+
+    # Comfortably inside 500 ft -> no penalty at all.
+    assert _penalty_and_limit(
+        60.0, 2.0, 100.0, 152.4, 70.0, 80.0, 0.7, requirements
+    )[0] == 0.0
+
+    # Worse climb performance must never score better.
+    penalties = [
+        _penalty_and_limit(60.0, 2.0, d, 152.4, 70.0, 80.0, 0.7, requirements)[0]
+        for d in (100.0, 152.4, 200.0, 400.0, 1000.0)
+    ]
+    assert penalties == sorted(penalties)
 
 
 def test_optimizer_margin_bonus_is_small_and_requires_feasibility() -> None:
@@ -79,3 +112,51 @@ def test_optimizer_margin_bonus_is_small_and_requires_feasibility() -> None:
     assert propulsion_margin_bonus((_performance(feasible=False),)) == 0.0
     assert propulsion_margin_bonus((_performance(mission=2),)) == 0.0
     assert math.isfinite(bonus)
+
+
+def test_sensor_diameter_is_a_design_variable_with_physical_coupling() -> None:
+    """Freezing the diameter made "heavy" reachable only by making the sensor
+    long, which is an artifact of the constant rather than physics."""
+    import contextlib
+    import io
+
+    from src.mech.main_mech import evaluate_mechanical_module
+    from src.vectors import (
+        MAX_SENSOR_DIAMETER_M,
+        MIN_SENSOR_DIAMETER_M,
+        DesignVector,
+        maximum_sensor_weight_kg,
+    )
+
+    assert "sensor_diameter_m" in DesignVector.opt_names()
+
+    # The density ceiling must scale with the cross-sectional area.
+    thin = maximum_sensor_weight_kg(0.30, MIN_SENSOR_DIAMETER_M)
+    fat = maximum_sensor_weight_kg(0.30, MAX_SENSOR_DIAMETER_M)
+    ratio = (MAX_SENSOR_DIAMETER_M / MIN_SENSOR_DIAMETER_M) ** 2
+    assert abs(fat / thin - ratio) < 1e-9
+
+    # A short fat sensor can now out-mass a much longer thin one: area scales
+    # with the square of diameter, so 4x the area beats 2.7x the length.
+    assert maximum_sensor_weight_kg(0.15, 6.0 * 0.0254) > maximum_sensor_weight_kg(
+        0.40, 3.0 * 0.0254
+    )
+
+    # A denser-than-steel sensor is still rejected.
+    try:
+        DesignVector(sensor_length_m=0.10, sensor_diameter_m=0.0254,
+                     sensor_weight_kg=50.0, batt_capacity=3.0)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("density bound did not reject an impossible sensor")
+
+    # A fatter sensor must widen the container, and so the fuselage.
+    def width(diameter_m: float) -> float:
+        design = DesignVector(sensor_length_m=0.20, sensor_diameter_m=diameter_m,
+                              sensor_weight_kg=0.5, mission3_sensor_weight_kg=0.5,
+                              batt_capacity=3.0)
+        with contextlib.redirect_stdout(io.StringIO()):
+            return evaluate_mechanical_module(design).resolved_fuselage_width_m
+
+    assert width(6.0 * 0.0254) > width(3.0 * 0.0254)

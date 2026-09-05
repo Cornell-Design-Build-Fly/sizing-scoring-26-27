@@ -54,6 +54,60 @@ Aero solver expectations:
 
 ## Session Log
 
+### 2026-09-05 - Claude
+Changed (team direction: make the design physics-limited, not bound-limited):
+- **Climb to pattern altitude** is now a hard constraint in
+  `src/prop/mission_performance.py`: 200 ft of climb inside the 500 ft from the
+  start line to the turn marker, expressed as a climb GRADIENT (sin(gamma) =
+  (T-D)/W, gradient = tan(gamma)) because at 21.8 deg the small-angle form is
+  invalid. `climb_distance_includes_takeoff_roll = True`, so the ground roll is
+  charged against the 500 ft and only the remainder is available to climb in.
+  This compounds correctly: heavier -> longer roll -> less distance -> steeper
+  required gradient.
+- **Battery fixed at 8S** and removed from the design vector.
+  `MAX_BATT_CAPACITY_AH` is now DERIVED from the 100 Wh rules cap
+  (3.3784 Ah at 8S) instead of the stale 4.5 Ah bound, so the optimizer box is
+  legal by construction.
+- **Sensor diameter is now a design variable** (`sensor_diameter_m`, 0.5-6 in).
+  This was the last arbitrary constant and it was distorting the answer: with
+  diameter frozen at 3 in, "heavy" was reachable only by making the sensor
+  LONG, which lengthened the container, fuselage and takeoff roll. The
+  container cross-section now grows to enclose the sensor, and inertia, towed
+  drag and the density bound all use the flown diameter.
+- Sensor Cd 0.137 -> 0.3.
+
+Learned:
+- The physics limit is real and robust to sensor shape. On a fixed airframe the
+  climb crossover sits between 4.5 kg (OK) and 5.5 kg (fails) of sensor, i.e.
+  ~19-21 lb TOGW, whether the sensor is long-and-thin or short-and-fat.
+- There is a SECOND independent wall: Mission 3's 5-minute window against
+  100 Wh. At a 4 kg sensor M3 needs 93.7 Wh of 78.9 allowed, and lowering
+  throttle to save energy makes cruise stop trimming instead.
+- The 55 lb TOGW rules cap is NOT binding; climb and M3 energy bind first.
+- Steel density as the sensor ceiling is defensible rather than a guess: rules
+  3.1.1 force lights, battery and electronics inside the sensor, so it cannot
+  be solid ballast; lead at ~70% packing lands near 7900 kg/m^3.
+
+Verified (other team members' work since df8b576):
+- `src/prop/mission_performance.py` (takeoff/climb/energy) and `src/tow/`
+  (tether load surrogate, R^2 0.998, fitted 2-50 lbf) are sound. The surrogate
+  scales linearly to the origin below its fit range, which matters now that
+  sensors can be much lighter than 2 lbf.
+- `main_aero.py` correctly separates supported mass from inertial mass so the
+  tow's downward force raises lift demand without adding inertia.
+- `score.py` replaced the placeholder M2/M3 normalizers with real max-team
+  values (0.182332 lb/s, 252.890 lb).
+- Ira removed the 35 lb sensor cap in f6289cc; the remaining ceiling is the
+  density limit at maximum volume, not an independent bound.
+
+Open notes:
+- `MIN_SENSOR_LENGTH_M` is still relaxed to 1 in for exploration. Rules 3.1.1
+  require 6 in; restore before treating any result as rules-legal.
+- Four fixtures used 4.5 Ah, which is 133 Wh at 8S and now illegal; updated.
+- Pre-existing and unrelated: `mech_test_custom_design` passes a long-removed
+  `ducks_num`; `compare_stability_models` imports a `load_default_prop_database`
+  that does not exist in `src/prop/prop_database.py`.
+
 ### 2026-09-04e - Claude
 Changed (cleanup only, no behaviour change except the default below):
 - **Fixed a break I introduced**: `src/testing/compare_stability_models.py`

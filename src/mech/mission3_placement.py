@@ -31,9 +31,9 @@ def place_mission3_payload(
 
     sensor_mass = float(design_vector.mission3_sensor_weight_kg)
     sensor_length = design_vector.mission3_sensor_length_m
-    radius = 0.5 * config.sensor.diameter_m
+    radius = 0.5 * float(design_vector.sensor_diameter_m)
     sensor_dimensions = np.asarray(
-        (sensor_length, config.sensor.diameter_m, config.sensor.diameter_m),
+        (sensor_length, design_vector.sensor_diameter_m, design_vector.sensor_diameter_m),
         dtype=float,
     )
     center_delta = np.abs(position - primary_container.position_m)

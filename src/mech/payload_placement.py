@@ -132,6 +132,7 @@ def summarize_mission2_payload(
     total_count: int,
     sensor_mass_kg: float,
     sensor_length_m: float,
+    sensor_diameter_m: float,
     config: Mission2Config,
     electronics_back_x_m: float,
 ) -> PayloadPackingSummary:
@@ -141,7 +142,7 @@ def summarize_mission2_payload(
         raise ValueError("sensor_mass_kg must be finite and positive.")
     if not np.isfinite(electronics_back_x_m):
         raise ValueError("electronics_back_x_m must be finite.")
-    dimensions = config.container_dimensions_m(sensor_length_m)
+    dimensions = config.container_dimensions_m(sensor_length_m, sensor_diameter_m)
     positions = _local_positions(
         total_count=total_count,
         container_dimensions_m=dimensions,
@@ -178,6 +179,7 @@ def place_mission2_payload(
     total_count: int,
     sensor_mass_kg: float,
     sensor_length_m: float,
+    sensor_diameter_m: float,
     config: Mission2Config,
     electronics_back_x_m: float,
 ) -> tuple[MassItem, ...]:
@@ -187,7 +189,7 @@ def place_mission2_payload(
         raise ValueError("sensor_mass_kg must be finite and positive.")
     if not np.isfinite(electronics_back_x_m):
         raise ValueError("electronics_back_x_m must be finite.")
-    dimensions = config.container_dimensions_m(sensor_length_m)
+    dimensions = config.container_dimensions_m(sensor_length_m, sensor_diameter_m)
     positions = _local_positions(
         total_count=total_count,
         container_dimensions_m=dimensions,

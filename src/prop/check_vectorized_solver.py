@@ -26,7 +26,7 @@ from src.prop.prop_helper_functions import (
 
 def main() -> None:
     design_vector = DesignVector(
-        batt_capacity=4.5,
+        batt_capacity=3.0,
         prop_diameter_in=14.0,
         prop_pitch_in=10.0,
         motor_kv=520.0,

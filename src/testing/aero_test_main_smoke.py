@@ -25,7 +25,7 @@ def make_realistic_design_vector() -> DesignVector:
         sensor_length_m=12.0 * 0.0254,
         sensor_weight_kg=6.0,
         mission3_sensor_weight_kg=6.0,
-        batt_capacity=4.5,    # Ah
+        batt_capacity=3.0,    # Ah (4.5 Ah at 8S would exceed the 100 Wh cap)
         fuselage_width=0.13,  # m
         fuselage_height=0.13, # m
     )

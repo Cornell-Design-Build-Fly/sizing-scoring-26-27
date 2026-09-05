@@ -17,8 +17,10 @@ from src.vectors import (
 
 
 MU = 1.81e-5
-SENSOR_CD = 0.137
-SENSOR_RADIUS_M = 0.5 * SENSOR_DIAMETER_M
+# Towed-sensor drag coefficient on frontal-ish reference area. Raised from
+# 0.137 to 0.3 at the team's direction (2026-09-05).
+SENSOR_CD = 0.3
+SENSOR_RADIUS_M = 0.5 * SENSOR_DIAMETER_M  # nominal; the flown value is used below
 
 
 def sensor_drag_force(
@@ -31,7 +33,7 @@ def sensor_drag_force(
     The M3 flown weight determines rod length; diameter remains fixed.
     """
     sensor_length = design.mission3_sensor_length_m
-    sensor_area = 2.0 * SENSOR_RADIUS_M * sensor_length
+    sensor_area = float(design.sensor_diameter_m) * sensor_length
     return 0.5 * parameters.rho * velocity**2 * SENSOR_CD * sensor_area
 
 

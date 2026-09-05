@@ -110,10 +110,13 @@ class ToplineConfig:
     callback_score_best: bool = True
     save_best_visualization: bool = True
     scoring_references: ScoringReferences = DEFAULT_SCORING_REFERENCES
+    # Battery is fixed at 8S by team decision (2026-09-05) and is no longer a
+    # design variable. Setting optimize_battery_cell_count=True restores the
+    # old behaviour if a future study needs it.
     battery_cell_count: int = DEFAULT_BATTERY_CELL_COUNT
-    optimize_battery_cell_count: bool = True
+    optimize_battery_cell_count: bool = False
     battery_cell_count_bounds: tuple[int, int] = DEFAULT_BATTERY_CELL_COUNT_BOUNDS
-    battery_cell_count_choices: tuple[int, ...] | None = (6, 8)
+    battery_cell_count_choices: tuple[int, ...] | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -202,7 +205,10 @@ def _sensor_density_margin(x: np.ndarray) -> float:
 
     names = DesignVector.opt_names()
     return float(
-        maximum_sensor_weight_kg(x[names.index("sensor_length_m")])
+        maximum_sensor_weight_kg(
+            x[names.index("sensor_length_m")],
+            x[names.index("sensor_diameter_m")],
+        )
         - x[names.index("sensor_weight_kg")]
     )
 
@@ -387,10 +393,16 @@ def _initial_population(
         high,
     )
     length_index = names.index("sensor_length_m")
+    diameter_index = names.index("sensor_diameter_m")
     population[:, max_sensor_weight_index] = np.minimum(
         population[:, max_sensor_weight_index],
         np.array(
-            [maximum_sensor_weight_kg(value) for value in population[:, length_index]]
+            [
+                maximum_sensor_weight_kg(length, diameter)
+                for length, diameter in zip(
+                    population[:, length_index], population[:, diameter_index]
+                )
+            ]
         ),
     )
     m3_weight_lower = bounds[m3_sensor_weight_index, 0]

@@ -274,6 +274,7 @@ def build_local_fuselage_assembly(
         total_count=total_container_count,
         sensor_mass_kg=design_vector.sensor_weight_kg,
         sensor_length_m=sensor_length_m,
+        sensor_diameter_m=float(design_vector.sensor_diameter_m),
         config=config.mission2,
         electronics_back_x_m=0.0,
     )
@@ -342,6 +343,7 @@ def build_local_fuselage_assembly(
         total_count=total_container_count,
         sensor_mass_kg=design_vector.sensor_weight_kg,
         sensor_length_m=sensor_length_m,
+        sensor_diameter_m=float(design_vector.sensor_diameter_m),
         config=config.mission2,
         electronics_back_x_m=local_layout.back_edge_x_m,
     )

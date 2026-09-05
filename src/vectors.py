@@ -24,7 +24,19 @@ FUSELAGE_TIP_SIZE = 0.01
 MAX_EXTRA_SHIPPING_CONTAINERS = 10
 INCH_M = 0.0254
 POUND_KG = 0.45359237
+# Nominal sensor diameter, kept as the default and as the container's minimum
+# cross-section. The flown diameter is a design variable (see OPT_VARS) because
+# freezing it made "heavy" reachable only by making the sensor LONG, which then
+# lengthened the container, the fuselage and the takeoff roll. That coupling is
+# an artifact of the constant, not physics: a short fat sensor is equally legal.
 SENSOR_DIAMETER_M = 3.0 * INCH_M
+MIN_SENSOR_DIAMETER_M = 0.5 * INCH_M
+MAX_SENSOR_DIAMETER_M = 6.0 * INCH_M
+# Density ceiling for the sensor. Not a guess: the rules require the lights,
+# battery and control electronics to live inside the sensor, so it cannot be
+# solid ballast. Lead is 11340 kg/m^3; at roughly 70% packing around the
+# electronics that lands near 7900, so solid steel is a good proxy for "as
+# dense as this could actually be built".
 SENSOR_STEEL_DENSITY_KG_M3 = 7850.0
 # Simulation-only geometric floor. The rules require a 6-inch sensor, but the
 # solid-steel proxy that derived length from weight forced a 12.03 lb MINIMUM
@@ -38,19 +50,25 @@ MIN_SENSOR_WEIGHT_KG = 0.05
 MIN_MISSION3_SENSOR_WEIGHT_KG = MIN_SENSOR_WEIGHT_KG
 
 
-def maximum_sensor_weight_kg(sensor_length_m: float) -> float:
-    """Heaviest physically realizable sensor of a given length.
+def maximum_sensor_weight_kg(
+    sensor_length_m: float,
+    sensor_diameter_m: float = SENSOR_DIAMETER_M,
+) -> float:
+    """Heaviest physically realizable sensor of a given length and diameter.
 
-    Weight and length are free, but the sensor cannot be denser than the solid
-    steel rod it is modelled on. Without this bound the optimizer would take
-    maximum weight at minimum length -- Mission 3 and the Ground Mission both
+    Weight, length and diameter are all free; the sensor simply cannot be denser
+    than SENSOR_STEEL_DENSITY_KG_M3. Without this bound the optimizer would take
+    maximum weight in minimum volume -- Mission 3 and the Ground Mission both
     reward weight -- and get an arbitrarily small, arbitrarily heavy payload.
     """
 
     sensor_length_m = float(sensor_length_m)
+    sensor_diameter_m = float(sensor_diameter_m)
     if not np.isfinite(sensor_length_m) or sensor_length_m <= 0.0:
         raise ValueError("sensor_length_m must be finite and positive.")
-    cross_section_m2 = np.pi * (0.5 * SENSOR_DIAMETER_M) ** 2
+    if not np.isfinite(sensor_diameter_m) or sensor_diameter_m <= 0.0:
+        raise ValueError("sensor_diameter_m must be finite and positive.")
+    cross_section_m2 = np.pi * (0.5 * sensor_diameter_m) ** 2
     return float(SENSOR_STEEL_DENSITY_KG_M3 * cross_section_m2 * sensor_length_m)
 
 
@@ -58,7 +76,9 @@ def maximum_sensor_weight_kg(sensor_length_m: float) -> float:
 # independent sensor-weight cap: it is the density limit evaluated at the
 # largest sensor length the optimizer can select. The nonlinear density
 # constraint below tightens the bound for every shorter sensor.
-OPTIMIZER_SENSOR_WEIGHT_UPPER_KG = maximum_sensor_weight_kg(MAX_SENSOR_LENGTH_M)
+OPTIMIZER_SENSOR_WEIGHT_UPPER_KG = maximum_sensor_weight_kg(
+    MAX_SENSOR_LENGTH_M, MAX_SENSOR_DIAMETER_M
+)
 
 
 def sensor_length_from_weight_kg(sensor_weight_kg: float) -> float:
@@ -70,6 +90,15 @@ def sensor_length_from_weight_kg(sensor_weight_kg: float) -> float:
     cross_section_m2 = np.pi * (0.5 * SENSOR_DIAMETER_M) ** 2
     return float(sensor_weight_kg / (SENSOR_STEEL_DENSITY_KG_M3 * cross_section_m2))
 
+# Rules 3.2.3.2: total propulsion energy may not exceed 100 Wh. With the cell
+# count fixed at 8S this converts directly into a capacity ceiling, so the
+# optimizer box is entirely feasible and no separate energy constraint is
+# needed. Derived rather than hardcoded so it tracks DEFAULT_BATTERY_CELL_COUNT.
+MAX_PROPULSION_ENERGY_WH = 100.0
+MAX_BATT_CAPACITY_AH = MAX_PROPULSION_ENERGY_WH / battery_nominal_voltage_v(
+    DEFAULT_BATTERY_CELL_COUNT
+)
+
 OPT_VARS = [
     ("wing_span", (0.914, 1.8288)),
     ("wing_chord", (0.12, 0.40)),
@@ -77,6 +106,7 @@ OPT_VARS = [
     ("nose_length", (0.08, 0.3)),
     ("extra_shipping_containers", (0, MAX_EXTRA_SHIPPING_CONTAINERS)),
     ("sensor_length_m", (MIN_SENSOR_LENGTH_M, MAX_SENSOR_LENGTH_M)),
+    ("sensor_diameter_m", (MIN_SENSOR_DIAMETER_M, MAX_SENSOR_DIAMETER_M)),
     (
         "sensor_weight_kg",
         (MIN_SENSOR_WEIGHT_KG, OPTIMIZER_SENSOR_WEIGHT_UPPER_KG),
@@ -85,7 +115,7 @@ OPT_VARS = [
         "mission3_sensor_weight_kg",
         (MIN_MISSION3_SENSOR_WEIGHT_KG, OPTIMIZER_SENSOR_WEIGHT_UPPER_KG),
     ),
-    ("batt_capacity", (1.0, 4.5)),
+    ("batt_capacity", (1.0, MAX_BATT_CAPACITY_AH)),
     ("prop_diameter_in", (10.0, 25.0)),
     ("prop_pitch_in", (5.0, 18.0)),
     ("motor_kv", (200.0, 650.0)),
@@ -115,11 +145,12 @@ class DesignVector:
     # declared maximum. Both lengths follow from their respective weights.
     extra_shipping_containers: float = 0
     sensor_length_m: float = 6.0 * INCH_M
+    sensor_diameter_m: float = SENSOR_DIAMETER_M
     sensor_weight_kg: float = 1.0
     mission3_sensor_weight_kg: float | None = None
 
     # Prop components
-    batt_capacity: float = 4.5 # [Ah]
+    batt_capacity: float = MAX_BATT_CAPACITY_AH  # [Ah]
     battery_cell_count: int = DEFAULT_BATTERY_CELL_COUNT
     prop_diameter_in: float = 14.0  # [in]
     prop_pitch_in: float = 10.0  # [in]
@@ -177,7 +208,9 @@ class DesignVector:
                 f"sensor_weight_kg must be at least {MIN_SENSOR_WEIGHT_KG} kg, "
                 f"and sensor_length_m at least {MIN_SENSOR_LENGTH_M} m."
             )
-        if self.sensor_weight_kg > maximum_sensor_weight_kg(self.sensor_length_m):
+        if self.sensor_weight_kg > maximum_sensor_weight_kg(
+            self.sensor_length_m, self.sensor_diameter_m
+        ):
             raise ValueError(
                 "sensor_weight_kg exceeds a solid steel rod of the declared "
                 "length and diameter; the sensor would be denser than steel."
@@ -227,7 +260,7 @@ class DesignVector:
             self.batt_capacity,
             self.battery_cell_count,
         )
-        if self.batt_energy > 100.0:
+        if self.batt_energy > MAX_PROPULSION_ENERGY_WH + 1e-9:
             raise ValueError("Total propulsion battery energy cannot exceed 100 Wh.")
 
     def to_array(self) -> np.ndarray:
@@ -322,6 +355,7 @@ class ASBDesignVector(DesignVector):
             nose_length=design_vector.nose_length * unit_scale,
             extra_shipping_containers=design_vector.extra_shipping_containers,
             sensor_length_m=design_vector.sensor_length_m * unit_scale,
+            sensor_diameter_m=design_vector.sensor_diameter_m * unit_scale,
             sensor_weight_kg=design_vector.sensor_weight_kg,
             mission3_sensor_weight_kg=design_vector.mission3_sensor_weight_kg,
             batt_capacity=design_vector.batt_capacity,

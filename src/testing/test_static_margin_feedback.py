@@ -259,9 +259,16 @@ def test_non_convergent_cruise_costs_the_maximum_penalty() -> None:
     from src.aero.aero_score import AeroScore
     from src.aero.main_aero import aero_main
 
-    # The stock DesignVector does not trim; it must not be cheaper than a
-    # marginally unstable design.
-    design = DesignVector()
+    # Force a design that cannot possibly trim: a tiny wing at a huge payload,
+    # so no cruise solution exists. (The stock DesignVector used to serve this
+    # role, but it trims now that the battery is fixed at 8S.)
+    design = replace(
+        DesignVector(**FLYABLE),
+        wing_span=0.914,
+        wing_chord=0.12,
+        motor_max_power=1000.0,
+        cruise_throttle=0.5,
+    )
     with _quiet():
         mech = evaluate_mechanical_module(design, parameter_vector=PV)
         resolved = resolved_aerodynamic_design_vector(design, mech)

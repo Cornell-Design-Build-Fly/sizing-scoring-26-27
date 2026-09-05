@@ -578,8 +578,11 @@ class SensorConfig:
 class Mission2Config:
     """Mission-2 shipping-container geometry and local packing rules."""
 
+    # Minimum rules-representative cross-section. The actual container grows
+    # to enclose the sensor when a larger diameter is selected.
     container_width_m: float = 5.0 * 0.0254
     container_height_m: float = 5.0 * 0.0254
+    container_wall_thickness_m: float = 0.25 * 0.0254
     container_length_padding_m: float = 2.0 * 0.0254
     # The shipping container stays rules-representative even when the
     # simulation is allowed a shorter-than-legal sensor.
@@ -624,9 +627,20 @@ class Mission2Config:
         if not 0 <= self.target_static_margin <= 1:
             raise ValueError("Mission-2 target static margin must lie in [0, 1].")
 
-    def container_dimensions_m(self, sensor_length_m: float) -> tuple[float, float, float]:
+    def container_dimensions_m(
+        self,
+        sensor_length_m: float,
+        sensor_diameter_m: float | None = None,
+    ) -> tuple[float, float, float]:
         if not np.isfinite(sensor_length_m) or sensor_length_m <= 0:
             raise ValueError("sensor_length_m must be finite and positive.")
+        # The container must physically enclose the sensor, so a fatter sensor
+        # produces a fatter container, a wider fuselage and more drag.
+        cross_section = 0.0
+        if sensor_diameter_m is not None:
+            cross_section = float(
+                sensor_diameter_m + 2.0 * self.container_wall_thickness_m
+            )
         return (
             float(
                 max(
@@ -634,8 +648,8 @@ class Mission2Config:
                     self.minimum_container_length_m,
                 )
             ),
-            self.container_width_m,
-            self.container_height_m,
+            max(self.container_width_m, cross_section),
+            max(self.container_height_m, cross_section),
         )
 
 
