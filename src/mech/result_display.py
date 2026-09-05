@@ -54,12 +54,12 @@ def _write_placement_csv(path: Path, mission: "MissionMassProperties") -> None:
 def _item_color(item) -> str:
     """Return a consistent color for each mass-element category."""
 
-    if item.category == "mission_2_payload":
+    if item.name.startswith("Duck "):
         return "#e6a700"
+    if item.name.startswith("Puck "):
+        return "#2878b5"
     if item.category == "mission_3_payload":
         return "#17a589"
-    if item.category == "release_mechanism":
-        return "#2878b5"
     if item.category == "propulsion_and_electronics":
         return "#d9534f"
     if item.category == "controls":

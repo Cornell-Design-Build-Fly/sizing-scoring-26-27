@@ -1,0 +1,5490 @@
+{
+  "score": 5.494203535256776,
+  "objective": -5.494203535256776,
+  "breakdown": {
+    "ground": 0.06053268765133172,
+    "m1": 1.0,
+    "m2": 1.991664332802536,
+    "m3": 2.442006514802909
+  },
+  "optimizer_vector": {
+    "wing_span": 1.5194518885775308,
+    "wing_chord": 0.3995705417008069,
+    "tail_arm": 0.827025796408477,
+    "nose_length": 0.2554762491563717,
+    "ducks_num": 71.0,
+    "pucks_num": 17.0,
+    "banner_length": 2.2529273064141013,
+    "batt_capacity": 4.446603764445426,
+    "prop_diameter_in": 13.160898078859784,
+    "prop_pitch_in": 9.591697019218195,
+    "motor_kv": 462.0949341164171,
+    "motor_max_power": 1470.9997132336766,
+    "cruise_throttle": 0.9112497824585912,
+    "mission3_cruise_throttle": 0.9940676158396784,
+    "fuselage_width": 0.0762,
+    "fuselage_height": 0.13,
+    "wing_airfoil": "naca2412",
+    "wing_area": 0.6071282142072381,
+    "hstab_area": 0.1466644392993103,
+    "hstab_span": 0.6633199212280082,
+    "hstab_chord": 0.22110664040933603,
+    "vstab_area": 0.040156034025677814,
+    "vstab_span": 0.18904726996932078,
+    "vstab_chord": 0.21241266288687727,
+    "batt_energy": 98.71460357068845
+  },
+  "scoring_vector": {
+    "wing_span": 1.5194518885775308,
+    "wing_chord": 0.3995705417008069,
+    "tail_arm": 0.827025796408477,
+    "nose_length": 0.2554762491563717,
+    "ducks_num": 71,
+    "pucks_num": 17,
+    "banner_length": 2.2529273064141013,
+    "batt_capacity": 4.446603764445426,
+    "prop_diameter_in": 13.160898078859784,
+    "prop_pitch_in": 9.591697019218195,
+    "motor_kv": 462.0949341164171,
+    "motor_max_power": 1470.9997132336766,
+    "cruise_throttle": 0.9112497824585912,
+    "mission3_cruise_throttle": 0.9940676158396784,
+    "fuselage_width": 0.0762,
+    "fuselage_height": 0.13,
+    "wing_airfoil": "naca2412",
+    "wing_area": 0.6071282142072381,
+    "hstab_area": 0.1466644392993103,
+    "hstab_span": 0.6633199212280082,
+    "hstab_chord": 0.22110664040933603,
+    "vstab_area": 0.040156034025677814,
+    "vstab_span": 0.18904726996932078,
+    "vstab_chord": 0.21241266288687727,
+    "batt_energy": 98.71460357068845
+  },
+  "resolved_vector": {
+    "wing_span": 1.5194518885775308,
+    "wing_chord": 0.3995705417008069,
+    "tail_arm": 0.827025796408477,
+    "nose_length": 0.2554762491563717,
+    "ducks_num": 71,
+    "pucks_num": 17,
+    "banner_length": 2.2529273064141013,
+    "batt_capacity": 4.446603764445426,
+    "prop_diameter_in": 13.160898078859784,
+    "prop_pitch_in": 9.591697019218195,
+    "motor_kv": 462.0949341164171,
+    "motor_max_power": 1470.9997132336766,
+    "cruise_throttle": 0.9112497824585912,
+    "mission3_cruise_throttle": 0.9940676158396784,
+    "fuselage_width": 0.23520000000000002,
+    "fuselage_height": 0.13,
+    "wing_airfoil": "naca2412",
+    "wing_area": 0.6071282142072381,
+    "hstab_area": 0.1466644392993103,
+    "hstab_span": 0.6633199212280082,
+    "hstab_chord": 0.22110664040933603,
+    "vstab_area": 0.040156034025677814,
+    "vstab_span": 0.18904726996932078,
+    "vstab_chord": 0.21241266288687727,
+    "batt_energy": 98.71460357068845
+  },
+  "mechanical": {
+    "neutral_point_x_m": 0.15019663295566865,
+    "wing_aerodynamic_center_x_m": 0.09989263542520173,
+    "horizontal_tail_aerodynamic_center_x_m": 0.882302456510811,
+    "target_cg_x_m": 0.10224816795157182,
+    "acceptable_cg_x_range_m": [
+      0.05829540836448306,
+      0.11023957878558796
+    ],
+    "electronics_position_m": [
+      -0.28421966400057713,
+      0.0,
+      -0.07619999999999999
+    ],
+    "electronics_layout": {
+      "profile": "fat",
+      "length_m": 0.228,
+      "cg_from_front_m": 0.119,
+      "front_edge_x_m": -0.4032196640005771,
+      "cg_x_m": -0.28421966400057713,
+      "back_edge_x_m": -0.17521966400057712,
+      "cg_y_m": 0.0,
+      "cg_z_m": -0.07619999999999999
+    },
+    "input_fuselage_width_m": 0.0762,
+    "input_fuselage_height_m": 0.13,
+    "resolved_fuselage_width_m": 0.23520000000000002,
+    "resolved_fuselage_height_m": 0.13,
+    "fuselage_width_increases": 3,
+    "all_items": [
+      {
+        "name": "Main wing structure",
+        "mass_kg": 0.5961102219035157,
+        "position_m": [
+          0.19978527085040346,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.3995705417008069,
+          1.5194518885775308,
+          0.02
+        ],
+        "category": "airframe",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Wing servo (left)",
+        "mass_kg": 0.021,
+        "position_m": [
+          0.19978527085040346,
+          -0.3798629721443827,
+          0.0
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.04,
+          0.02,
+          0.04
+        ],
+        "category": "controls",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Wing servo (right)",
+        "mass_kg": 0.021,
+        "position_m": [
+          0.19978527085040346,
+          0.3798629721443827,
+          0.0
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.04,
+          0.02,
+          0.04
+        ],
+        "category": "controls",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Wing integration",
+        "mass_kg": 0.1,
+        "position_m": [
+          0.19978527085040346,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.08,
+          0.08,
+          0.06
+        ],
+        "category": "integration",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Wing spar",
+        "mass_kg": 0.2601095605870011,
+        "position_m": [
+          0.11987116251024207,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.02,
+          1.5194518885775308,
+          0.02
+        ],
+        "category": "airframe",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Horizontal tail structure",
+        "mass_kg": 0.12549295807016372,
+        "position_m": [
+          0.937579116613145,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.22110664040933603,
+          0.6633199212280082,
+          0.012
+        ],
+        "category": "airframe",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Vertical tail structure",
+        "mass_kg": 0.035765699723925556,
+        "position_m": [
+          0.9332321278519156,
+          0.0,
+          0.09452363498466039
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.21241266288687727,
+          0.012,
+          0.18904726996932078
+        ],
+        "category": "airframe",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Horizontal tail servo",
+        "mass_kg": 0.021,
+        "position_m": [
+          0.937579116613145,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.04,
+          0.02,
+          0.04
+        ],
+        "category": "controls",
+        "notes": "Placed at the horizontal stabilizer geometric center until a measured installation location is supplied.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Vertical tail servo",
+        "mass_kg": 0.021,
+        "position_m": [
+          0.9332321278519156,
+          0.0,
+          0.09452363498466039
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.04,
+          0.02,
+          0.04
+        ],
+        "category": "controls",
+        "notes": "Placed at the vertical stabilizer geometric center until a measured installation location is supplied.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Boom spar",
+        "mass_kg": 0.11102500238443663,
+        "position_m": [
+          0.7238514892593099,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.648561895117006,
+          0.02,
+          0.02
+        ],
+        "category": "airframe",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Tail integration",
+        "mass_kg": 0.025,
+        "position_m": [
+          0.937579116613145,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.06,
+          0.06,
+          0.05
+        ],
+        "category": "integration",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Landing gear",
+        "mass_kg": 0.22,
+        "position_m": [
+          0.0,
+          0.0,
+          -0.1016
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.08,
+          0.18,
+          0.08
+        ],
+        "category": "airframe",
+        "notes": "Installed directly below the main-wing leading edge, with its center 4 inches below the wing plane.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Fuselage structure",
+        "mass_kg": 1.133478512035011,
+        "position_m": [
+          0.18778033599942284,
+          0.0,
+          -0.065
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          1.182,
+          0.23520000000000002,
+          0.13
+        ],
+        "category": "airframe",
+        "notes": "Fuselage-local uniform shell-area-density approximation from the electronics front edge to the aft-most Mission-2 payload edge; mass scales with length and cross-sectional perimeter.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Battery",
+        "mass_kg": 0.7614812814615003,
+        "position_m": [
+          -0.28421966400057713,
+          0.0,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.228,
+          0.0,
+          0.0
+        ],
+        "category": "propulsion_and_electronics",
+        "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Motor",
+        "mass_kg": 0.2889893110147089,
+        "position_m": [
+          -0.28421966400057713,
+          0.0,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.228,
+          0.0,
+          0.0
+        ],
+        "category": "propulsion_and_electronics",
+        "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Propeller",
+        "mass_kg": 0.03324980340491743,
+        "position_m": [
+          -0.28421966400057713,
+          0.0,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.228,
+          0.0,
+          0.0
+        ],
+        "category": "propulsion_and_electronics",
+        "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "ESC",
+        "mass_kg": 0.118,
+        "position_m": [
+          -0.28421966400057713,
+          0.0,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.228,
+          0.0,
+          0.0
+        ],
+        "category": "propulsion_and_electronics",
+        "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Other electronics",
+        "mass_kg": 0.05,
+        "position_m": [
+          -0.28421966400057713,
+          0.0,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M1",
+          "M3",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.228,
+          0.0,
+          0.0
+        ],
+        "category": "propulsion_and_electronics",
+        "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 1",
+        "mass_kg": 0.018,
+        "position_m": [
+          -0.14871966400057712,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 2",
+        "mass_kg": 0.018,
+        "position_m": [
+          -0.14871966400057712,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 3",
+        "mass_kg": 0.018,
+        "position_m": [
+          -0.14871966400057712,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 4",
+        "mass_kg": 0.018,
+        "position_m": [
+          -0.14871966400057712,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 5",
+        "mass_kg": 0.018,
+        "position_m": [
+          -0.09571966400057713,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 6",
+        "mass_kg": 0.018,
+        "position_m": [
+          -0.09571966400057713,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 7",
+        "mass_kg": 0.018,
+        "position_m": [
+          -0.09571966400057713,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 8",
+        "mass_kg": 0.018,
+        "position_m": [
+          -0.09571966400057713,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 9",
+        "mass_kg": 0.018,
+        "position_m": [
+          -0.04271966400057714,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 10",
+        "mass_kg": 0.018,
+        "position_m": [
+          -0.04271966400057714,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 11",
+        "mass_kg": 0.018,
+        "position_m": [
+          -0.04271966400057714,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 12",
+        "mass_kg": 0.018,
+        "position_m": [
+          -0.04271966400057714,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 13",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.010280335999422852,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 14",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.010280335999422852,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 15",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.010280335999422852,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 16",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.010280335999422852,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 17",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.0632803359994229,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 18",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.0632803359994229,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 19",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.0632803359994229,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 20",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.0632803359994229,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 21",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.11628033599942295,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 5, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 22",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.11628033599942295,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 5, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 23",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.11628033599942295,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 5, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 24",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.11628033599942295,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 5, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 25",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.16928033599942288,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 6, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 26",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.16928033599942288,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 6, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 27",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.16928033599942288,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 6, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 28",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.16928033599942288,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 6, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 29",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.22228033599942282,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 7, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 30",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.22228033599942282,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 7, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 31",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.22228033599942282,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 7, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 32",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.22228033599942282,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 7, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 33",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.27528033599942286,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 8, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 34",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.27528033599942286,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 8, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 35",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.27528033599942286,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 8, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 36",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.27528033599942286,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 8, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 37",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.3282803359994229,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 9, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 38",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.3282803359994229,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 9, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 39",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.3282803359994229,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 9, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 40",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.3282803359994229,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 9, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 41",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.38128033599942285,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 10, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 42",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.38128033599942285,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 10, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 43",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.38128033599942285,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 10, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 44",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.38128033599942285,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 10, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 45",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.4342803359994228,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 11, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 46",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.4342803359994228,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 11, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 47",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.4342803359994228,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 11, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 48",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.4342803359994228,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 11, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 49",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.48728033599942294,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 12, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 50",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.48728033599942294,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 12, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 51",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.48728033599942294,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 12, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 52",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.48728033599942294,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 12, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 53",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.5402803359994228,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 13, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 54",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.5402803359994228,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 13, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 55",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.5402803359994228,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 13, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 56",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.5402803359994228,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 13, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 57",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.5932803359994228,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 14, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 58",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.5932803359994228,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 14, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 59",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.5932803359994228,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 14, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 60",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.5932803359994228,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 14, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 61",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.6462803359994227,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 15, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 62",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.6462803359994227,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 15, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 63",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.6462803359994227,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 15, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 64",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.6462803359994227,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 15, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 65",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.6992803359994229,
+          -0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 16, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 66",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.6992803359994229,
+          -0.026500000000000003,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 16, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 67",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.6992803359994229,
+          0.026499999999999996,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 16, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 68",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.6992803359994229,
+          0.0795,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 16, column 3.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 69",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.7522803359994228,
+          -0.053000000000000005,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 17, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 70",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.7522803359994228,
+          -6.938893903907228e-18,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 17, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Duck 71",
+        "mass_kg": 0.018,
+        "position_m": [
+          0.7522803359994228,
+          0.05299999999999999,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.053,
+          0.053,
+          0.053
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 17, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 1",
+        "mass_kg": 0.17,
+        "position_m": [
+          -0.13711966400057712,
+          -0.07620000000000002,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 2",
+        "mass_kg": 0.17,
+        "position_m": [
+          -0.13711966400057712,
+          -1.3877787807814457e-17,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 3",
+        "mass_kg": 0.17,
+        "position_m": [
+          -0.13711966400057712,
+          0.07619999999999999,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 4",
+        "mass_kg": 0.17,
+        "position_m": [
+          -0.060919664000577134,
+          -0.07620000000000002,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 5",
+        "mass_kg": 0.17,
+        "position_m": [
+          -0.060919664000577134,
+          -1.3877787807814457e-17,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 6",
+        "mass_kg": 0.17,
+        "position_m": [
+          -0.060919664000577134,
+          0.07619999999999999,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 7",
+        "mass_kg": 0.17,
+        "position_m": [
+          0.015280335999422856,
+          -0.07620000000000002,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 8",
+        "mass_kg": 0.17,
+        "position_m": [
+          0.015280335999422856,
+          -1.3877787807814457e-17,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 9",
+        "mass_kg": 0.17,
+        "position_m": [
+          0.015280335999422856,
+          0.07619999999999999,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 10",
+        "mass_kg": 0.17,
+        "position_m": [
+          0.0914803359994229,
+          -0.07620000000000002,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 11",
+        "mass_kg": 0.17,
+        "position_m": [
+          0.0914803359994229,
+          -1.3877787807814457e-17,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 12",
+        "mass_kg": 0.17,
+        "position_m": [
+          0.0914803359994229,
+          0.07619999999999999,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 13",
+        "mass_kg": 0.17,
+        "position_m": [
+          0.16768033599942284,
+          -0.07620000000000002,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 14",
+        "mass_kg": 0.17,
+        "position_m": [
+          0.16768033599942284,
+          -1.3877787807814457e-17,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 15",
+        "mass_kg": 0.17,
+        "position_m": [
+          0.16768033599942284,
+          0.07619999999999999,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 2.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 16",
+        "mass_kg": 0.17,
+        "position_m": [
+          0.24388033599942288,
+          -0.0381,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 5, column 0.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Puck 17",
+        "mass_kg": 0.17,
+        "position_m": [
+          0.24388033599942288,
+          0.0381,
+          -0.11539999999999999
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0762,
+          0.0762,
+          0.0254
+        ],
+        "category": "mission_2_payload",
+        "notes": "Fuselage-local front-to-back placement; centered lateral row 5, column 1.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "M3 forward mechanism",
+        "mass_kg": 0.1,
+        "position_m": [
+          -0.15021966400057712,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M3"
+        ],
+        "dimensions_m": [
+          0.05,
+          0.05,
+          0.05
+        ],
+        "category": "mission_3_payload",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "M3 banner",
+        "mass_kg": 0.08156095016419362,
+        "position_m": [
+          -0.07521966400057711,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M3"
+        ],
+        "dimensions_m": [
+          0.1,
+          0.06,
+          0.06
+        ],
+        "category": "mission_3_payload",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "M3 aft mechanism",
+        "mass_kg": 0.1,
+        "position_m": [
+          -0.0002196640005771161,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M3"
+        ],
+        "dimensions_m": [
+          0.05,
+          0.05,
+          0.05
+        ],
+        "category": "mission_3_payload",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      }
+    ],
+    "missions": {
+      "M1": {
+        "mission": "M1",
+        "items": [
+          {
+            "name": "Main wing structure",
+            "mass_kg": 0.5961102219035157,
+            "position_m": [
+              0.19978527085040346,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.3995705417008069,
+              1.5194518885775308,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing servo (left)",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.19978527085040346,
+              -0.3798629721443827,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing servo (right)",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.19978527085040346,
+              0.3798629721443827,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing integration",
+            "mass_kg": 0.1,
+            "position_m": [
+              0.19978527085040346,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.08,
+              0.08,
+              0.06
+            ],
+            "category": "integration",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing spar",
+            "mass_kg": 0.2601095605870011,
+            "position_m": [
+              0.11987116251024207,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.02,
+              1.5194518885775308,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Horizontal tail structure",
+            "mass_kg": 0.12549295807016372,
+            "position_m": [
+              0.937579116613145,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.22110664040933603,
+              0.6633199212280082,
+              0.012
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Vertical tail structure",
+            "mass_kg": 0.035765699723925556,
+            "position_m": [
+              0.9332321278519156,
+              0.0,
+              0.09452363498466039
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.21241266288687727,
+              0.012,
+              0.18904726996932078
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Horizontal tail servo",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.937579116613145,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "Placed at the horizontal stabilizer geometric center until a measured installation location is supplied.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Vertical tail servo",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.9332321278519156,
+              0.0,
+              0.09452363498466039
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "Placed at the vertical stabilizer geometric center until a measured installation location is supplied.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Boom spar",
+            "mass_kg": 0.11102500238443663,
+            "position_m": [
+              0.7238514892593099,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.648561895117006,
+              0.02,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Tail integration",
+            "mass_kg": 0.025,
+            "position_m": [
+              0.937579116613145,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.06,
+              0.06,
+              0.05
+            ],
+            "category": "integration",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Landing gear",
+            "mass_kg": 0.22,
+            "position_m": [
+              0.0,
+              0.0,
+              -0.1016
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.08,
+              0.18,
+              0.08
+            ],
+            "category": "airframe",
+            "notes": "Installed directly below the main-wing leading edge, with its center 4 inches below the wing plane.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Fuselage structure",
+            "mass_kg": 1.133478512035011,
+            "position_m": [
+              0.18778033599942284,
+              0.0,
+              -0.065
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              1.182,
+              0.23520000000000002,
+              0.13
+            ],
+            "category": "airframe",
+            "notes": "Fuselage-local uniform shell-area-density approximation from the electronics front edge to the aft-most Mission-2 payload edge; mass scales with length and cross-sectional perimeter.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Battery",
+            "mass_kg": 0.7614812814615003,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Motor",
+            "mass_kg": 0.2889893110147089,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Propeller",
+            "mass_kg": 0.03324980340491743,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "ESC",
+            "mass_kg": 0.118,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Other electronics",
+            "mass_kg": 0.05,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          }
+        ],
+        "total_mass_kg": 3.9427023505851797,
+        "weight_n": 38.66213924983827,
+        "cg_m": [
+          0.08366191164628273,
+          0.0,
+          -0.04718679743614215
+        ],
+        "inertia_tensor_kg_m2": [
+          [
+            0.18923741540057623,
+            0.0,
+            -0.033846457618923985
+          ],
+          [
+            0.0,
+            0.563061611715981,
+            0.0
+          ],
+          [
+            -0.033846457618923985,
+            0.0,
+            0.7363857042704435
+          ]
+        ],
+        "static_margin": 0.16651558202007352,
+        "static_margin_feasible": true,
+        "placement_feasible": true,
+        "warnings": [
+          "Mission 2 selected fuselage width 0.2352 m after 3 duck-width increase(s)."
+        ]
+      },
+      "M2": {
+        "mission": "M2",
+        "items": [
+          {
+            "name": "Main wing structure",
+            "mass_kg": 0.5961102219035157,
+            "position_m": [
+              0.19978527085040346,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.3995705417008069,
+              1.5194518885775308,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing servo (left)",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.19978527085040346,
+              -0.3798629721443827,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing servo (right)",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.19978527085040346,
+              0.3798629721443827,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing integration",
+            "mass_kg": 0.1,
+            "position_m": [
+              0.19978527085040346,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.08,
+              0.08,
+              0.06
+            ],
+            "category": "integration",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing spar",
+            "mass_kg": 0.2601095605870011,
+            "position_m": [
+              0.11987116251024207,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.02,
+              1.5194518885775308,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Horizontal tail structure",
+            "mass_kg": 0.12549295807016372,
+            "position_m": [
+              0.937579116613145,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.22110664040933603,
+              0.6633199212280082,
+              0.012
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Vertical tail structure",
+            "mass_kg": 0.035765699723925556,
+            "position_m": [
+              0.9332321278519156,
+              0.0,
+              0.09452363498466039
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.21241266288687727,
+              0.012,
+              0.18904726996932078
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Horizontal tail servo",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.937579116613145,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "Placed at the horizontal stabilizer geometric center until a measured installation location is supplied.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Vertical tail servo",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.9332321278519156,
+              0.0,
+              0.09452363498466039
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "Placed at the vertical stabilizer geometric center until a measured installation location is supplied.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Boom spar",
+            "mass_kg": 0.11102500238443663,
+            "position_m": [
+              0.7238514892593099,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.648561895117006,
+              0.02,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Tail integration",
+            "mass_kg": 0.025,
+            "position_m": [
+              0.937579116613145,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.06,
+              0.06,
+              0.05
+            ],
+            "category": "integration",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Landing gear",
+            "mass_kg": 0.22,
+            "position_m": [
+              0.0,
+              0.0,
+              -0.1016
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.08,
+              0.18,
+              0.08
+            ],
+            "category": "airframe",
+            "notes": "Installed directly below the main-wing leading edge, with its center 4 inches below the wing plane.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Fuselage structure",
+            "mass_kg": 1.133478512035011,
+            "position_m": [
+              0.18778033599942284,
+              0.0,
+              -0.065
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              1.182,
+              0.23520000000000002,
+              0.13
+            ],
+            "category": "airframe",
+            "notes": "Fuselage-local uniform shell-area-density approximation from the electronics front edge to the aft-most Mission-2 payload edge; mass scales with length and cross-sectional perimeter.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Battery",
+            "mass_kg": 0.7614812814615003,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Motor",
+            "mass_kg": 0.2889893110147089,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Propeller",
+            "mass_kg": 0.03324980340491743,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "ESC",
+            "mass_kg": 0.118,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Other electronics",
+            "mass_kg": 0.05,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 1",
+            "mass_kg": 0.018,
+            "position_m": [
+              -0.14871966400057712,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 2",
+            "mass_kg": 0.018,
+            "position_m": [
+              -0.14871966400057712,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 3",
+            "mass_kg": 0.018,
+            "position_m": [
+              -0.14871966400057712,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 4",
+            "mass_kg": 0.018,
+            "position_m": [
+              -0.14871966400057712,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 5",
+            "mass_kg": 0.018,
+            "position_m": [
+              -0.09571966400057713,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 6",
+            "mass_kg": 0.018,
+            "position_m": [
+              -0.09571966400057713,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 7",
+            "mass_kg": 0.018,
+            "position_m": [
+              -0.09571966400057713,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 8",
+            "mass_kg": 0.018,
+            "position_m": [
+              -0.09571966400057713,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 9",
+            "mass_kg": 0.018,
+            "position_m": [
+              -0.04271966400057714,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 10",
+            "mass_kg": 0.018,
+            "position_m": [
+              -0.04271966400057714,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 11",
+            "mass_kg": 0.018,
+            "position_m": [
+              -0.04271966400057714,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 12",
+            "mass_kg": 0.018,
+            "position_m": [
+              -0.04271966400057714,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 13",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.010280335999422852,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 14",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.010280335999422852,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 15",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.010280335999422852,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 16",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.010280335999422852,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 17",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.0632803359994229,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 18",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.0632803359994229,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 19",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.0632803359994229,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 20",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.0632803359994229,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 21",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.11628033599942295,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 5, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 22",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.11628033599942295,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 5, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 23",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.11628033599942295,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 5, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 24",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.11628033599942295,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 5, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 25",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.16928033599942288,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 6, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 26",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.16928033599942288,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 6, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 27",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.16928033599942288,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 6, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 28",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.16928033599942288,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 6, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 29",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.22228033599942282,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 7, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 30",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.22228033599942282,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 7, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 31",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.22228033599942282,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 7, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 32",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.22228033599942282,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 7, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 33",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.27528033599942286,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 8, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 34",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.27528033599942286,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 8, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 35",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.27528033599942286,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 8, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 36",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.27528033599942286,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 8, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 37",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.3282803359994229,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 9, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 38",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.3282803359994229,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 9, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 39",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.3282803359994229,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 9, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 40",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.3282803359994229,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 9, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 41",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.38128033599942285,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 10, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 42",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.38128033599942285,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 10, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 43",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.38128033599942285,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 10, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 44",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.38128033599942285,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 10, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 45",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.4342803359994228,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 11, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 46",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.4342803359994228,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 11, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 47",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.4342803359994228,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 11, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 48",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.4342803359994228,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 11, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 49",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.48728033599942294,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 12, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 50",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.48728033599942294,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 12, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 51",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.48728033599942294,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 12, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 52",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.48728033599942294,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 12, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 53",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.5402803359994228,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 13, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 54",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.5402803359994228,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 13, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 55",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.5402803359994228,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 13, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 56",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.5402803359994228,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 13, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 57",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.5932803359994228,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 14, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 58",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.5932803359994228,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 14, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 59",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.5932803359994228,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 14, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 60",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.5932803359994228,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 14, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 61",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.6462803359994227,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 15, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 62",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.6462803359994227,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 15, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 63",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.6462803359994227,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 15, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 64",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.6462803359994227,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 15, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 65",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.6992803359994229,
+              -0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 16, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 66",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.6992803359994229,
+              -0.026500000000000003,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 16, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 67",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.6992803359994229,
+              0.026499999999999996,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 16, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 68",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.6992803359994229,
+              0.0795,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 16, column 3.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 69",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.7522803359994228,
+              -0.053000000000000005,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 17, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 70",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.7522803359994228,
+              -6.938893903907228e-18,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 17, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Duck 71",
+            "mass_kg": 0.018,
+            "position_m": [
+              0.7522803359994228,
+              0.05299999999999999,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.053,
+              0.053,
+              0.053
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 17, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 1",
+            "mass_kg": 0.17,
+            "position_m": [
+              -0.13711966400057712,
+              -0.07620000000000002,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 2",
+            "mass_kg": 0.17,
+            "position_m": [
+              -0.13711966400057712,
+              -1.3877787807814457e-17,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 3",
+            "mass_kg": 0.17,
+            "position_m": [
+              -0.13711966400057712,
+              0.07619999999999999,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 0, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 4",
+            "mass_kg": 0.17,
+            "position_m": [
+              -0.060919664000577134,
+              -0.07620000000000002,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 5",
+            "mass_kg": 0.17,
+            "position_m": [
+              -0.060919664000577134,
+              -1.3877787807814457e-17,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 6",
+            "mass_kg": 0.17,
+            "position_m": [
+              -0.060919664000577134,
+              0.07619999999999999,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 1, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 7",
+            "mass_kg": 0.17,
+            "position_m": [
+              0.015280335999422856,
+              -0.07620000000000002,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 8",
+            "mass_kg": 0.17,
+            "position_m": [
+              0.015280335999422856,
+              -1.3877787807814457e-17,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 9",
+            "mass_kg": 0.17,
+            "position_m": [
+              0.015280335999422856,
+              0.07619999999999999,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 2, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 10",
+            "mass_kg": 0.17,
+            "position_m": [
+              0.0914803359994229,
+              -0.07620000000000002,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 11",
+            "mass_kg": 0.17,
+            "position_m": [
+              0.0914803359994229,
+              -1.3877787807814457e-17,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 12",
+            "mass_kg": 0.17,
+            "position_m": [
+              0.0914803359994229,
+              0.07619999999999999,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 3, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 13",
+            "mass_kg": 0.17,
+            "position_m": [
+              0.16768033599942284,
+              -0.07620000000000002,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 14",
+            "mass_kg": 0.17,
+            "position_m": [
+              0.16768033599942284,
+              -1.3877787807814457e-17,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 15",
+            "mass_kg": 0.17,
+            "position_m": [
+              0.16768033599942284,
+              0.07619999999999999,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 4, column 2.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 16",
+            "mass_kg": 0.17,
+            "position_m": [
+              0.24388033599942288,
+              -0.0381,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 5, column 0.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Puck 17",
+            "mass_kg": 0.17,
+            "position_m": [
+              0.24388033599942288,
+              0.0381,
+              -0.11539999999999999
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0762,
+              0.0762,
+              0.0254
+            ],
+            "category": "mission_2_payload",
+            "notes": "Fuselage-local front-to-back placement; centered lateral row 5, column 1.",
+            "intrinsic_inertia_kg_m2": null
+          }
+        ],
+        "total_mass_kg": 8.110702350585164,
+        "weight_n": 79.53354724983811,
+        "cg_m": [
+          0.10224816795157217,
+          -4.277615922748421e-18,
+          -0.07606407811569538
+        ],
+        "inertia_tensor_kg_m2": [
+          [
+            0.21391245437394166,
+            -2.4936649967166602e-18,
+            -0.03852599886395074
+          ],
+          [
+            -2.4936649967166602e-18,
+            0.7720362382128565,
+            -1.5720931501039814e-18
+          ],
+          [
+            -0.03852599886395074,
+            -1.5720931501039814e-18,
+            0.9536071561939535
+          ]
+        ],
+        "static_margin": 0.11999999999999914,
+        "static_margin_feasible": true,
+        "placement_feasible": true,
+        "warnings": [
+          "Mission 2 selected fuselage width 0.2352 m after 3 duck-width increase(s)."
+        ]
+      },
+      "M3": {
+        "mission": "M3",
+        "items": [
+          {
+            "name": "Main wing structure",
+            "mass_kg": 0.5961102219035157,
+            "position_m": [
+              0.19978527085040346,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.3995705417008069,
+              1.5194518885775308,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing servo (left)",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.19978527085040346,
+              -0.3798629721443827,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing servo (right)",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.19978527085040346,
+              0.3798629721443827,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing integration",
+            "mass_kg": 0.1,
+            "position_m": [
+              0.19978527085040346,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.08,
+              0.08,
+              0.06
+            ],
+            "category": "integration",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing spar",
+            "mass_kg": 0.2601095605870011,
+            "position_m": [
+              0.11987116251024207,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.02,
+              1.5194518885775308,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Horizontal tail structure",
+            "mass_kg": 0.12549295807016372,
+            "position_m": [
+              0.937579116613145,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.22110664040933603,
+              0.6633199212280082,
+              0.012
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Vertical tail structure",
+            "mass_kg": 0.035765699723925556,
+            "position_m": [
+              0.9332321278519156,
+              0.0,
+              0.09452363498466039
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.21241266288687727,
+              0.012,
+              0.18904726996932078
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Horizontal tail servo",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.937579116613145,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "Placed at the horizontal stabilizer geometric center until a measured installation location is supplied.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Vertical tail servo",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.9332321278519156,
+              0.0,
+              0.09452363498466039
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "Placed at the vertical stabilizer geometric center until a measured installation location is supplied.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Boom spar",
+            "mass_kg": 0.11102500238443663,
+            "position_m": [
+              0.7238514892593099,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.648561895117006,
+              0.02,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Tail integration",
+            "mass_kg": 0.025,
+            "position_m": [
+              0.937579116613145,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.06,
+              0.06,
+              0.05
+            ],
+            "category": "integration",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Landing gear",
+            "mass_kg": 0.22,
+            "position_m": [
+              0.0,
+              0.0,
+              -0.1016
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.08,
+              0.18,
+              0.08
+            ],
+            "category": "airframe",
+            "notes": "Installed directly below the main-wing leading edge, with its center 4 inches below the wing plane.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Fuselage structure",
+            "mass_kg": 1.133478512035011,
+            "position_m": [
+              0.18778033599942284,
+              0.0,
+              -0.065
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              1.182,
+              0.23520000000000002,
+              0.13
+            ],
+            "category": "airframe",
+            "notes": "Fuselage-local uniform shell-area-density approximation from the electronics front edge to the aft-most Mission-2 payload edge; mass scales with length and cross-sectional perimeter.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Battery",
+            "mass_kg": 0.7614812814615003,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Motor",
+            "mass_kg": 0.2889893110147089,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Propeller",
+            "mass_kg": 0.03324980340491743,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "ESC",
+            "mass_kg": 0.118,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Other electronics",
+            "mass_kg": 0.05,
+            "position_m": [
+              -0.28421966400057713,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M3",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "M3 forward mechanism",
+            "mass_kg": 0.1,
+            "position_m": [
+              -0.15021966400057712,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3"
+            ],
+            "dimensions_m": [
+              0.05,
+              0.05,
+              0.05
+            ],
+            "category": "mission_3_payload",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "M3 banner",
+            "mass_kg": 0.08156095016419362,
+            "position_m": [
+              -0.07521966400057711,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3"
+            ],
+            "dimensions_m": [
+              0.1,
+              0.06,
+              0.06
+            ],
+            "category": "mission_3_payload",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "M3 aft mechanism",
+            "mass_kg": 0.1,
+            "position_m": [
+              -0.0002196640005771161,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3"
+            ],
+            "dimensions_m": [
+              0.05,
+              0.05,
+              0.05
+            ],
+            "category": "mission_3_payload",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          }
+        ],
+        "total_mass_kg": 4.224263300749373,
+        "weight_n": 41.42312592714834,
+        "cg_m": [
+          0.07307193554446678,
+          0.0,
+          -0.044041643222159185
+        ],
+        "inertia_tensor_kg_m2": [
+          [
+            0.1899548207931104,
+            0.0,
+            -0.03187626143001593
+          ],
+          [
+            0.0,
+            0.5715813183586881,
+            0.0
+          ],
+          [
+            -0.03187626143001593,
+            0.0,
+            0.7443202754240482
+          ]
+        ],
+        "static_margin": 0.19301897753251243,
+        "static_margin_feasible": true,
+        "placement_feasible": true,
+        "warnings": [
+          "Mission 2 selected fuselage width 0.2352 m after 3 duck-width increase(s).",
+          "Mission-3 banner center x=-0.1171 m was outside its allowed range and was clipped to x=-0.0752 m."
+        ]
+      }
+    },
+    "warnings": [
+      "Mission 2 selected fuselage width 0.2352 m after 3 duck-width increase(s).",
+      "Mission-3 banner center x=-0.1171 m was outside its allowed range and was clipped to x=-0.0752 m."
+    ],
+    "penalty": 0.0,
+    "penalty_static_margin": 0.0
+  },
+  "aero": {
+    "M1": {
+      "can_fly": true,
+      "lap_time": 25.487859975100044,
+      "penalty": 0.0,
+      "penalty_static_margin": 0.0,
+      "penalty_longitudinal": 0.0,
+      "penalty_directional": 0.0,
+      "penalty_spiral": 0.0
+    },
+    "M2": {
+      "can_fly": true,
+      "lap_time": 29.76465239733532,
+      "penalty": 0.0,
+      "penalty_static_margin": 0.0,
+      "penalty_longitudinal": 0.0,
+      "penalty_directional": 0.0,
+      "penalty_spiral": 0.0
+    },
+    "M3": {
+      "can_fly": true,
+      "lap_time": 37.363865126887816,
+      "penalty": 0.0,
+      "penalty_static_margin": 0.0,
+      "penalty_longitudinal": 0.0,
+      "penalty_directional": 0.0,
+      "penalty_spiral": 0.0
+    }
+  }
+}

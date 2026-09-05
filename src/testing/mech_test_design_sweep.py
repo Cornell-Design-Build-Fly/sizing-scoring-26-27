@@ -28,12 +28,7 @@ import numpy as np
 
 from src.mech import MechanicalModuleConfig, MechanicalResult, evaluate_mechanical_module
 from src.mech.mass_properties import geometry_stations
-from src.vectors import (
-    DesignVector,
-    MAX_SENSOR_LENGTH_M,
-    MIN_SENSOR_WEIGHT_KG,
-    maximum_sensor_weight_kg,
-)
+from src.vectors import DesignVector
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
@@ -56,29 +51,27 @@ DESIGN_CASES = (
         slug="small_payload",
         label="Small payload",
         design_vector=DesignVector(
-            extra_shipping_containers=0,
-            sensor_weight_kg=MIN_SENSOR_WEIGHT_KG,
-            mission3_sensor_weight_kg=MIN_SENSOR_WEIGHT_KG,
+            ducks_num=3,
+            pucks_num=1,
+            banner_length=0.50,
         ),
     ),
     DesignCase(
         slug="medium_payload",
         label="Medium payload",
         design_vector=DesignVector(
-            extra_shipping_containers=4,
-            sensor_length_m=12.0 * 0.0254,
-            sensor_weight_kg=10.0,
-            mission3_sensor_weight_kg=6.0,
+            ducks_num=7,
+            pucks_num=2,
+            banner_length=2.75,
         ),
     ),
     DesignCase(
         slug="large_payload",
         label="Large payload", 
         design_vector=DesignVector(
-            extra_shipping_containers=10,
-            sensor_length_m=24.0 * 0.0254,
-            sensor_weight_kg=maximum_sensor_weight_kg(MAX_SENSOR_LENGTH_M),
-            mission3_sensor_weight_kg=10.0,
+            ducks_num=50,
+            pucks_num=11,
+            banner_length=5.00, 
         ),
     ),
 )

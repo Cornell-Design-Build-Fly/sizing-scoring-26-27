@@ -29,14 +29,12 @@ from src.mech.models import (
     Mission3Config,
     MissionMassProperties,
     NeutralPointConfig,
-    SensorConfig,
+    PayloadTypeConfig,
+    PlacementRules,
+    RelativePayloadRules,
     StaticMarginConfig,
 )
-from src.mech.payload_placement import (
-    PayloadPlacementError,
-    place_mission2_payload,
-    resolve_extra_container_count,
-)
+from src.mech.payload_placement import PayloadPlacementError, place_mission2_payload
 
 __all__ = [
     "AirframeMassConfig",
@@ -54,8 +52,10 @@ __all__ = [
     "MissionMassProperties",
     "NeutralPointConfig",
     "PayloadPlacementError",
+    "PayloadTypeConfig",
     "PiecewiseLinearMassModel",
-    "SensorConfig",
+    "PlacementRules",
+    "RelativePayloadRules",
     "StaticMarginConfig",
     "center_of_gravity",
     "estimate_aerodynamic_center_x",
@@ -66,7 +66,6 @@ __all__ = [
     "inertia_tensor_about_point",
     "mech_main",
     "place_mission2_payload",
-    "resolve_extra_container_count",
     "resolve_electronics_layout",
     "static_margin",
 ]

@@ -210,27 +210,21 @@ def build_fuselage_item(
     electronics_layout: ElectronicsLayout,
     mission2_payload: tuple[MassItem, ...],
     fuselage_width_m: float,
-    fuselage_height_m: float,
     config: MechanicalModuleConfig,
 ) -> MassItem:
     """Build a local fuselage around electronics and the occupied M2 envelope."""
 
     front_edge_x = electronics_layout.front_edge_x_m
-    payload_front_edges = tuple(
-        item.position_m[0] - 0.5 * item.dimensions_m[0]
-        for item in mission2_payload
-    )
     payload_back_edges = tuple(
         item.position_m[0] + 0.5 * item.dimensions_m[0]
         for item in mission2_payload
     )
-    front_edge_x = min((front_edge_x, *payload_front_edges))
     back_edge_x = max((electronics_layout.back_edge_x_m, *payload_back_edges))
     length = float(back_edge_x - front_edge_x)
     if length <= 0:
         raise RuntimeError("The locally packed fuselage length must be positive.")
     cross_sectional_perimeter = 2.0 * (
-        fuselage_width_m + fuselage_height_m
+        fuselage_width_m + design_vector.fuselage_height
     )
 
     return MassItem(
@@ -243,14 +237,14 @@ def build_fuselage_item(
         position_m=(
             0.5 * (front_edge_x + back_edge_x),
             0.0,
-            -0.5 * fuselage_height_m,
+            -0.5 * design_vector.fuselage_height,
         ),
-        dimensions_m=(length, fuselage_width_m, fuselage_height_m),
+        dimensions_m=(length, fuselage_width_m, design_vector.fuselage_height),
         missions=ALL_MISSIONS,
         category="airframe",
         notes=(
             "Fuselage-local uniform shell-area-density approximation from the "
-            "forward-most electronics/payload edge to the aft-most edge; "
+            "electronics front edge to the aft-most Mission-2 payload edge; "
             "mass scales with length and cross-sectional perimeter."
         ),
     )
@@ -260,55 +254,27 @@ def build_local_fuselage_assembly(
     design_vector: DesignVector,
     *,
     battery_nominal_voltage_v: float,
-    total_container_count: int,
+    fuselage_width_m: float,
+    duck_count: int,
+    puck_count: int,
     config: MechanicalModuleConfig,
 ) -> tuple[tuple[MassItem, ...], tuple[MassItem, ...], ElectronicsLayout]:
     """Pack electronics and M2 payload before installation on the airplane."""
 
     airframe = config.airframe
-    # Sensor length is now an independent design variable rather than a value
-    # derived from weight, so the mechanical module simply uses the declared
-    # length. The solid-steel density bound is enforced in DesignVector.
-    sensor_length_m = float(design_vector.sensor_length_m)
-    preview = place_mission2_payload(
-        total_count=total_container_count,
-        sensor_mass_kg=design_vector.sensor_weight_kg,
-        sensor_length_m=sensor_length_m,
-        config=config.mission2,
-        electronics_back_x_m=0.0,
-    )
-    resolved_width_m = max(
-        float(design_vector.fuselage_width),
-        2.0
-        * max(
-            abs(item.position_m[1]) + 0.5 * item.dimensions_m[1]
-            for item in preview
-        ),
-    )
-    resolved_height_m = max(
-        float(design_vector.fuselage_height),
-        max(
-            item.position_m[2] + 0.5 * item.dimensions_m[2]
-            for item in preview
-        )
-        - min(
-            item.position_m[2] - 0.5 * item.dimensions_m[2]
-            for item in preview
-        ),
-    )
     packaging = airframe.electronics_packaging
     local_layout = resolve_electronics_layout(
         cg_x_m=packaging.skinny_cg_from_front_m,
-        fuselage_width_m=resolved_width_m,
-        fuselage_height_m=resolved_height_m,
+        fuselage_width_m=fuselage_width_m,
+        fuselage_height_m=design_vector.fuselage_height,
         config=packaging,
         cg_y_m=airframe.electronics_y_m,
     )
     if not np.isclose(local_layout.front_edge_x_m, 0.0, atol=1e-12):
         local_layout = resolve_electronics_layout(
             cg_x_m=local_layout.cg_from_front_m,
-            fuselage_width_m=resolved_width_m,
-            fuselage_height_m=resolved_height_m,
+            fuselage_width_m=fuselage_width_m,
+            fuselage_height_m=design_vector.fuselage_height,
             config=packaging,
             cg_y_m=airframe.electronics_y_m,
         )
@@ -338,49 +304,26 @@ def build_local_fuselage_assembly(
     if sum(item.mass_kg for item in electronics_items) <= 0:
         raise ValueError("Permanent electronics mass must be positive.")
 
+    half_width = 0.5 * fuselage_width_m
     mission2_payload = place_mission2_payload(
-        total_count=total_container_count,
-        sensor_mass_kg=design_vector.sensor_weight_kg,
-        sensor_length_m=sensor_length_m,
+        duck_count=duck_count,
+        puck_count=puck_count,
         config=config.mission2,
-        electronics_back_x_m=local_layout.back_edge_x_m,
-    )
-    first_container = mission2_payload[0]
-    release_top_z = max(
-        item.position_m[2] + 0.5 * item.dimensions_m[2]
-        for item in mission2_payload
-        if np.isclose(item.position_m[0], first_container.position_m[0])
-    )
-    release_mechanism = MassItem(
-        name="Sensor release mechanism",
-        mass_kg=config.sensor.release_mechanism_mass_kg(
-            design_vector.sensor_weight_kg
+        electronics_back_x_m=(
+            local_layout.back_edge_x_m
+            + config.mission2.electronics_aft_clearance_m
         ),
-        position_m=(
-            first_container.position_m[0],
-            first_container.position_m[1],
-            release_top_z,
-        ),
-        missions=ALL_MISSIONS,
-        category="release_mechanism",
-        notes=(
-            "Permanent mechanism modeled as a point mass at the top of the "
-            "center container stack; mass is 1/20 of sensor mass."
-        ),
+        y_bounds_m=(-half_width, half_width),
+        z_bounds_m=(-design_vector.fuselage_height, 0.0),
     )
     fuselage = build_fuselage_item(
         design_vector,
         local_layout,
         mission2_payload,
-        resolved_width_m,
-        resolved_height_m,
+        fuselage_width_m,
         config,
     )
-    return (
-        (fuselage,) + electronics_items + (release_mechanism,),
-        mission2_payload,
-        local_layout,
-    )
+    return (fuselage,) + electronics_items, mission2_payload, local_layout
 
 
 def translate_mass_items_x(

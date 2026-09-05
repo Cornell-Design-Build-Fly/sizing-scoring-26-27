@@ -21,9 +21,6 @@ from typing import Iterable
 
 import numpy as np
 
-from src.prop.prop_classes import NOMINAL_CELL_VOLTAGE_V
-from src.vectors import SENSOR_DIAMETER_M, SENSOR_STEEL_DENSITY_KG_M3
-
 from src.mech.electronics import (
     ElectronicsLayout,
     ElectronicsPackagingConfig,
@@ -118,32 +115,17 @@ class MassItem:
 
 @dataclass(frozen=True)
 class StaticMarginConfig:
-    """General static-margin limits and reference target.
+    """General static-margin limits and the Mission-3 placement target.
 
     Mission 1 uses ``maximum`` as its one-sided acceptance limit. Mission 2 has
     its own exact placement target in :class:`Mission2Config`.
     """
 
-    # Acceptable band requested by the team: 5% to 35% MAC, ideally 20-25%.
-    # The band is deliberately wide because the team can trim with ballast on
-    # the day, so designs inside it must not be penalized at all.
-    minimum: float = 0.05
+    minimum: float = 0.10
     target: float = 0.20
-    maximum: float = 0.35
-    # No extra buffer: the band above is already the tolerant one, and a buffer
-    # on top of it would push the unpenalized region past 35%.
-    optimizer_penalty_buffer: float = 0.0
+    maximum: float = 0.23
+    optimizer_penalty_buffer: float = 0.15
     optimizer_penalty_scale: float = 0.15
-    # Hard lower edge of the unpenalized band. The buffer may not push the
-    # acceptable range below this value, so a CG behind the neutral point
-    # (negative static margin) is always penalized.
-    optimizer_penalty_floor: float = 0.0
-    # Missions whose static margin feeds the optimizer penalty. M2 and M3 are
-    # the configurations actually flown for score: under the 2026-27 M1 waiver
-    # (rules 3.3.3) a successful M2 also scores M1, and the scoring model in
-    # src/opt/score.py assumes that waiver path, so M1's payload-free static
-    # margin stays diagnostic. Add "M1" here to constrain it as well.
-    penalized_missions: tuple[str, ...] = ("M2", "M3")
 
     def __post_init__(self) -> None:
         if not np.all(
@@ -168,17 +150,6 @@ class StaticMarginConfig:
             raise ValueError("Static-margin optimizer penalty buffer cannot be negative.")
         if self.optimizer_penalty_scale <= 0:
             raise ValueError("Static-margin optimizer penalty scale must be positive.")
-        if not np.isfinite(self.optimizer_penalty_floor):
-            raise ValueError("Static-margin optimizer penalty floor must be finite.")
-        if self.optimizer_penalty_floor > self.maximum:
-            raise ValueError(
-                "Static-margin optimizer penalty floor cannot exceed the maximum."
-            )
-        unknown = set(self.penalized_missions) - set(ALL_MISSIONS)
-        if unknown:
-            raise ValueError(
-                f"Unknown penalized missions: {sorted(unknown)}."
-            )
 
 
 @dataclass(frozen=True)
@@ -226,7 +197,7 @@ class BatteryMassModel:
 
     slope_g_per_ah: float = 28.4
     intercept_g: float = 0.63
-    cell_nominal_voltage_v: float = NOMINAL_CELL_VOLTAGE_V
+    cell_nominal_voltage_v: float = 3.7
 
     def __post_init__(self) -> None:
         values = (self.slope_g_per_ah, self.intercept_g, self.cell_nominal_voltage_v)
@@ -544,112 +515,241 @@ class AirframeMassConfig:
 
 
 @dataclass(frozen=True)
-class SensorConfig:
-    """Shared physical model for the M2/M3 sensor and release mechanism."""
+class PlacementRules:
+    """Per-type direction controls retained for configuration compatibility.
 
-    diameter_m: float = SENSOR_DIAMETER_M
-    steel_density_kg_m3: float = SENSOR_STEEL_DENSITY_KG_M3
-    release_mechanism_mass_ratio: float = 1.0 / 20.0
+    Local fuselage rows only grow aft and therefore require ``allow_aft``.
+    ``allow_forward`` and the older vertical/stacking flags remain in the public
+    configuration for compatibility; vertical ordering is set by
+    ``RelativePayloadRules``.
+    """
+
+    allow_forward: bool = True
+    allow_aft: bool = True
+    allow_above: bool = True
+    allow_below: bool = True
+    allow_stacking: bool = True
 
     def __post_init__(self) -> None:
-        values = (
-            self.diameter_m,
-            self.steel_density_kg_m3,
-            self.release_mechanism_mass_ratio,
-        )
-        if not np.all(np.isfinite(values)) or np.any(np.asarray(values) <= 0):
-            raise ValueError("Sensor configuration values must be finite and positive.")
+        if not (self.allow_forward or self.allow_aft):
+            raise ValueError("At least one of allow_forward or allow_aft must be True.")
+        if not (self.allow_above or self.allow_below):
+            raise ValueError("At least one of allow_above or allow_below must be True.")
 
-    def length_from_max_weight_m(self, sensor_mass_kg: float) -> float:
-        """Return the length of the fixed-diameter solid-steel sensor proxy."""
 
-        if not np.isfinite(sensor_mass_kg) or sensor_mass_kg <= 0:
-            raise ValueError("sensor_mass_kg must be finite and positive.")
-        area_m2 = np.pi * (0.5 * self.diameter_m) ** 2
-        return float(sensor_mass_kg / (self.steel_density_kg_m3 * area_m2))
+@dataclass(frozen=True)
+class RelativePayloadRules:
+    """Relative duck/puck ordering for the local-row M2 process.
 
-    def release_mechanism_mass_kg(self, sensor_mass_kg: float) -> float:
-        if not np.isfinite(sensor_mass_kg) or sensor_mass_kg <= 0:
-            raise ValueError("sensor_mass_kg must be finite and positive.")
-        return float(self.release_mechanism_mass_ratio * sensor_mass_kg)
+    The default Mission-2 configuration selects ``pucks_below_ducks``.
+    Longitudinal fields are retained for configuration compatibility, but the
+    local process rejects them because both payload types start immediately
+    behind the electronics.
+    """
+
+    pucks_forward_of_ducks: bool = False
+    pucks_aft_of_ducks: bool = False
+    pucks_above_ducks: bool = False
+    pucks_below_ducks: bool = False
+
+    def __post_init__(self) -> None:
+        if self.pucks_forward_of_ducks and self.pucks_aft_of_ducks:
+            raise ValueError(
+                "Pucks cannot be required both forward and aft of all ducks."
+            )
+        if self.pucks_above_ducks and self.pucks_below_ducks:
+            raise ValueError(
+                "Pucks cannot be required both above and below all ducks."
+            )
+
+
+@dataclass(frozen=True)
+class PayloadTypeConfig:
+    """Mass, bounding box, and placement rules for one M2 payload type."""
+
+    label: str
+    mass_kg: float
+    dimensions_m: tuple[float, float, float]
+    rules: PlacementRules = field(default_factory=PlacementRules)
+
+    def __post_init__(self) -> None:
+        if not self.label:
+            raise ValueError("Payload label cannot be empty.")
+        if not np.isfinite(self.mass_kg) or self.mass_kg <= 0:
+            raise ValueError(f"Payload mass for {self.label!r} must be finite and positive.")
+        dimensions = np.asarray(self.dimensions_m, dtype=float)
+        if (
+            dimensions.shape != (3,)
+            or not np.all(np.isfinite(dimensions))
+            or np.any(dimensions <= 0)
+        ):
+            raise ValueError(
+                f"Payload dimensions for {self.label!r} must be three positive values."
+            )
 
 
 @dataclass(frozen=True)
 class Mission2Config:
-    """Mission-2 shipping-container geometry and local packing rules."""
+    """Mission-2 local fuselage-packing and width-retry configuration.
 
-    container_width_m: float = 5.0 * 0.0254
-    container_height_m: float = 5.0 * 0.0254
-    container_length_padding_m: float = 2.0 * 0.0254
-    # The shipping container stays rules-representative even when the
-    # simulation is allowed a shorter-than-legal sensor.
-    minimum_container_length_m: float = 8.0 * 0.0254
-    empty_container_mass_kg: float = 0.5 * 0.45359237
-    containers_across: int = 3
-    maximum_stack: int = 2
-    maximum_extra_containers: int = 10
-    # Placed at the middle of the team's preferred 20-25% band.
-    target_static_margin: float = 0.20
-    clearance_m: float = 0.0
+    Payload rows start behind the electronics, fill from one sidewall to the
+    other, and then grow aft.  The completed fuselage is installed on the fixed
+    airplane afterward. Width increases happen when the installed fuselage
+    reaches the tail leading edge or the resulting M1 static margin exceeds
+    its maximum. At most ``maximum_width_increases`` retries are made, and each
+    uses exactly one duck width.
+    """
+
+    duck: PayloadTypeConfig = field(
+        default_factory=lambda: PayloadTypeConfig(
+            label="Duck",
+            mass_kg=0.018,
+            dimensions_m=(0.053, 0.053, 0.053),
+        )
+    )
+    puck: PayloadTypeConfig = field(
+        default_factory=lambda: PayloadTypeConfig(
+            label="Puck",
+            mass_kg=0.170,
+            dimensions_m=(0.0762, 0.0762, 0.0254),
+        )
+    )
+    relative_payload_rules: RelativePayloadRules = field(
+        default_factory=lambda: RelativePayloadRules(pucks_below_ducks=True)
+    )
+    target_static_margin: float = 0.12
+    # The compartment bound is retained only for compatibility and rejected
+    # below. Local payload packing uses the electronics back face and fuselage
+    # sidewalls; the installed fuselage uses the tail clearance as its aft limit.
+    compartment_x_bounds_m: tuple[float, float] | None = None
     electronics_aft_clearance_m: float = 0.0
     tail_leading_edge_clearance_m: float = 0.0
+    maximum_width_increases: int = 4
+    compartment_center_y_m: float = 0.0
+    duck_center_z_m: float = -3.0 * 0.0254
+    relative_reference_x_m: float | None = None
+    clearance_m: float = 0.0
+    vertical_clearance_m: float = 0.0
 
     def __post_init__(self) -> None:
-        positive_values = (
-            self.container_width_m,
-            self.container_height_m,
-            self.container_length_padding_m,
-            self.empty_container_mass_kg,
-        )
-        nonnegative_values = (
-            self.clearance_m,
+        scalar_values = [
+            self.compartment_center_y_m,
+            self.duck_center_z_m,
+            self.target_static_margin,
             self.electronics_aft_clearance_m,
             self.tail_leading_edge_clearance_m,
-        )
-        if not np.all(np.isfinite(positive_values)) or np.any(
-            np.asarray(positive_values) <= 0
-        ):
-            raise ValueError("Mission-2 container values must be finite and positive.")
-        if not np.all(np.isfinite(nonnegative_values)) or np.any(
-            np.asarray(nonnegative_values) < 0
-        ):
-            raise ValueError("Mission-2 clearances must be finite and nonnegative.")
-        for name, value in {
-            "containers_across": self.containers_across,
-            "maximum_stack": self.maximum_stack,
-            "maximum_extra_containers": self.maximum_extra_containers,
-        }.items():
-            if not isinstance(value, int) or value <= 0:
-                raise ValueError(f"{name} must be a positive integer.")
+            self.clearance_m,
+            self.vertical_clearance_m,
+        ]
+        if not np.all(np.isfinite(scalar_values)):
+            raise ValueError("Mission-2 scalar configuration values must be finite.")
         if not 0 <= self.target_static_margin <= 1:
             raise ValueError("Mission-2 target static margin must lie in [0, 1].")
-
-    def container_dimensions_m(self, sensor_length_m: float) -> tuple[float, float, float]:
-        if not np.isfinite(sensor_length_m) or sensor_length_m <= 0:
-            raise ValueError("sensor_length_m must be finite and positive.")
-        return (
-            float(
-                max(
-                    sensor_length_m + self.container_length_padding_m,
-                    self.minimum_container_length_m,
-                )
-            ),
-            self.container_width_m,
-            self.container_height_m,
-        )
+        if (
+            not isinstance(self.maximum_width_increases, int)
+            or self.maximum_width_increases < 0
+        ):
+            raise ValueError("maximum_width_increases must be a nonnegative integer.")
+        if self.electronics_aft_clearance_m < 0 or self.tail_leading_edge_clearance_m < 0:
+            raise ValueError("Mission-2 longitudinal keep-out distances cannot be negative.")
+        if self.clearance_m < 0 or self.vertical_clearance_m < 0:
+            raise ValueError("Mission-2 clearances cannot be negative.")
+        if self.compartment_x_bounds_m is not None:
+            raise ValueError(
+                "compartment_x_bounds_m is incompatible with local fuselage packing."
+            )
+        if self.compartment_center_y_m != 0:
+            raise ValueError(
+                "compartment_center_y_m is incompatible with fuselage-sidewall packing."
+            )
+        if self.relative_reference_x_m is not None:
+            raise ValueError(
+                "relative_reference_x_m is no longer configurable; Mission 2 "
+                "starts behind the electronics in fuselage-local coordinates."
+            )
 
 
 @dataclass(frozen=True)
 class Mission3Config:
-    """Mission-3 sensor placement options."""
+    """Mission-3 three-mass banner-system model.
 
-    # The sensor is centered in the former primary-container volume by default.
-    center_offset_m: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    The current-year defaults include two 100 g mechanisms and a banner areal
+    density based on a 0.233 kg, 2.9 m^2 reference banner. Banner height is
+    one fifth of its length, so area is ``banner_length_m**2 / 5``. A fixed
+    ``banner_mass_kg`` overrides all density models.
+    ``banner_linear_density_kg_m`` is retained as a legacy override for callers
+    that already have a measured mass per unit length.
+
+    A value of ``None`` for ``banner_center_x_m`` lets the module solve for the
+    best longitudinal location; otherwise the supplied position is used
+    exactly (subject to optional bounds).  The two mechanisms use explicit,
+    fixed longitudinal distances from the banner instead of deriving those
+    distances from banner height.
+    """
+
+    forward_mechanism_mass_kg: float = 0.100
+    aft_mechanism_mass_kg: float = 0.100
+    banner_mass_kg: float | None = None
+    banner_areal_density_kg_m2: float = 0.233 / 2.9
+    banner_linear_density_kg_m: float | None = None
+    banner_center_x_m: float | None = None
+    banner_center_y_m: float = 0.0
+    banner_center_z_m: float = 0.0
+    banner_center_x_bounds_m: tuple[float, float] | None = None
+    forward_mechanism_distance_m: float = 0.075
+    aft_mechanism_distance_m: float = 0.075
+    forward_mechanism_dimensions_m: tuple[float, float, float] = (0.050, 0.050, 0.050)
+    aft_mechanism_dimensions_m: tuple[float, float, float] = (0.050, 0.050, 0.050)
+    banner_packed_dimensions_m: tuple[float, float, float] = (0.100, 0.060, 0.060)
 
     def __post_init__(self) -> None:
-        offset = np.asarray(self.center_offset_m, dtype=float)
-        if offset.shape != (3,) or not np.all(np.isfinite(offset)):
-            raise ValueError("center_offset_m must contain three finite values.")
+        masses = [
+            self.forward_mechanism_mass_kg,
+            self.aft_mechanism_mass_kg,
+            self.banner_areal_density_kg_m2,
+        ]
+        if self.banner_mass_kg is not None:
+            masses.append(self.banner_mass_kg)
+        if self.banner_linear_density_kg_m is not None:
+            masses.append(self.banner_linear_density_kg_m)
+        if not np.all(np.isfinite(masses)) or np.any(np.asarray(masses) < 0):
+            raise ValueError("Mission-3 masses and mass density must be finite and nonnegative.")
+        distances = (
+            self.forward_mechanism_distance_m,
+            self.aft_mechanism_distance_m,
+        )
+        if not np.all(np.isfinite(distances)) or np.any(np.asarray(distances) <= 0):
+            raise ValueError("Mission-3 fixed distances must be positive.")
+        for value_name, value in {
+            "banner_center_x_m": self.banner_center_x_m,
+            "banner_center_y_m": self.banner_center_y_m,
+            "banner_center_z_m": self.banner_center_z_m,
+        }.items():
+            if value is not None and not np.isfinite(value):
+                raise ValueError(f"{value_name} must be finite when supplied.")
+        if self.banner_center_x_bounds_m is not None:
+            lower, upper = self.banner_center_x_bounds_m
+            if not (np.isfinite(lower) and np.isfinite(upper) and lower < upper):
+                raise ValueError("banner_center_x_bounds_m must be finite and increasing.")
+        for name, dimensions in {
+            "forward_mechanism_dimensions_m": self.forward_mechanism_dimensions_m,
+            "aft_mechanism_dimensions_m": self.aft_mechanism_dimensions_m,
+            "banner_packed_dimensions_m": self.banner_packed_dimensions_m,
+        }.items():
+            array = np.asarray(dimensions, dtype=float)
+            if array.shape != (3,) or not np.all(np.isfinite(array)) or np.any(array < 0):
+                raise ValueError(f"{name} must contain three finite nonnegative values.")
+
+    def resolved_banner_mass_kg(self, banner_length_m: float) -> float:
+        if not np.isfinite(banner_length_m) or banner_length_m < 0:
+            raise ValueError("banner_length_m must be finite and nonnegative.")
+        if self.banner_mass_kg is not None:
+            return float(self.banner_mass_kg)
+        if self.banner_linear_density_kg_m is not None:
+            return float(self.banner_linear_density_kg_m * banner_length_m)
+        banner_height_m = banner_length_m / 5.0
+        banner_area_m2 = banner_length_m * banner_height_m
+        return float(self.banner_areal_density_kg_m2 * banner_area_m2)
 
 
 @dataclass(frozen=True)
@@ -657,7 +757,6 @@ class MechanicalModuleConfig:
     static_margin: StaticMarginConfig = field(default_factory=StaticMarginConfig)
     neutral_point: NeutralPointConfig = field(default_factory=NeutralPointConfig)
     airframe: AirframeMassConfig = field(default_factory=AirframeMassConfig)
-    sensor: SensorConfig = field(default_factory=SensorConfig)
     mission2: Mission2Config = field(default_factory=Mission2Config)
     mission3: Mission3Config = field(default_factory=Mission3Config)
 
@@ -708,10 +807,6 @@ class MechanicalResult:
     warnings: tuple[str, ...] = ()
     penalty: float = 0.0
     penalty_static_margin: float = 0.0
-    # Penalty from a Mission-2 placement that had to be clamped to stay inside
-    # the airframe instead of reaching its exact static-margin target.
-    penalty_placement: float = 0.0
-    penalty_static_margin_by_mission: dict[str, float] = field(default_factory=dict)
 
     @property
     def fuselage_width_m(self) -> float:

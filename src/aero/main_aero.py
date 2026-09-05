@@ -15,7 +15,7 @@ from src.aero.cruise_analysis_fast import cruise_analysis_fast
 from src.aero.aero_analysis import aero_analysis
 from src.aero.stability_analysis_coarse import stability_analysis_coarse
 from src.aero.stability_analysis import stability_analysis
-from src.aero.aero_score import MAX_PENALTY, AeroScore, aero_score
+from src.aero.aero_score import AeroScore, aero_score
 
 def aero_main(
         design_vector: DesignVector,
@@ -28,7 +28,6 @@ def aero_main(
         mass: float,
         disp_res: bool = False,
         debug: bool = False,
-        supported_mass: float | None = None,
 ) -> AeroScore:
 
     """
@@ -40,10 +39,7 @@ def aero_main(
         mission: Mission number being evaluated (1, 2, or 3).
         cg: The center of gravity of the airplane (x, y, z).
         inertia_matrix: The inertia matrix of the airplane.
-        mass: Inertial mass of the airplane.
-        supported_mass: Optional equivalent mass used only for steady lift and
-            stall-speed calculations. This permits a downward tether force to
-            increase lift demand without incorrectly adding aircraft inertia.
+        mass: The mass of the airplane.
     """
 
     analysis_start = perf_counter()
@@ -72,13 +68,7 @@ def aero_main(
     #     design_vector, parameter_vector, thrust_velocity, cg, mass, mission, debug
     # )
     cruise_condition = cruise_analysis_fast(
-        design_vector,
-        parameter_vector,
-        thrust_velocity,
-        cg,
-        mass if supported_mass is None else supported_mass,
-        mission,
-        debug,
+        design_vector, parameter_vector, thrust_velocity, cg, mass, mission, debug
     )
     if debug:
         print(f"[aero] Cruise analysis complete (converged={cruise_condition.converged}).", flush=True)
@@ -87,16 +77,8 @@ def aero_main(
     if not cruise_condition.converged:
         if debug:
             print("[aero] Stopping evaluation because cruise trim did not converge.", flush=True)
-        # A design that cannot be trimmed at all is worse than one that trims
-        # but is marginally unstable, so it must carry the maximum penalty.
-        # Leaving this at the AeroScore default of 0.0 inverted the objective:
-        # an untrimmable aircraft scored up to 10 points better than a
-        # barely-flyable one, which rewarded the optimizer for walking into the
-        # non-convergent region, where the objective is flat and gives no
-        # gradient back out.
         return AeroScore(
-            can_fly=False,
-            penalty=MAX_PENALTY,
+            can_fly = False,
         )
 
     # Stability model selection: leave exactly one call active.

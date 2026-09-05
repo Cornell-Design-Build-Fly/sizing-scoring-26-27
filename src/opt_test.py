@@ -20,13 +20,6 @@ from tqdm.auto import tqdm
 from src.main import main
 from src.mech.main_mech import evaluate_mechanical_module
 from src.opt.score import scoring_reference_values
-from src.opt.topline_opt import (
-    ToplineConfig,
-    _design_vector_from_optimizer,
-    _integrality_mask,
-    _optimizer_bounds,
-    _optimizer_variable_names,
-)
 from src.opt.view_results import (
     plot_final_population,
     plot_final_population_spread,
@@ -54,12 +47,6 @@ SUPPRESS_MODULE_OUTPUT = True
 REPORT_REJECTIONS = False
 REJECTION_DETAIL_CHARS = 220
 SAVE_BEST_DESIGN_VISUALIZATION = True
-BATTERY_CELL_COUNT_BOUNDS = (5, 8)
-OPTIMIZER_CONFIG = ToplineConfig(
-    optimize_battery_cell_count=True,
-    battery_cell_count_bounds=BATTERY_CELL_COUNT_BOUNDS,
-    battery_cell_count_choices=None,
-)
 EVALUATION_HISTORY: list[dict] = []
 PROGRESS_BAR = None
 BEST_SCORE = -math.inf
@@ -77,29 +64,8 @@ HISTORY_ARTIFACTS = (
 
 
 
-def optimizer_variable_names() -> list[str]:
-    return _optimizer_variable_names(OPTIMIZER_CONFIG)
-
-
-def optimizer_bounds() -> list[tuple[float, float]]:
-    return _optimizer_bounds(OPTIMIZER_CONFIG)
-
-
-def optimizer_integrality() -> np.ndarray:
-    return _integrality_mask(OPTIMIZER_CONFIG)
-
-
-def optimizer_array_from_design(design: DesignVector) -> np.ndarray:
-    return np.append(design.to_array(), float(design.battery_cell_count))
-
-
-def design_from_optimizer_array(x: np.ndarray) -> DesignVector:
-    return _design_vector_from_optimizer(x, OPTIMIZER_CONFIG)
-
-
 pd_constraint = NonlinearConstraint(
-    lambda x: x[optimizer_variable_names().index("prop_pitch_in")]
-    / x[optimizer_variable_names().index("prop_diameter_in")],
+    lambda x: x[9] / x[8],
     0.4,   # minimum P/D
     0.8,   # maximum P/D
 )
@@ -129,18 +95,7 @@ def _write_run_summary(result, elapsed_seconds: float) -> Path:
         "workers": resolved_worker_count(),
         "maxiter": MAXITER,
         "popsize": POPSIZE,
-        "variables": len(optimizer_bounds()),
-        "variable_names": optimizer_variable_names(),
-        "bounds": {
-            name: bounds
-            for name, bounds in zip(optimizer_variable_names(), optimizer_bounds())
-        },
-        "integrality": {
-            name: bool(flag)
-            for name, flag in zip(
-                optimizer_variable_names(), optimizer_integrality()
-            )
-        },
+        "variables": len(DesignVector.bounds()),
         "population_size": de_population_size(),
         "maximum_expected_evaluations": expected_de_evaluations(),
         "evaluations_per_second": int(result.nfev) / elapsed_seconds,
@@ -165,11 +120,8 @@ def save_best_design_visualization(design: DesignVector) -> tuple[Path, Path]:
 
     scoring_design = replace(
         design,
-        extra_shipping_containers=(
-            round(design.extra_shipping_containers)
-            if ROUND_PAYLOAD
-            else design.extra_shipping_containers
-        ),
+        ducks_num=round(design.ducks_num) if ROUND_PAYLOAD else design.ducks_num,
+        pucks_num=round(design.pucks_num) if ROUND_PAYLOAD else design.pucks_num,
     )
     with _module_output_context():
         mech = evaluate_mechanical_module(scoring_design, parameter_vector=PARAMETER_VECTOR)
@@ -220,7 +172,7 @@ def _history_row(
         "implied_penalty": np.nan,
         "message": message,
     }
-    for index, name in enumerate(optimizer_variable_names()):
+    for index, name in enumerate(DesignVector.opt_names()):
         row[name] = float(x[index])
     if breakdown is None:
         row.update({"ground": np.nan, "m1": np.nan, "m2": np.nan, "m3": np.nan})
@@ -294,7 +246,7 @@ def _ensure_prop_database_loaded() -> float:
 def _random_pd_feasible_vector(rng: np.random.Generator) -> np.ndarray:
     """Sample a random optimizer vector that satisfies the P/D constraint."""
 
-    bounds = optimizer_bounds()
+    bounds = DesignVector.bounds()
     values = np.array(
         [
             rng.uniform(lower, upper)
@@ -303,11 +255,7 @@ def _random_pd_feasible_vector(rng: np.random.Generator) -> np.ndarray:
         dtype=float,
     )
 
-    names = optimizer_variable_names()
-    for index, is_integer in enumerate(optimizer_integrality()):
-        if is_integer:
-            lower, upper = bounds[index]
-            values[index] = rng.integers(int(lower), int(upper) + 1)
+    names = DesignVector.opt_names()
     diameter_index = names.index("prop_diameter_in")
     pitch_index = names.index("prop_pitch_in")
     diameter = values[diameter_index]
@@ -351,7 +299,7 @@ def benchmark_fitness_runtime(
 
     database_load_seconds = _ensure_prop_database_loaded()
 
-    baseline = optimizer_array_from_design(DesignVector())
+    baseline = DesignVector().to_array()
     for _ in range(warmup_count):
         fitness(baseline, record=False)
 
@@ -468,7 +416,7 @@ def expected_de_evaluations() -> int:
 def de_population_size() -> int:
     """Differential-evolution population size for the current settings."""
 
-    return POPSIZE * len(optimizer_bounds())
+    return POPSIZE * len(DesignVector.bounds())
 
 
 def resolved_worker_count() -> int:
@@ -515,7 +463,7 @@ def fitness(x: np.ndarray, *, record: bool = True) -> float:
     record = record and should_record_evaluations()
     evaluation = _next_evaluation_number()
     try:
-        design_vector = design_from_optimizer_array(x)
+        design_vector = DesignVector.from_array(x)
         if PROP_DATABASE is None:
             _ensure_prop_database_loaded()
         with _module_output_context():
@@ -653,7 +601,7 @@ def _differential_evolution_kwargs() -> dict:
 
     return {
         "func": fitness,
-        "bounds": optimizer_bounds(),
+        "bounds": DesignVector.bounds(),
         "constraints": (pd_constraint,),
         "maxiter": MAXITER,
         "popsize": POPSIZE,
@@ -663,7 +611,6 @@ def _differential_evolution_kwargs() -> dict:
         "tol": DE_TOL,
         "atol": DE_ATOL,
         "disp": False,
-        "integrality": optimizer_integrality(),
     }
 
 
@@ -756,14 +703,14 @@ def print_final_population_spread(result) -> None:
     if not hasattr(result, "population"):
         return
     population = np.asarray(result.population, dtype=float)
-    bounds = np.asarray(optimizer_bounds(), dtype=float)
+    bounds = np.asarray(DesignVector.bounds(), dtype=float)
     spans = bounds[:, 1] - bounds[:, 0]
     normalized_std = np.std(population, axis=0) / spans
 
     print("\nFinal population spread:")
     print("  variable | std / range")
     for name, spread in sorted(
-        zip(optimizer_variable_names(), normalized_std),
+        zip(DesignVector.opt_names(), normalized_std),
         key=lambda item: item[1],
         reverse=True,
     ):
@@ -778,20 +725,17 @@ def main_opt_test() -> None:
     PROP_DATABASE = _load_prop_database()
 
     print("Optimization variables:")
-    for name, bounds in zip(optimizer_variable_names(), optimizer_bounds()):
+    for name, bounds in zip(DesignVector.opt_names(), DesignVector.bounds()):
         print(f"  {name}: {bounds}")
 
     baseline = DesignVector()
     print("\nBaseline design:")
     for name, value in asdict(baseline).items():
-        if name in optimizer_variable_names():
+        if name in DesignVector.opt_names():
             print(f"  {name}: {value}")
 
     print("\nBaseline score check:")
-    baseline_objective = fitness(
-        optimizer_array_from_design(baseline),
-        record=False,
-    )
+    baseline_objective = fitness(baseline.to_array(), record=False)
     print(f"  objective: {baseline_objective}")
     print(f"  score: {-baseline_objective}")
 
@@ -807,8 +751,8 @@ def main_opt_test() -> None:
     )
     print(f"Termination: {result.message}")
 
-    best_design = design_from_optimizer_array(result.x)
-    print_best_result(result, optimizer_variable_names())
+    best_design = DesignVector.from_array(result.x)
+    print_best_result(result, DesignVector.opt_names())
     if EVALUATION_HISTORY:
         print_generation_summary()
     else:
@@ -819,7 +763,7 @@ def main_opt_test() -> None:
         )
     print_final_population_spread(result)
     print("\nBest design vector:")
-    print(best_design.disp_vars(optimization_names=optimizer_variable_names()))
+    print(best_design.disp_vars())
     visualization_paths = None
     if SAVE_BEST_DESIGN_VISUALIZATION:
         try:
@@ -857,8 +801,8 @@ def main_opt_test() -> None:
     )
     plot_final_population_spread(
         result,
-        optimizer_variable_names(),
-        optimizer_bounds(),
+        DesignVector.opt_names(),
+        DesignVector.bounds(),
         save_path=str(population_spread_path),
         show=False,
     )

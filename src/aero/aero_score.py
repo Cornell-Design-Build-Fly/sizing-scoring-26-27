@@ -12,14 +12,12 @@ Flyability requirements (ALL must hold for can_fly = True):
     Cma < 0                           : longitudinally stable
     Cnb > 0                           : directionally stable
     static_margin > 0                 : CG ahead of neutral point
-    spiral doubling time ≥ 2.5 s      : spiral divergence is slow enough to
-                                        be corrected by the pilot
+    spiral doubling time > 4 s        : spiral divergence is slow enough to
+                                        be corrected by the pilot / autopilot
 
-Spiral criterion: time to double bank angle must be at least 2.5 s, with 10 s
-or better incurring no penalty at all.  The doubling time comes from the
-4-state lateral solve in src/aero/stability_criteria.py, NOT from the
-get_modes spiral approximation, which divides by Clb and is singular on this
-zero-dihedral airframe.  Convergent spirals always pass.
+Spiral criterion: a spiral growth rate λ_spiral ≤ ln(2)/4 ≈ 0.173 s⁻¹ means
+the aircraft doubles its bank angle in ≥ 4 s when disturbed — accepted per
+MIL-SPEC and typical DBF practice.  Stable spirals (λ ≤ 0) always pass.
 
 When can_fly is False the penalty is a weighted, log-scale combination of
 how far each hard constraint is violated.
@@ -29,8 +27,6 @@ Usage
     from src.aero.aero_score import aero_score, AeroScore
     score: AeroScore = aero_score(cruise_condition, stability_result)
 """
-
-import math
 
 import numpy as np
 from dataclasses import dataclass
@@ -56,10 +52,9 @@ from src.vectors import ParameterVector
 # the minimum turn radius for a structurally limited aircraft.
 STRAIGHT_LENGTH_M: float = 152.4         # 500 ft per straight leg [m]
 STRAIGHTS_PER_LAP: int   = 4             # 4 legs × 500 ft = 2000 ft total straight
+LOOP_360_RAD:      float = 2.0 * np.pi   # 360° loop at far (upwind) end [rad]
 TURN_180_COUNT:    int   = 2             # number of 180° reversals per lap
 TURN_180_RAD:      float = np.pi         # each 180° reversal [rad]
-TURN_360_COUNT:    int   = 1             # number of 360° loops per lap
-TURN_360_RAD:      float = 2.0 * np.pi   # each 360° loop [rad]
 N_ZS:              float = 2.5           # structural limit load factor (civil)
 
 # ── Flyability Thresholds ──────────────────────────────────────────────────
@@ -67,17 +62,10 @@ CMA_LIMIT:    float = 0.0   # Cma must be strictly below this
 CNB_LIMIT:    float = 0.0   # Cnb must be strictly above this
 SM_LIMIT:     float = 0.0   # static_margin must be strictly above this
 
-# Spiral is judged on time to double bank angle, per the team's criterion:
-# at or above 2.5 s is acceptable, 10 s or better is the target, and anything
-# faster than 2.5 s is treated as unstable. The doubling time comes from the
-# 4-state lateral solve in src/aero/stability_criteria.py, NOT from the
-# get_modes spiral approximation, which divides by Clb and is singular on this
-# zero-dihedral geometry.
-SPIRAL_DOUBLING_TIME_MIN_S:   float = 2.5    # hard bound
-SPIRAL_DOUBLING_TIME_IDEAL_S: float = 10.0   # no penalty at or above this
-# Penalty charged exactly at the 2.5 s bound; the remainder of the 0-10 range
-# is reserved for designs faster (worse) than the bound.
-SPIRAL_BOUND_PENALTY: float = 2.0
+# Spiral: growth rate must not exceed ln(2)/T_double_min
+# → eigenvalue.real ≤ SPIRAL_RATE_MAX means doubling time ≥ 4 s
+SPIRAL_DOUBLING_TIME_MIN_S: float = 4.0
+SPIRAL_RATE_MAX: float = np.log(2.0) / SPIRAL_DOUBLING_TIME_MIN_S  # ≈ 0.1733 s⁻¹
 
 # ── Penalty Scale Parameters ───────────────────────────────────────────────
 # The "scale" for each constraint is the violation magnitude that drives that
@@ -87,39 +75,19 @@ SPIRAL_BOUND_PENALTY: float = 2.0
 #   static margin:  scale=0.10  →  10 % MAC beyond boundary → full penalty
 #   Cma:            scale=0.50  →  Cma = +0.50 /rad is severe instability
 #   Cnb:            scale=0.10  →  Cnb = -0.10 /rad is severe instability
-#   spiral:         graded on time-to-double; see _spiral_penalty
+#   spiral rate:    scale=SPIRAL_RATE_MAX  →  2× threshold (dt=2 s) → full penalty
 SM_PENALTY_SCALE:     float = 0.10          # [fraction of MAC]
 CMA_PENALTY_SCALE:    float = 0.50          # [1/rad]
 CNB_PENALTY_SCALE:    float = 0.10          # [1/rad]
-# The spiral criterion is already normalized to [-1, 1], so a full violation
-# maps to the cap.
+SPIRAL_PENALTY_SCALE: float = SPIRAL_RATE_MAX  # [s⁻¹]
 ENDURANCE_PENALTY_SCALE: float = 1.0
-
-# Upper bound on any single aero penalty, and the value assigned to a design
-# that cannot be trimmed at all.
-MAX_PENALTY: float = 10.0
 
 # Weights applied to each component penalty before summing.
 # Must sum to 1.0 so the weighted total stays in [0, 10].
-#
-# Rebalanced 2026-09-04 against what actually binds in a converged population
-# of 500 real optimizer candidates:
-#   p_sm      fired   0/500  (was the largest weight at 0.40)
-#   p_cma     fired   0/500
-#   p_cnb     fired 235/500  <- a real, now-accurate discriminator
-#   p_spiral  fired 217/500  but saturated at the cap in 215 of them
-#   p_endurance fired 38/500 and was added OUTSIDE the weighted sum, giving it
-#                            an effective weight of 1.0 and letting it reach
-#                            the full cap on its own.
-# Endurance is now inside the weighted sum. Spiral is down-weighted because
-# with zero wing dihedral it is violated by essentially every design and so
-# cannot discriminate between them; it is kept as a smooth signal rather than
-# a saturated step. See src/aero/stability_criteria.py.
-W_SM:        float = 0.25   # static margin
-W_CMA:       float = 0.10   # longitudinal stability
-W_CNB:       float = 0.30   # directional stability — dominant real constraint
-W_SPIRAL:    float = 0.10   # spiral criterion (cannot discriminate today)
-W_ENDURANCE: float = 0.25   # energy to complete the mission
+W_SM:     float = 0.40   # static margin — most critical single metric
+W_CMA:    float = 0.25   # longitudinal stability
+W_CNB:    float = 0.15   # directional stability
+W_SPIRAL: float = 0.20   # spiral mode
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -159,8 +127,6 @@ class AeroScore:
     penalty_longitudinal:    float | None = None
     penalty_directional:     float | None = None
     penalty_spiral:          float | None = None
-    cruise_speed_mps:        float | None = None
-    stall_speed_mps:         float | None = None
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -193,38 +159,6 @@ def _log_penalty(violation: float, scale: float) -> float:
     if violation <= 0.0:
         return 0.0
     return min(10.0, 10.0 * np.log2(1.0 + violation / scale))
-
-
-def _spiral_penalty(time_to_double_s: float) -> float:
-    """Grade the spiral mode on time to double bank angle.
-
-    0 at or above ``SPIRAL_DOUBLING_TIME_IDEAL_S`` (10 s), rising linearly in
-    divergence rate to ``SPIRAL_BOUND_PENALTY`` at the ``2.5 s`` bound, then
-    continuing on a log scale to the full cap for designs worse than the bound.
-    A convergent spiral (infinite doubling time) scores 0.
-    """
-
-    if not math.isfinite(time_to_double_s):
-        return 0.0  # convergent spiral, or no divergent root
-    if time_to_double_s <= 0.0:
-        return MAX_PENALTY
-    rate = math.log(2.0) / time_to_double_s
-    rate_ideal = math.log(2.0) / SPIRAL_DOUBLING_TIME_IDEAL_S
-    rate_bound = math.log(2.0) / SPIRAL_DOUBLING_TIME_MIN_S
-    if rate <= rate_ideal:
-        return 0.0
-    if rate <= rate_bound:
-        span = rate_bound - rate_ideal
-        return float(SPIRAL_BOUND_PENALTY * (rate - rate_ideal) / span)
-    excess = (rate - rate_bound) / rate_bound
-    return float(
-        min(
-            MAX_PENALTY,
-            SPIRAL_BOUND_PENALTY
-            + (MAX_PENALTY - SPIRAL_BOUND_PENALTY)
-            * min(1.0, math.log2(1.0 + excess)),
-        )
-    )
 
 
 def _compute_lap_time(
@@ -285,10 +219,7 @@ def _compute_lap_time(
     t_straight = STRAIGHTS_PER_LAP * STRAIGHT_LENGTH_M / cruise_speed
 
     # Turn time: 1 × 360° loop + 2 × 180° reversals = 4π total
-    total_turn_rad = (
-        TURN_180_COUNT * TURN_180_RAD
-        + TURN_360_COUNT * TURN_360_RAD
-    )
+    total_turn_rad = LOOP_360_RAD + TURN_180_COUNT * TURN_180_RAD  # = 4π
     t_turns = total_turn_rad / omega
 
     return t_straight + t_turns
@@ -307,7 +238,7 @@ def _endurance_values(
     if not np.isfinite(available):
         available = 0.0
     available = max(0.0, available)
-    required = {1: 3.0 * lap_time, 2: 5.0 * lap_time, 3: 300.0}[mission]
+    required = 3.0 * lap_time if mission == 1 else 300.0
     violation = max(0.0, required - available) / required
     return available, required, _log_penalty(violation, ENDURANCE_PENALTY_SCALE)
 
@@ -372,13 +303,10 @@ def aero_score(
     cg_ahead_of_np        = stability_result.static_margin > SM_LIMIT # SM  > 0
 
     # Spiral: eigenvalue is real; positive means bank angle grows.
+    # Pass if growth rate ≤ SPIRAL_RATE_MAX (doubling time ≥ 4 s).
     # stability_result.spiral is a ModeResult; eigenvalue_real is its real part.
-    spiral_time_to_double = (
-        stability_result.spiral_time_to_double_s
-        if stability_result.spiral_time_to_double_s is not None
-        else math.inf
-    )
-    spiral_ok = spiral_time_to_double >= SPIRAL_DOUBLING_TIME_MIN_S
+    spiral_rate = stability_result.spiral.eigenvalue_real
+    spiral_ok   = spiral_rate <= SPIRAL_RATE_MAX
 
     can_fly = (
         longitudinally_stable and directionally_stable and cg_ahead_of_np
@@ -395,29 +323,24 @@ def aero_score(
             penalty_longitudinal=0.0,
             penalty_directional=0.0,
             penalty_spiral=0.0,
-            cruise_speed_mps=float(cruise_speed),
-            stall_speed_mps=float(stall_speed),
         )
 
     # Compute how far each violated requirement is outside its boundary.
     sm_violation     = max(0.0, SM_LIMIT     - stability_result.static_margin)
     cma_violation    = max(0.0, stability_result.Cma - CMA_LIMIT)
     cnb_violation    = max(0.0, CNB_LIMIT    - stability_result.Cnb)
-    p_spiral_direct = _spiral_penalty(spiral_time_to_double)
+    spiral_violation = max(0.0, spiral_rate  - SPIRAL_RATE_MAX)
 
     p_sm     = _log_penalty(sm_violation,     SM_PENALTY_SCALE)
     p_cma    = _log_penalty(cma_violation,    CMA_PENALTY_SCALE)
     p_cnb    = _log_penalty(cnb_violation,    CNB_PENALTY_SCALE)
-    p_spiral = p_spiral_direct
+    p_spiral = _log_penalty(spiral_violation, SPIRAL_PENALTY_SCALE)
 
-    # Weighted sum; weights sum to 1.0 so the total stays in [0, 10].
+    # Weighted sum; weights sum to 1.0 so total stays in [0, 10].
     penalty = min(
-        MAX_PENALTY,
-        W_SM * p_sm
-        + W_CMA * p_cma
-        + W_CNB * p_cnb
-        + W_SPIRAL * p_spiral
-        + W_ENDURANCE * p_endurance,
+        10.0,
+        W_SM * p_sm + W_CMA * p_cma + W_CNB * p_cnb + W_SPIRAL * p_spiral
+        + p_endurance,
     )
 
     return AeroScore(
@@ -428,6 +351,4 @@ def aero_score(
         penalty_longitudinal=p_cma,
         penalty_directional=p_cnb,
         penalty_spiral=p_spiral,
-        cruise_speed_mps=float(cruise_speed),
-        stall_speed_mps=float(stall_speed),
     )

@@ -8,31 +8,22 @@ from aerosandbox.aerodynamics.aero_3D.aero_buildup_submodels.fuselage_aerodynami
     fuselage_form_factor,
 )
 
-from src.vectors import (
-    ASBDesignVector,
-    DesignVector,
-    ParameterVector,
-    SENSOR_DIAMETER_M,
-)
+from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 
 
 MU = 1.81e-5
-SENSOR_CD = 0.137
-SENSOR_RADIUS_M = 0.5 * SENSOR_DIAMETER_M
+BANNER_CD = 0.08
+BANNER_ASPECT_RATIO = 5.0
 
 
-def sensor_drag_force(
+def banner_drag_force(
     design: DesignVector,
     parameters: ParameterVector,
     velocity,
 ):
-    """Return sensor drag using the projected side area of a cylinder.
-
-    The M3 flown weight determines rod length; diameter remains fixed.
-    """
-    sensor_length = design.mission3_sensor_length_m
-    sensor_area = 2.0 * SENSOR_RADIUS_M * sensor_length
-    return 0.5 * parameters.rho * velocity**2 * SENSOR_CD * sensor_area
+    """Return banner drag using area = length^2 / aspect ratio."""
+    banner_area = design.banner_length**2 / BANNER_ASPECT_RATIO
+    return 0.5 * parameters.rho * velocity**2 * BANNER_CD * banner_area
 
 
 @lru_cache(maxsize=4096)

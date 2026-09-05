@@ -6,7 +6,6 @@ from dataclasses import replace
 
 from src.mech.airframe_assembly import build_fixed_airframe_items
 from src.mech.mass_properties import (
-    buffered_static_margin_penalty,
     estimate_aerodynamic_center_x,
     geometry_stations,
 )
@@ -42,13 +41,18 @@ def evaluate_mechanical_design(
         warnings=warnings,
     )
 
+    if selection.width_increases:
+        warnings.append(
+            "Mission 2 selected fuselage width "
+            f"{selection.fuselage_width_m:.4f} m after "
+            f"{selection.width_increases} duck-width increase(s)."
+        )
     mission1 = replace(selection.mission1, warnings=tuple(warnings))
     mission2 = replace(selection.mission2, warnings=tuple(warnings))
 
     mission3_payload = place_mission3_payload(
         design_vector=design_vector,
         base_items=selection.base_items,
-        mission2_payload=selection.payload_items,
         electronics_layout=selection.electronics_layout,
         neutral_point_x_m=neutral_point_x,
         config=config,
@@ -82,29 +86,6 @@ def evaluate_mechanical_design(
         selection.base_items + selection.payload_items + mission3_payload
     )
 
-    # Static-margin feedback for the optimizer. Before the 2026-27 rules update
-    # this was driven solely by M1; the M1 waiver made that inappropriate, but
-    # zeroing it removed the only static-margin signal in the whole stack. It is
-    # now driven by the missions actually flown for score (see
-    # StaticMarginConfig.penalized_missions). The worst offending mission sets
-    # the penalty so the total stays on the same 0-10 scale as before rather
-    # than summing to 30 and swamping the mission scores.
-    evaluated = {"M1": mission1, "M2": mission2, "M3": mission3}
-    per_mission_penalties = {
-        name: buffered_static_margin_penalty(
-            evaluated[name].static_margin, config.static_margin
-        )
-        for name in config.static_margin.penalized_missions
-    }
-    static_margin_penalty = max(per_mission_penalties.values(), default=0.0)
-    for name, value in sorted(per_mission_penalties.items()):
-        if value > 0.0:
-            warnings.append(
-                f"{name} static margin is "
-                f"{100 * evaluated[name].static_margin:.2f}%, outside the "
-                f"buffered optimizer band; penalty {value:.3f}."
-            )
-
     return MechanicalResult(
         neutral_point_x_m=neutral_point_x,
         wing_aerodynamic_center_x_m=stations.wing_ac_x_m,
@@ -118,15 +99,13 @@ def evaluate_mechanical_design(
         input_fuselage_width_m=float(design_vector.fuselage_width),
         input_fuselage_height_m=float(design_vector.fuselage_height),
         resolved_fuselage_width_m=selection.fuselage_width_m,
-        resolved_fuselage_height_m=selection.fuselage_height_m,
+        resolved_fuselage_height_m=float(design_vector.fuselage_height),
         fuselage_width_increases=selection.width_increases,
         all_items=all_items,
         missions={"M1": mission1, "M2": mission2, "M3": mission3},
         warnings=tuple(dict.fromkeys(warnings)),
-        penalty=selection.placement_penalty + static_margin_penalty,
-        penalty_static_margin=static_margin_penalty,
-        penalty_placement=selection.placement_penalty,
-        penalty_static_margin_by_mission=dict(per_mission_penalties),
+        penalty=selection.static_margin_penalty,
+        penalty_static_margin=selection.static_margin_penalty,
     )
 
 

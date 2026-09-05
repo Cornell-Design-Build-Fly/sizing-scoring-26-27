@@ -64,20 +64,7 @@ class StabilityResult:
     roll_subsidence: ModeResult
     Cma: float
     Cnb: float
-    # Geometric static margin, (x_np - x_cg) / c_ref. This is the single
-    # definition used by the flyability gates, the mechanical placement target,
-    # and the optimizer penalty.
     static_margin: float | None = None
-    neutral_point_x_m: float | None = None
-    # Diagnostic only: the legacy -Cma/CLa value. It is NOT a static margin,
-    # because the calibrated Cma regression does not preserve the identity
-    # dCma/dx_cg = CLa / c_ref. Retained so the two can be compared.
-    static_margin_from_cma: float | None = None
-    # Seconds for the spiral mode to double bank angle; inf when convergent.
-    # Derived from the 4-state lateral solve in src/aero/stability_criteria.py,
-    # not from get_modes' spiral approximation, which divides by Clb and is
-    # singular on this zero-dihedral geometry.
-    spiral_time_to_double_s: float | None = None
 
 @dataclass(frozen=True)
 class AeroOutput:
