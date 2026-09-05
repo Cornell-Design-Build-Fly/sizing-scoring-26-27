@@ -7,6 +7,15 @@ import math
 
 import numpy as np
 
+from src.aero.aero_score import (
+    N_ZS,
+    STRAIGHT_LENGTH_M,
+    STRAIGHTS_PER_LAP,
+    TURN_180_COUNT,
+    TURN_180_RAD,
+    TURN_360_COUNT,
+    TURN_360_RAD,
+)
 from src.aero.drag_model import drag_coefficients, fuselage_drag_geometry, sensor_drag_force
 from src.prop.continuous_prop_database import ContinuousPropDatabase
 from src.prop.prop_cruise_values import solve_cruise_samples
@@ -100,7 +109,7 @@ class MissionPropulsionPerformance:
     climb_distance_required_m: float
     climb_distance_allowed_m: float
     maximum_propeller_tip_mach: float
-    cruise_power_w: float
+    cruise_power_w: float  # nominal-equivalent battery depletion power
     takeoff_energy_wh: float
     climb_energy_wh: float
     reacceleration_energy_wh: float
@@ -112,6 +121,15 @@ class MissionPropulsionPerformance:
     climb_rate_margin_mps: float
     climb_distance_margin_m: float
     limiting_constraint: str
+    aerodynamic_lap_time_s: float
+    modeled_lap_time_s: float
+    straight_time_per_lap_s: float
+    turn_time_per_lap_s: float
+    turn_speed_mps: float
+    turn_load_factor: float
+    turn_power_w: float  # nominal-equivalent battery depletion power
+    straight_energy_wh: float
+    turn_energy_wh: float
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -142,6 +160,169 @@ def _drag_n(
     if mission == 3:
         drag += sensor_drag_force(design, parameters, speed)
     return np.asarray(drag, dtype=float)
+
+
+@dataclass(frozen=True)
+class _TurnPerformance:
+    feasible: bool
+    speed_mps: float
+    load_factor: float
+    angular_rate_rad_s: float
+    required_thrust_n: float
+    battery_power_w: float
+    maximum_rpm: float
+
+
+def _propulsion_limited_turn(
+    design: DesignVector,
+    parameters: ParameterVector,
+    *,
+    mission: int,
+    supported_weight_n: float,
+    cruise_speed_mps: float,
+    stall_speed_mps: float,
+    motor,
+    battery,
+    current_limit_a: float,
+    prop_database: ContinuousPropDatabase,
+) -> _TurnPerformance:
+    """Find the quickest sustainable level turn and its battery power.
+
+    The old course model always used the structural corner speed and load
+    factor, even when the propulsion system could not overcome the associated
+    induced drag.  This search applies lift, structural, thrust, current,
+    voltage, and motor-power limits together.  At the selected force demand it
+    then chooses the least-power propeller RPM that sustains the turn.
+    """
+
+    maximum_turn_speed = min(
+        cruise_speed_mps,
+        math.sqrt(N_ZS) * stall_speed_mps,
+    )
+    minimum_turn_speed = 1.001 * stall_speed_mps
+    if maximum_turn_speed <= minimum_turn_speed:
+        return _TurnPerformance(False, math.nan, 1.0, 0.0, math.inf, math.inf, 0.0)
+
+    turn_speeds = np.linspace(minimum_turn_speed, maximum_turn_speed, 31)
+    maximum_propulsion = solve_cruise_samples(
+        design.prop_diameter_in,
+        design.prop_pitch_in,
+        turn_speeds,
+        motor,
+        battery,
+        current_limit_a,
+        1.0,
+        prop_database,
+        min_rpm=3000,
+        max_rpm=20000,
+        rpm_step=100,
+    )
+
+    lift_limited_load_factor = (turn_speeds / stall_speed_mps) ** 2
+    upper_load_factor = np.minimum(N_ZS, lift_limited_load_factor)
+    lower_load_factor = np.ones_like(turn_speeds)
+    q = 0.5 * parameters.rho * turn_speeds**2
+
+    drag_at_one_g = _drag_n(
+        design,
+        parameters,
+        turn_speeds,
+        supported_weight_n,
+        mission,
+        lift_coefficient=supported_weight_n / (q * design.wing_area),
+    )
+    sustainable = (
+        ~maximum_propulsion.failed_mask
+        & (upper_load_factor > 1.0)
+        & (drag_at_one_g <= maximum_propulsion.thrust_samples_n)
+    )
+    if not np.any(sustainable):
+        return _TurnPerformance(False, math.nan, 1.0, 0.0, math.inf, math.inf, 0.0)
+
+    # Drag rises monotonically with lift coefficient in this model, so a short
+    # vectorized bisection gives the thrust-limited load factor at every speed.
+    for _ in range(24):
+        midpoint = 0.5 * (lower_load_factor + upper_load_factor)
+        midpoint_drag = _drag_n(
+            design,
+            parameters,
+            turn_speeds,
+            supported_weight_n,
+            mission,
+            lift_coefficient=(
+                midpoint * supported_weight_n / (q * design.wing_area)
+            ),
+        )
+        can_hold = sustainable & (
+            midpoint_drag <= maximum_propulsion.thrust_samples_n
+        )
+        lower_load_factor = np.where(can_hold, midpoint, lower_load_factor)
+        upper_load_factor = np.where(can_hold, upper_load_factor, midpoint)
+
+    angular_rates = np.zeros_like(turn_speeds)
+    angular_rates[sustainable] = (
+        parameters.gravity
+        * np.sqrt(np.maximum(lower_load_factor[sustainable] ** 2 - 1.0, 0.0))
+        / turn_speeds[sustainable]
+    )
+    best_index = int(np.argmax(angular_rates))
+    if angular_rates[best_index] <= 0.0:
+        return _TurnPerformance(False, math.nan, 1.0, 0.0, math.inf, math.inf, 0.0)
+
+    turn_speed = float(turn_speeds[best_index])
+    turn_load_factor = float(lower_load_factor[best_index])
+    turn_q = float(q[best_index])
+    required_thrust = float(
+        _drag_n(
+            design,
+            parameters,
+            turn_speed,
+            supported_weight_n,
+            mission,
+            lift_coefficient=(
+                turn_load_factor
+                * supported_weight_n
+                / (turn_q * design.wing_area)
+            ),
+        )
+    )
+    turn_operating_point = solve_cruise_samples(
+        design.prop_diameter_in,
+        design.prop_pitch_in,
+        (turn_speed,),
+        motor,
+        battery,
+        current_limit_a,
+        1.0,
+        prop_database,
+        min_rpm=3000,
+        max_rpm=20000,
+        rpm_step=100,
+        minimum_thrust_n=(required_thrust,),
+    )
+    if turn_operating_point.failed_mask[0]:
+        return _TurnPerformance(
+            False,
+            turn_speed,
+            turn_load_factor,
+            float(angular_rates[best_index]),
+            required_thrust,
+            math.inf,
+            float(maximum_propulsion.selected_rpm[best_index]),
+        )
+
+    return _TurnPerformance(
+        True,
+        turn_speed,
+        turn_load_factor,
+        float(angular_rates[best_index]),
+        required_thrust,
+        float(turn_operating_point.selected_current_a[0] * battery.vnom),
+        max(
+            float(maximum_propulsion.selected_rpm[best_index]),
+            float(turn_operating_point.selected_rpm[0]),
+        ),
+    )
 
 
 def _penalty_and_limit(
@@ -305,7 +486,12 @@ def evaluate_mission_propulsion(
     )
     takeoff_indices = np.searchsorted(sample_speeds, takeoff_speeds)
     takeoff_thrust_n = full.thrust_samples_n[takeoff_indices]
-    takeoff_power_w = full.selected_power_w[takeoff_indices]
+    # Capacity is an amp-hour limit. Convert current to nominal-equivalent pack
+    # power for depletion accounting; terminal I*V_sag omits internal-resistance
+    # loss and cannot be compared directly with nominal V*Ah pack energy.
+    takeoff_battery_power_w = (
+        full.selected_current_a[takeoff_indices] * battery.vnom
+    )
     net_force_n = (
         takeoff_thrust_n
         - drag_n
@@ -321,13 +507,16 @@ def evaluate_mission_propulsion(
         takeoff_distance = float(np.trapezoid(takeoff_speeds * inverse_acceleration, takeoff_speeds))
         takeoff_time = float(np.trapezoid(inverse_acceleration, takeoff_speeds))
         takeoff_energy = float(
-            np.trapezoid(takeoff_power_w * inverse_acceleration, takeoff_speeds)
+            np.trapezoid(
+                takeoff_battery_power_w * inverse_acceleration,
+                takeoff_speeds,
+            )
             / 3600.0
         )
 
     climb_index = int(np.searchsorted(sample_speeds, climb_speed))
     climb_thrust_n = float(full.thrust_samples_n[climb_index])
-    climb_power_w = float(full.selected_power_w[climb_index])
+    climb_power_w = float(full.selected_current_a[climb_index] * battery.vnom)
     climb_drag_n = float(
         _drag_n(design, parameters, climb_speed, weight_n, mission)
     )
@@ -356,37 +545,82 @@ def evaluate_mission_propulsion(
     else:
         climb_energy = climb_power_w * requirements.climb_altitude_m / climb_rate / 3600.0
 
-    operating_point_failed = bool(
-        static.failed_mask[0]
-        or np.any(full.failed_mask)
-        or cruise.failed_mask[0]
-    )
     cruise_power = (
         math.inf
         if cruise.failed_mask[0]
-        else float(cruise.selected_power_w[0])
+        else float(cruise.selected_current_a[0] * battery.vnom)
     )
-    mission_laps = {1: 3, 2: 5, 3: max(1, int(300.0 // lap_time_s))}[mission]
-    cruise_duration_s = {1: 3.0 * lap_time_s, 2: 5.0 * lap_time_s, 3: 300.0}[mission]
-    cruise_energy = cruise_power * cruise_duration_s / 3600.0
-    turn_speed = min(cruise_speed_mps, math.sqrt(2.5) * stall_speed_mps)
-    delta_ke_j = 0.5 * mass_kg * max(0.0, cruise_speed_mps**2 - turn_speed**2)
-    reacceleration_energy = (
-        3.0 * mission_laps * delta_ke_j
-        / requirements.reacceleration_efficiency
-        / 3600.0
+    turn = _propulsion_limited_turn(
+        design,
+        parameters,
+        mission=mission,
+        supported_weight_n=weight_n,
+        cruise_speed_mps=cruise_speed_mps,
+        stall_speed_mps=stall_speed_mps,
+        motor=motor,
+        battery=battery,
+        current_limit_a=current_limit,
+        prop_database=prop_database,
     )
+    total_turn_angle_rad = (
+        TURN_180_COUNT * TURN_180_RAD
+        + TURN_360_COUNT * TURN_360_RAD
+    )
+    straight_time_per_lap = (
+        STRAIGHTS_PER_LAP * STRAIGHT_LENGTH_M / cruise_speed_mps
+    )
+    turn_time_per_lap = (
+        total_turn_angle_rad / turn.angular_rate_rad_s
+        if turn.feasible
+        else math.inf
+    )
+    modeled_lap_time = straight_time_per_lap + turn_time_per_lap
+    if not turn.feasible:
+        straight_energy = math.inf
+        turn_energy = math.inf
+        cruise_energy = math.inf
+        reacceleration_energy = math.inf
+    else:
+        required_laps = {1: 3.0, 2: 5.0}.get(mission)
+        lap_equivalents = (
+            300.0 / modeled_lap_time
+            if required_laps is None
+            else required_laps
+        )
+        straight_duration_s = lap_equivalents * straight_time_per_lap
+        turn_duration_s = lap_equivalents * turn_time_per_lap
+        straight_energy = cruise_power * straight_duration_s / 3600.0
+        turn_energy = turn.battery_power_w * turn_duration_s / 3600.0
+        # Kept as a compatibility/reporting aggregate: it now means all steady
+        # course-flight energy, rather than straight power times every second.
+        cruise_energy = straight_energy + turn_energy
+        delta_ke_j = 0.5 * mass_kg * max(
+            0.0,
+            cruise_speed_mps**2 - turn.speed_mps**2,
+        )
+        reacceleration_energy = (
+            3.0 * lap_equivalents * delta_ke_j
+            / requirements.reacceleration_efficiency
+            / 3600.0
+        )
     required_energy = takeoff_energy + climb_energy + reacceleration_energy + cruise_energy
     usable_energy = battery.vnom * battery.get_useable_capacity()
     allowed_energy = usable_energy * (1.0 - requirements.usable_energy_margin_fraction)
+    maximum_rpm = max(float(np.max(full.selected_rpm)), turn.maximum_rpm)
     propeller_tip_speed_mps = (
         math.pi
         * design.prop_diameter_in
         * 0.0254
-        * float(np.max(full.selected_rpm))
+        * maximum_rpm
         / 60.0
     )
     propeller_tip_mach = propeller_tip_speed_mps / requirements.speed_of_sound_mps
+    operating_point_failed = bool(
+        static.failed_mask[0]
+        or np.any(full.failed_mask)
+        or cruise.failed_mask[0]
+        or not turn.feasible
+    )
     penalty, limiting = _penalty_and_limit(
         takeoff_distance,
         climb_rate,
@@ -438,6 +672,15 @@ def evaluate_mission_propulsion(
         climb_rate_margin_mps=climb_rate - requirements.minimum_climb_rate_mps,
         climb_distance_margin_m=climb_distance_allowed - climb_distance_required,
         limiting_constraint=limiting,
+        aerodynamic_lap_time_s=lap_time_s,
+        modeled_lap_time_s=modeled_lap_time,
+        straight_time_per_lap_s=straight_time_per_lap,
+        turn_time_per_lap_s=turn_time_per_lap,
+        turn_speed_mps=turn.speed_mps,
+        turn_load_factor=turn.load_factor,
+        turn_power_w=turn.battery_power_w,
+        straight_energy_wh=straight_energy,
+        turn_energy_wh=turn_energy,
     )
 
 

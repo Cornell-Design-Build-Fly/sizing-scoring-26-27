@@ -248,6 +248,27 @@ def main(
         if not return_details and mission in (2, 3) and not performance.feasible:
             break
     propulsion_results = tuple(propulsion_result_list)
+    propulsion_by_mission = {
+        performance.mission: performance for performance in propulsion_results
+    }
+    # Course time is propulsion-aware: a turn can be lift-, structure-, or
+    # thrust-limited.  Replace the preliminary aero-only corner-speed estimate
+    # before competition scoring and reporting.
+    if 1 in propulsion_by_mission:
+        aero_m1 = replace(
+            aero_m1,
+            lap_time=propulsion_by_mission[1].modeled_lap_time_s,
+        )
+    if 2 in propulsion_by_mission:
+        aero_m2 = replace(
+            aero_m2,
+            lap_time=propulsion_by_mission[2].modeled_lap_time_s,
+        )
+    if 3 in propulsion_by_mission:
+        aero_m3 = replace(
+            aero_m3,
+            lap_time=propulsion_by_mission[3].modeled_lap_time_s,
+        )
     propulsion_feasible = (
         {performance.mission for performance in propulsion_results} == {1, 2, 3}
         and all(performance.feasible for performance in propulsion_results)

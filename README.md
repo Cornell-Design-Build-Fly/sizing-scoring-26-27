@@ -71,12 +71,19 @@ Each candidate is now checked for more than steady cruise. The propulsion
 model requires:
 
 - takeoff within 60 m at 1.2 times stall speed;
-- at least 2.0 m/s climb rate at 1.3 times stall speed;
-- enough usable battery energy for takeoff, a 50 ft climb, the complete
-  mission, and kinetic-energy recovery after every modeled turn;
+- 200 ft of climb before the 500 ft turn marker, with takeoff roll consuming
+  part of that distance, plus a 2.0 m/s climb-rate floor;
+- enough usable battery energy for takeoff, climb, straight segments,
+  propulsion-limited turns, and kinetic-energy recovery after each turn;
 - a five-percent usable-energy margin;
 - propeller tip Mach no greater than 0.75;
 - motor, ESC/current, 25C battery-discharge, voltage-sag, and power limits.
+
+Normal sizing runs use a fixed 8S pack and optimize capacity up to the 100 Wh
+rules limit. Course timing and energy use separate fast straightaways from
+slower turns. The turn solver enforces the lift, 2.5-g structural, available
+thrust, current, voltage, and motor-power limits, then selects the least-power
+propeller operating point that sustains the required turn force.
 
 The thresholds live in `src.prop.mission_performance.PropulsionRequirements`.
 Every evaluated mission receives the detailed speed-dependent ground-roll

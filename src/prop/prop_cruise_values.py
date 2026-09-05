@@ -56,10 +56,16 @@ def solve_cruise_samples(
     rpm_step: int = 100,
     knockdown: bool = False,
     knockdown_factor: float = 0.9,
+    minimum_thrust_n: ArrayLike | None = None,
 ) -> CruiseGridResult:
     """
-    Evaluate the full velocity x RPM grid and select the
-    maximum-thrust valid RPM independently at each velocity.
+    Evaluate the full velocity x RPM grid.
+
+    By default, select the maximum-thrust valid RPM independently at each
+    velocity.  If ``minimum_thrust_n`` is supplied, select the lowest-current
+    valid RPM that supplies at least that much thrust instead.  The latter is
+    used for course segments such as sustained turns, where the required
+    aerodynamic force is known and maximum thrust would overstate energy use.
 
     Propeller-database input units:
         diameter: inches
@@ -135,6 +141,20 @@ def solve_cruise_samples(
         raise ValueError(
             "Knockdown factor must be between 0 and 1."
         )
+
+    required_thrust = None
+    if minimum_thrust_n is not None:
+        required_thrust = np.asarray(minimum_thrust_n, dtype=np.float64)
+        if required_thrust.ndim == 0:
+            required_thrust = np.full(velocities.size, float(required_thrust))
+        else:
+            required_thrust = required_thrust.reshape(-1)
+        if required_thrust.size != velocities.size:
+            raise ValueError(
+                "minimum_thrust_n must be scalar or match the velocity count."
+            )
+        if not np.all(np.isfinite(required_thrust)) or np.any(required_thrust < 0.0):
+            raise ValueError("minimum_thrust_n must be finite and nonnegative.")
 
     # Exact discrete RPM values that will be considered.
     rpm_values = np.arange(
@@ -355,31 +375,38 @@ def solve_cruise_samples(
         )
     )
 
-    valid_rpm_count = np.count_nonzero(
-        valid_mask,
-        axis=1,
-    ).astype(np.int64)
+    selectable_thrust_grid = (
+        thrust_grid * knockdown_factor if knockdown else thrust_grid
+    )
+    selection_mask = valid_mask
+    if required_thrust is not None:
+        selection_mask = valid_mask & (
+            selectable_thrust_grid >= required_thrust[:, np.newaxis]
+        )
+
+    valid_rpm_count = np.count_nonzero(selection_mask, axis=1).astype(np.int64)
 
     failed_mask = valid_rpm_count == 0
 
-    # Give invalid points negative infinity so argmax ignores them.
-    selectable_thrust = np.where(
-        valid_mask,
-        thrust_grid,
-        -np.inf,
-    )
-
-    # Select the highest-thrust valid RPM in each velocity row.
-    best_rpm_indices = np.argmax(
-        selectable_thrust,
-        axis=1,
-    )
+    if required_thrust is None:
+        # Give invalid points negative infinity so argmax ignores them.
+        selection_values = np.where(
+            selection_mask,
+            selectable_thrust_grid,
+            -np.inf,
+        )
+        best_rpm_indices = np.argmax(selection_values, axis=1)
+    else:
+        # At fixed nominal pack voltage, minimum current is minimum battery
+        # depletion. Terminal power alone would favor voltage-sag loss.
+        selection_values = np.where(selection_mask, current_grid_a, np.inf)
+        best_rpm_indices = np.argmin(selection_values, axis=1)
 
     velocity_indices = np.arange(
         velocities.size
     )
 
-    selected_thrust_n = selectable_thrust[
+    selected_thrust_n = selectable_thrust_grid[
         velocity_indices,
         best_rpm_indices,
     ]
@@ -445,12 +472,6 @@ def solve_cruise_samples(
         0.0,
         selected_power_w,
     )
-
-    if knockdown:
-        selected_thrust_n = (
-            selected_thrust_n
-            * knockdown_factor
-        )
 
     return CruiseGridResult(
         velocities_mps=velocities.copy(),

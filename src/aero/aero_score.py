@@ -99,8 +99,8 @@ ENDURANCE_PENALTY_SCALE: float = 1.0
 # that cannot be trimmed at all.
 MAX_PENALTY: float = 10.0
 
-# Weights applied to each component penalty before summing.
-# Must sum to 1.0 so the weighted total stays in [0, 10].
+# Relative weights applied to each stability penalty. The active weights are
+# normalized when summed so the total stays in [0, 10].
 #
 # Rebalanced 2026-09-04 against what actually binds in a converged population
 # of 500 real optimizer candidates:
@@ -108,18 +108,21 @@ MAX_PENALTY: float = 10.0
 #   p_cma     fired   0/500
 #   p_cnb     fired 235/500  <- a real, now-accurate discriminator
 #   p_spiral  fired 217/500  but saturated at the cap in 215 of them
-#   p_endurance fired 38/500 and was added OUTSIDE the weighted sum, giving it
-#                            an effective weight of 1.0 and letting it reach
-#                            the full cap on its own.
-# Endurance is now inside the weighted sum. Spiral is down-weighted because
+# Battery endurance is no longer scored here. The propulsion module owns the
+# segment-resolved takeoff, climb, straight, turn, and re-acceleration energy
+# check; keeping the old quadratic flight-time fit here judged the same battery
+# twice using inconsistent models. The remaining stability weights are
+# normalized without changing their relative importance.
+# Spiral is down-weighted because
 # with zero wing dihedral it is violated by essentially every design and so
 # cannot discriminate between them; it is kept as a smooth signal rather than
 # a saturated step. See src/aero/stability_criteria.py.
-W_SM:        float = 0.25   # static margin
-W_CMA:       float = 0.10   # longitudinal stability
+W_SM:        float = 0.25
+W_CMA:       float = 0.10
 W_CNB:       float = 0.30   # directional stability — dominant real constraint
-W_SPIRAL:    float = 0.10   # spiral criterion (cannot discriminate today)
-W_ENDURANCE: float = 0.25   # energy to complete the mission
+W_SPIRAL:    float = 0.10
+W_ENDURANCE: float = 0.0
+AERO_PENALTY_WEIGHT_SUM = W_SM + W_CMA + W_CNB + W_SPIRAL
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -300,7 +303,10 @@ def _endurance_values(
     lap_time: float,
     mission: int,
 ) -> tuple[float, float, float]:
-    """Return available time, required time, and endurance penalty."""
+    """Legacy flight-time-fit diagnostic; not used by ``aero_score``.
+
+    Authoritative battery feasibility lives in ``mission_performance``.
+    """
     if mission not in (1, 2, 3):
         raise ValueError(f"Mission must be 1, 2, or 3, got {mission}.")
     available = float(np.polyval(flight_time_fit, cruise_speed))
@@ -358,13 +364,23 @@ def aero_score(
     cruise_speed = cruise_condition.operating_point.velocity
     stall_speed  = cruise_condition.stall_speed
     lap_time = _compute_lap_time(cruise_speed, stall_speed, parameter_vector)
-    available_time, required_time, p_endurance = _endurance_values(
-        flight_time_fit, cruise_speed, lap_time, mission
-    )
-    endurance_ok = available_time >= required_time
+    # Kept in the API while callers migrate. The propulsion module performs
+    # the authoritative, segment-resolved battery-energy check.
+    _ = flight_time_fit
+    p_endurance = 0.0
     lap_time_ok = np.isfinite(lap_time) and lap_time < 1e6
     if not lap_time_ok:
-        p_endurance = 10.0
+        return AeroScore(
+            lap_time=lap_time,
+            can_fly=False,
+            penalty=MAX_PENALTY,
+            penalty_static_margin=0.0,
+            penalty_longitudinal=0.0,
+            penalty_directional=0.0,
+            penalty_spiral=0.0,
+            cruise_speed_mps=float(cruise_speed),
+            stall_speed_mps=float(stall_speed),
+        )
 
     # ── Flyability gates ──────────────────────────────────────────────────
     longitudinally_stable = stability_result.Cma < CMA_LIMIT          # Cma < 0
@@ -382,7 +398,7 @@ def aero_score(
 
     can_fly = (
         longitudinally_stable and directionally_stable and cg_ahead_of_np
-        and spiral_ok and endurance_ok and lap_time_ok
+        and spiral_ok and lap_time_ok
     )
 
     # ── Penalty ──────────────────────────────────────────────────────────
@@ -410,14 +426,17 @@ def aero_score(
     p_cnb    = _log_penalty(cnb_violation,    CNB_PENALTY_SCALE)
     p_spiral = p_spiral_direct
 
-    # Weighted sum; weights sum to 1.0 so the total stays in [0, 10].
+    # Normalize the active relative weights so the total stays in [0, 10].
     penalty = min(
         MAX_PENALTY,
-        W_SM * p_sm
-        + W_CMA * p_cma
-        + W_CNB * p_cnb
-        + W_SPIRAL * p_spiral
-        + W_ENDURANCE * p_endurance,
+        (
+            W_SM * p_sm
+            + W_CMA * p_cma
+            + W_CNB * p_cnb
+            + W_SPIRAL * p_spiral
+            + W_ENDURANCE * p_endurance
+        )
+        / AERO_PENALTY_WEIGHT_SUM,
     )
 
     return AeroScore(

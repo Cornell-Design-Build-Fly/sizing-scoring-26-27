@@ -54,6 +54,44 @@ Aero solver expectations:
 
 ## Session Log
 
+### 2026-09-05 - Codex
+Changed:
+- Replaced the course-energy shortcut with segment-resolved straight/turn
+  accounting. Turns are now searched over speed and load factor subject to
+  lift, 2.5-g structure, prop thrust, current, voltage, and motor-power limits;
+  the least-power RPM that sustains the selected turn is used for energy.
+- Battery depletion now integrates `current * nominal pack voltage`. The old
+  `current * sagged terminal voltage` omitted pack-resistance losses while
+  comparing against nominal `Ah * V` energy.
+- Removed the legacy quadratic flight-time endurance fit from aero flyability;
+  propulsion is now the one battery-feasibility authority instead of judging
+  the same pack twice with inconsistent models.
+- Both normal optimization entry points are fixed at 8S. Cell-count variation
+  remains available only through the explicit comparison tooling.
+- Restored the rules-legal 6-inch sensor minimum and relaxed the artificial
+  5-inch prop-pitch floor to 4 inches (the P/D constraint is the real floor).
+
+Learned:
+- On `opt_physics_limited/run_20260905_125154`, the saved best design can
+  sustain its 2.5-g turns, so lap time remains 35.36 s in M3. Turn power is
+  about 1000 W versus 623 W on straights, however. Corrected M3 required energy
+  is 75.72 Wh versus 61.84 Wh previously. Its 76.98 Wh nominal pack therefore
+  fails. Holding mass fixed implies 93.77 Wh / 3.168 Ah, but a full capacity
+  sweep (which adds battery mass) does not pass energy until about 96.2 Wh /
+  3.25 Ah; by then the old design fails the climb-distance constraint. It must
+  be reoptimized rather than repaired by changing capacity alone.
+- The low battery was a modeling issue, not an active battery-capacity bound.
+  The latest pack was only 76.98 Wh and sat 0.32 Wh above the old M3 check.
+- The saved optimum's 5-inch prop pitch was exactly on an artificial box bound;
+  other primary geometry variables were not similarly pinned. M2 climb distance
+  and M3 energy are genuine active physics constraints.
+
+Verified:
+- `python -m compileall -q src`
+- Standalone turn-energy, spiral, propulsion-requirement, continuous-scoring,
+  vectorized-prop, and battery-cell plumbing checks pass. The environment does
+  not currently have pytest installed, so the pytest runner itself was not used.
+
 ### 2026-09-05 - Claude
 Changed (team direction: make the design physics-limited, not bound-limited):
 - **Climb to pattern altitude** is now a hard constraint in

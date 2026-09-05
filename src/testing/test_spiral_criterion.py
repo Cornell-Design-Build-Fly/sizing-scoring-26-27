@@ -109,7 +109,7 @@ def test_time_to_double_handles_convergent_and_degenerate_roots() -> None:
 
 def test_aero_score_actually_applies_the_spiral_penalty() -> None:
     """Covers the wiring, not just the helper: a fast spiral must cost score."""
-    from src.aero.aero_score import W_SPIRAL, aero_score
+    from src.aero.aero_score import AERO_PENALTY_WEIGHT_SUM, W_SPIRAL, aero_score
     from src.aero.custom_classes import CruiseCondition, ModeResult, StabilityResult
     from src.vectors import ParameterVector
     import aerosandbox as asb
@@ -135,7 +135,10 @@ def test_aero_score_actually_applies_the_spiral_penalty() -> None:
     assert not bad.can_fly
     assert bad.penalty > 0.0
     # The whole difference must come through the spiral weight.
-    assert bad.penalty == pytest_approx(W_SPIRAL * MAX_PENALTY, absolute=1e-9)
+    assert bad.penalty == pytest_approx(
+        W_SPIRAL * MAX_PENALTY / AERO_PENALTY_WEIGHT_SUM,
+        absolute=1e-9,
+    )
     assert bad.penalty_spiral == MAX_PENALTY
 
 

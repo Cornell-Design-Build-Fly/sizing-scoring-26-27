@@ -38,13 +38,10 @@ MAX_SENSOR_DIAMETER_M = 6.0 * INCH_M
 # electronics that lands near 7900, so solid steel is a good proxy for "as
 # dense as this could actually be built".
 SENSOR_STEEL_DENSITY_KG_M3 = 7850.0
-# Simulation-only geometric floor. The rules require a 6-inch sensor, but the
-# solid-steel proxy that derived length from weight forced a 12.03 lb MINIMUM
-# sensor, which put ~80% of the sampled design space over the 55 lb limit and
-# made light sensors unreachable. Length and weight are now independent, as
-# they were before the 2026-27 rules update, so the optimizer can explore the
-# full light-to-heavy range. Restore this to 6 inches for a rules-legal study.
-MIN_SENSOR_LENGTH_M = 1.0 * INCH_M
+# Rules 3.1.1 require the sensor to be at least 6 inches long.  Length and
+# weight are independent, so enforcing that geometry no longer creates the old
+# artificial 12.03 lb minimum sensor weight.
+MIN_SENSOR_LENGTH_M = 6.0 * INCH_M
 MAX_SENSOR_LENGTH_M = 24.0 * INCH_M
 MIN_SENSOR_WEIGHT_KG = 0.05
 MIN_MISSION3_SENSOR_WEIGHT_KG = MIN_SENSOR_WEIGHT_KG
@@ -117,7 +114,10 @@ OPT_VARS = [
     ),
     ("batt_capacity", (1.0, MAX_BATT_CAPACITY_AH)),
     ("prop_diameter_in", (10.0, 25.0)),
-    ("prop_pitch_in", (5.0, 18.0)),
+    # The database reaches 3 in and the P/D >= 0.4 constraint imposes an
+    # effective 4 in floor at the 10 in minimum diameter.  A 5 in box bound was
+    # therefore an artificial active cap in the latest optimum.
+    ("prop_pitch_in", (4.0, 18.0)),
     ("motor_kv", (200.0, 650.0)),
     ("motor_max_power", (1000.0, 3000.0)),
     ("cruise_throttle", (0.5, 1.0)),

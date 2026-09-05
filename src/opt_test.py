@@ -54,11 +54,9 @@ SUPPRESS_MODULE_OUTPUT = True
 REPORT_REJECTIONS = False
 REJECTION_DETAIL_CHARS = 220
 SAVE_BEST_DESIGN_VISUALIZATION = True
-BATTERY_CELL_COUNT_BOUNDS = (5, 8)
 OPTIMIZER_CONFIG = ToplineConfig(
-    optimize_battery_cell_count=True,
-    battery_cell_count_bounds=BATTERY_CELL_COUNT_BOUNDS,
-    battery_cell_count_choices=None,
+    battery_cell_count=8,
+    optimize_battery_cell_count=False,
 )
 EVALUATION_HISTORY: list[dict] = []
 PROGRESS_BAR = None
@@ -90,7 +88,7 @@ def optimizer_integrality() -> np.ndarray:
 
 
 def optimizer_array_from_design(design: DesignVector) -> np.ndarray:
-    return np.append(design.to_array(), float(design.battery_cell_count))
+    return design.to_array()
 
 
 def design_from_optimizer_array(x: np.ndarray) -> DesignVector:

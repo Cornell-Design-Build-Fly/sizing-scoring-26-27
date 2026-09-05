@@ -44,6 +44,15 @@ def _performance(**overrides) -> MissionPropulsionPerformance:
         "climb_rate_margin_mps": 1.0,
         "climb_distance_margin_m": 30.5,
         "limiting_constraint": "takeoff_distance",
+        "aerodynamic_lap_time_s": 30.0,
+        "modeled_lap_time_s": 32.0,
+        "straight_time_per_lap_s": 20.0,
+        "turn_time_per_lap_s": 12.0,
+        "turn_speed_mps": 18.0,
+        "turn_load_factor": 2.0,
+        "turn_power_w": 900.0,
+        "straight_energy_wh": 30.0,
+        "turn_energy_wh": 20.0,
     }
     values.update(overrides)
     return MissionPropulsionPerformance(**values)
