@@ -6,6 +6,7 @@ from src.mech.mass_properties import inertia_tensor_about_cg
 from src.prop.main_prop import prop_main
 from src.prop.mission_performance import (
     DEFAULT_PROPULSION_REQUIREMENTS,
+    PROPULSION_INFEASIBLE_BASE_PENALTY,
     PropulsionRequirements,
     evaluate_mission_propulsion,
     propulsion_margin_bonus,
@@ -211,10 +212,20 @@ def main(
     )
 
     propulsion_result_list = []
-    for mission, mass, aero in (
-        (2, m2_properties.total_mass_kg, aero_m2),
-        (3, m3_properties.total_mass_kg, aero_m3),
-        (1, m1_properties.total_mass_kg, aero_m1),
+    for mission, mass, supported_mass, aero in (
+        (
+            2,
+            m2_properties.total_mass_kg,
+            m2_properties.total_mass_kg,
+            aero_m2,
+        ),
+        (3, m3_properties.total_mass_kg, m3_supported_mass_kg, aero_m3),
+        (
+            1,
+            m1_properties.total_mass_kg,
+            m1_properties.total_mass_kg,
+            aero_m1,
+        ),
     ):
         if aero.cruise_speed_mps is None or aero.stall_speed_mps is None:
             continue
@@ -223,6 +234,7 @@ def main(
             pv,
             mission=mission,
             mass_kg=mass,
+            supported_mass_kg=supported_mass,
             cruise_speed_mps=float(aero.cruise_speed_mps),
             stall_speed_mps=float(aero.stall_speed_mps),
             lap_time_s=float(aero.lap_time),
@@ -233,9 +245,13 @@ def main(
         # M2 is the prerequisite flight and M3 is the long energy case. There
         # is no value spending time evaluating lighter missions until each
         # prerequisite is propulsion-feasible.
-        if mission in (2, 3) and not performance.feasible:
+        if not return_details and mission in (2, 3) and not performance.feasible:
             break
     propulsion_results = tuple(propulsion_result_list)
+    propulsion_feasible = (
+        {performance.mission for performance in propulsion_results} == {1, 2, 3}
+        and all(performance.feasible for performance in propulsion_results)
+    )
 
     score_function = total_optimization_score if continuous_lap_scoring else total_score
     m2_payload_mass_kg = sum(
@@ -260,6 +276,11 @@ def main(
         (performance.penalty for performance in propulsion_results),
         default=0.0,
     )
+    if not propulsion_feasible:
+        propulsion_penalty = max(
+            propulsion_penalty,
+            PROPULSION_INFEASIBLE_BASE_PENALTY,
+        )
     tot_penalty += propulsion_penalty
     if continuous_lap_scoring:
         tot_score += propulsion_margin_bonus(
@@ -285,6 +306,7 @@ def main(
                 "penalty_aero_m3": aero_m3.penalty,
                 "penalty_overweight": overweight_penalty(max_takeoff_mass_kg),
                 "penalty_propulsion": propulsion_penalty,
+                "propulsion_feasible": propulsion_feasible,
                 "propulsion": {
                     f"M{performance.mission}": performance.to_dict()
                     for performance in propulsion_results

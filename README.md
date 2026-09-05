@@ -79,7 +79,10 @@ model requires:
 - motor, ESC/current, 25C battery-discharge, voltage-sag, and power limits.
 
 The thresholds live in `src.prop.mission_performance.PropulsionRequirements`.
-An optimistic constant-static-thrust takeoff lower bound rejects obviously
-impossible candidates cheaply; candidates that pass it receive the detailed
-ground-roll integration. A small optimizer-only margin bonus breaks ties among
-fully scoring airplanes, while official scores remain unchanged.
+Every evaluated mission receives the detailed speed-dependent ground-roll
+integration; the optimistic constant-static-thrust distance is retained only
+as a diagnostic lower bound. Any propulsion failure receives a hard base
+penalty larger than the maximum competition score, so the optimizer cannot
+trade away flyability for payload points. A small optimizer-only margin bonus
+breaks ties among fully feasible airplanes, while official scores remain
+unchanged.

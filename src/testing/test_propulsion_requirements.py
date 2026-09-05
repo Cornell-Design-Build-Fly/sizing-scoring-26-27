@@ -2,6 +2,7 @@ import math
 
 from src.prop.mission_performance import (
     MissionPropulsionPerformance,
+    PROPULSION_INFEASIBLE_BASE_PENALTY,
     PropulsionRequirements,
     _penalty_and_limit,
     propulsion_margin_bonus,
@@ -15,6 +16,9 @@ def _performance(**overrides) -> MissionPropulsionPerformance:
         "mission": 2,
         "feasible": True,
         "penalty": 0.0,
+        "inertial_mass_kg": 10.0,
+        "supported_mass_kg": 10.0,
+        "operating_points_feasible": True,
         "static_thrust_n": 100.0,
         "static_thrust_to_weight": 0.5,
         "liftoff_speed_mps": 15.0,
@@ -50,14 +54,28 @@ def test_battery_current_limit_uses_capacity_and_c_rating() -> None:
 def test_propulsion_penalty_identifies_takeoff_climb_and_energy_failures() -> None:
     requirements = PropulsionRequirements()
     assert _penalty_and_limit(60.0, 2.0, 70.0, 80.0, 0.7, requirements)[0] == 0.0
-    assert _penalty_and_limit(120.0, 2.0, 70.0, 80.0, 0.7, requirements)[1] == "takeoff_distance"
+    takeoff_penalty, takeoff_limit = _penalty_and_limit(
+        120.0, 2.0, 70.0, 80.0, 0.7, requirements
+    )
+    assert takeoff_penalty > PROPULSION_INFEASIBLE_BASE_PENALTY
+    assert takeoff_limit == "takeoff_distance"
     assert _penalty_and_limit(60.0, 0.0, 70.0, 80.0, 0.7, requirements)[1] == "climb_rate"
     assert _penalty_and_limit(60.0, 2.0, 160.0, 80.0, 0.7, requirements)[1] == "mission_energy"
+    assert _penalty_and_limit(
+        60.0,
+        2.0,
+        70.0,
+        80.0,
+        0.7,
+        requirements,
+        operating_point_failed=True,
+    )[1] == "propulsion_operating_point"
 
 
 def test_optimizer_margin_bonus_is_small_and_requires_feasibility() -> None:
-    feasible = _performance()
-    bonus = propulsion_margin_bonus((feasible,))
+    feasible = tuple(_performance(mission=mission) for mission in (1, 2, 3))
+    bonus = propulsion_margin_bonus(feasible)
     assert 0.0 < bonus <= 0.05
     assert propulsion_margin_bonus((_performance(feasible=False),)) == 0.0
+    assert propulsion_margin_bonus((_performance(mission=2),)) == 0.0
     assert math.isfinite(bonus)

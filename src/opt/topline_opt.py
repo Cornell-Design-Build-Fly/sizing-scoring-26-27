@@ -49,6 +49,7 @@ from src.prop.prop_classes import (
     normalize_battery_cell_count,
 )
 from src.prop.prop_helper_functions import make_battery_from_design
+from src.prop.mission_performance import DEFAULT_PROPULSION_REQUIREMENTS
 from src.vectors import (
     ASBDesignVector,
     DesignVector,
@@ -1157,6 +1158,8 @@ def _best_design_report(
             "c_rating": battery.Crat,
             "maximum_current_a": battery.get_max_current(),
         },
+        "propulsion_feasible": bool(details.get("propulsion_feasible", False)),
+        "propulsion_requirements": asdict(DEFAULT_PROPULSION_REQUIREMENTS),
         "propulsion": details.get("propulsion", {}),
         "scoring_references": scoring_reference_values(config.scoring_references),
         "mechanical": mech_result,

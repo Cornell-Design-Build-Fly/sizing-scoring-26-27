@@ -60,6 +60,8 @@ def _summarize_run(run_dir: Path) -> dict[str, Any]:
         "battery_cell_count": int(battery["cell_count"]),
         "run_dir": str(run_dir),
         "score": float(report["score"]),
+        "propulsion_feasible": bool(report.get("propulsion_feasible", False)),
+        "propulsion_penalty": float(report["penalties"].get("propulsion", 0.0)),
         "ground_score": float(report["breakdown"]["ground"]),
         "m1_score": float(report["breakdown"]["m1"]),
         "m2_score": float(report["breakdown"]["m2"]),

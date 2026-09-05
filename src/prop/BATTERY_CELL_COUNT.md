@@ -36,8 +36,9 @@ Use `--mode both` to run the fixed cases and the joint case in one invocation.
 
 ## Model limits
 
-The present model does not check ESC/full-charge voltage compatibility,
-battery C-rating, or cell-count-dependent packaging volume. It also uses motor
-current directly for battery sag and endurance at partial throttle. Treat the
-comparison as internally consistent sizing guidance until those assumptions
-are validated against the selected hardware.
+The present model enforces a 25C pack-current limit along with motor current,
+power, voltage-sag, mission-energy, takeoff, climb, and propeller-tip-speed
+limits. It does not yet check ESC/full-charge voltage compatibility or
+cell-count-dependent packaging volume. Treat the comparison as internally
+consistent sizing guidance until those assumptions are validated against the
+selected hardware.

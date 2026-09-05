@@ -14,6 +14,10 @@ from src.prop.prop_helper_functions import make_battery_from_design, make_motor_
 from src.vectors import DesignVector, ParameterVector
 
 
+PROPULSION_INFEASIBLE_BASE_PENALTY = 10.0
+PROPULSION_VIOLATION_PENALTY_SCALE = 10.0
+
+
 @dataclass(frozen=True)
 class PropulsionRequirements:
     """Editable operational requirements used by the optimizer."""
@@ -61,6 +65,9 @@ class MissionPropulsionPerformance:
     mission: int
     feasible: bool
     penalty: float
+    inertial_mass_kg: float
+    supported_mass_kg: float
+    operating_points_feasible: bool
     static_thrust_n: float
     static_thrust_to_weight: float
     liftoff_speed_mps: float
@@ -121,8 +128,10 @@ def _penalty_and_limit(
     allowed_energy_wh: float,
     propeller_tip_mach: float,
     requirements: PropulsionRequirements,
+    *,
+    operating_point_failed: bool = False,
 ) -> tuple[float, str]:
-    violations = {
+    raw_violations = {
         "takeoff_distance": max(
             0.0,
             takeoff_distance_m / requirements.maximum_takeoff_distance_m - 1.0,
@@ -136,10 +145,20 @@ def _penalty_and_limit(
             0.0,
             propeller_tip_mach / requirements.maximum_propeller_tip_mach - 1.0,
         ),
+        "propulsion_operating_point": float(operating_point_failed),
+    }
+    violations = {
+        name: value if math.isfinite(value) else math.inf
+        for name, value in raw_violations.items()
     }
     limiting = max(violations, key=violations.get)
     worst = violations[limiting]
-    return 10.0 * (1.0 - math.exp(-2.0 * worst)), limiting
+    if worst <= 0.0:
+        return 0.0, "none"
+    severity = PROPULSION_VIOLATION_PENALTY_SCALE * (
+        1.0 - math.exp(-2.0 * worst)
+    )
+    return PROPULSION_INFEASIBLE_BASE_PENALTY + severity, limiting
 
 
 def evaluate_mission_propulsion(
@@ -148,16 +167,30 @@ def evaluate_mission_propulsion(
     *,
     mission: int,
     mass_kg: float,
+    supported_mass_kg: float | None = None,
     cruise_speed_mps: float,
     stall_speed_mps: float,
     lap_time_s: float,
     prop_database: ContinuousPropDatabase,
     requirements: PropulsionRequirements = DEFAULT_PROPULSION_REQUIREMENTS,
 ) -> MissionPropulsionPerformance:
-    """Evaluate full-throttle takeoff/climb and complete-mission energy."""
+    """Evaluate full-throttle takeoff/climb and complete-mission energy.
+
+    ``mass_kg`` is the mass accelerated along the flight path. The optional
+    ``supported_mass_kg`` is the equivalent vertical load used for lift,
+    thrust-to-weight, and climb; it differs for the towed-sensor mission.
+    """
     if mission not in (1, 2, 3):
         raise ValueError("mission must be 1, 2, or 3.")
-    values = (mass_kg, cruise_speed_mps, stall_speed_mps, lap_time_s)
+    if supported_mass_kg is None:
+        supported_mass_kg = mass_kg
+    values = (
+        mass_kg,
+        supported_mass_kg,
+        cruise_speed_mps,
+        stall_speed_mps,
+        lap_time_s,
+    )
     if not np.all(np.isfinite(values)) or np.any(np.asarray(values) <= 0.0):
         raise ValueError("Mass, speeds, and lap time must be finite and positive.")
 
@@ -179,66 +212,14 @@ def evaluate_mission_propulsion(
         max_rpm=20000,
         rpm_step=100,
     )
-    weight_n = mass_kg * parameters.gravity
+    weight_n = supported_mass_kg * parameters.gravity
     static_thrust = float(static.thrust_samples_n[0])
-    static_tip_mach = (
-        math.pi
-        * design.prop_diameter_in
-        * 0.0254
-        * float(static.selected_rpm[0])
-        / 60.0
-        / requirements.speed_of_sound_mps
-    )
     if static_thrust <= 0.0 or static.failed_mask[0]:
         optimistic_takeoff_distance = math.inf
     else:
         optimistic_takeoff_distance = (
             mass_kg * liftoff_speed**2 / (2.0 * static_thrust)
         )
-    # This deliberately ignores drag, rolling resistance, and thrust loss with
-    # airspeed. Failure is therefore conclusive, while passing only authorizes
-    # the more detailed (and more expensive) calculation below.
-    if optimistic_takeoff_distance > requirements.maximum_takeoff_distance_m:
-        violation = (
-            optimistic_takeoff_distance / requirements.maximum_takeoff_distance_m
-            - 1.0
-        )
-        penalty = 10.0 * (1.0 - math.exp(-2.0 * violation))
-        allowed_energy = (
-            battery.vnom
-            * battery.get_useable_capacity()
-            * (1.0 - requirements.usable_energy_margin_fraction)
-        )
-        return MissionPropulsionPerformance(
-            mission=mission,
-            feasible=False,
-            penalty=penalty,
-            static_thrust_n=static_thrust,
-            static_thrust_to_weight=static_thrust / weight_n,
-            liftoff_speed_mps=liftoff_speed,
-            takeoff_distance_m=optimistic_takeoff_distance,
-            optimistic_takeoff_distance_lower_bound_m=optimistic_takeoff_distance,
-            takeoff_screened_early=True,
-            takeoff_time_s=math.inf,
-            climb_speed_mps=climb_speed,
-            climb_rate_mps=0.0,
-            maximum_propeller_tip_mach=static_tip_mach,
-            cruise_power_w=0.0,
-            takeoff_energy_wh=math.inf,
-            climb_energy_wh=math.inf,
-            reacceleration_energy_wh=math.inf,
-            cruise_energy_wh=math.inf,
-            required_energy_wh=math.inf,
-            allowed_energy_wh=allowed_energy,
-            energy_margin_wh=-math.inf,
-            takeoff_distance_margin_m=(
-                requirements.maximum_takeoff_distance_m
-                - optimistic_takeoff_distance
-            ),
-            climb_rate_margin_mps=-requirements.minimum_climb_rate_mps,
-            limiting_constraint="takeoff_distance_lower_bound",
-        )
-
     takeoff_speeds = np.linspace(0.01, liftoff_speed, 41)
     sample_speeds = np.unique(
         np.concatenate((takeoff_speeds, (climb_speed, cruise_speed_mps)))
@@ -323,7 +304,16 @@ def evaluate_mission_propulsion(
     else:
         climb_energy = climb_power_w * requirements.climb_altitude_m / climb_rate / 3600.0
 
-    cruise_power = float(cruise.selected_power_w[0])
+    operating_point_failed = bool(
+        static.failed_mask[0]
+        or np.any(full.failed_mask)
+        or cruise.failed_mask[0]
+    )
+    cruise_power = (
+        math.inf
+        if cruise.failed_mask[0]
+        else float(cruise.selected_power_w[0])
+    )
     mission_laps = {1: 3, 2: 5, 3: max(1, int(300.0 // lap_time_s))}[mission]
     cruise_duration_s = {1: 3.0 * lap_time_s, 2: 5.0 * lap_time_s, 3: 300.0}[mission]
     cruise_energy = cruise_power * cruise_duration_s / 3600.0
@@ -352,9 +342,11 @@ def evaluate_mission_propulsion(
         allowed_energy,
         propeller_tip_mach,
         requirements,
+        operating_point_failed=operating_point_failed,
     )
     feasible = (
-        takeoff_distance <= requirements.maximum_takeoff_distance_m
+        not operating_point_failed
+        and takeoff_distance <= requirements.maximum_takeoff_distance_m
         and climb_rate >= requirements.minimum_climb_rate_mps
         and required_energy <= allowed_energy
         and propeller_tip_mach <= requirements.maximum_propeller_tip_mach
@@ -363,6 +355,9 @@ def evaluate_mission_propulsion(
         mission=mission,
         feasible=feasible,
         penalty=penalty,
+        inertial_mass_kg=mass_kg,
+        supported_mass_kg=supported_mass_kg,
+        operating_points_feasible=not operating_point_failed,
         static_thrust_n=static_thrust,
         static_thrust_to_weight=static_thrust / weight_n,
         liftoff_speed_mps=liftoff_speed,
@@ -392,7 +387,10 @@ def propulsion_margin_bonus(
     requirements: PropulsionRequirements = DEFAULT_PROPULSION_REQUIREMENTS,
 ) -> float:
     """Small optimizer-only tie-breaker; never changes official scores."""
-    if not results or not all(result.feasible for result in results):
+    if (
+        {result.mission for result in results} != {1, 2, 3}
+        or not all(result.feasible for result in results)
+    ):
         return 0.0
     takeoff = min(
         1.0,
@@ -422,6 +420,8 @@ def propulsion_margin_bonus(
 __all__ = [
     "DEFAULT_PROPULSION_REQUIREMENTS",
     "MissionPropulsionPerformance",
+    "PROPULSION_INFEASIBLE_BASE_PENALTY",
+    "PROPULSION_VIOLATION_PENALTY_SCALE",
     "PropulsionRequirements",
     "evaluate_mission_propulsion",
     "propulsion_margin_bonus",
