@@ -67,8 +67,15 @@ def test_battery_current_limit_uses_capacity_and_c_rating() -> None:
 def test_propulsion_penalty_identifies_takeoff_climb_and_energy_failures() -> None:
     requirements = PropulsionRequirements()
     assert _penalty_and_limit(60.0, 2.0, 100.0, 152.4, 70.0, 80.0, 0.7, requirements)[0] == 0.0
+    # Keep a finite runway gate, but do not invent a minimum pattern altitude.
+    assert _penalty_and_limit(60.0, 2.0, 400.0, 152.4, 70.0, 80.0, 0.7, requirements)[0] == 0.0
+    trade_study_requirements = PropulsionRequirements(
+        maximum_takeoff_distance_m=60.0,
+        climb_altitude_m=60.96,
+        climb_distance_m=152.4,
+    )
     takeoff_penalty, takeoff_limit = _penalty_and_limit(
-        120.0, 2.0, 100.0, 152.4, 70.0, 80.0, 0.7, requirements
+        120.0, 2.0, 100.0, 152.4, 70.0, 80.0, 0.7, trade_study_requirements
     )
     assert takeoff_penalty > PROPULSION_INFEASIBLE_BASE_PENALTY
     assert takeoff_limit == "takeoff_distance"
@@ -87,9 +94,11 @@ def test_propulsion_penalty_identifies_takeoff_climb_and_energy_failures() -> No
     )[1] == "propulsion_operating_point"
 
 
-def test_climb_to_pattern_altitude_is_a_binding_constraint() -> None:
-    """200 ft within 500 ft is what physically limits takeoff weight."""
-    requirements = PropulsionRequirements()
+def test_optional_climb_to_pattern_altitude_trade_study() -> None:
+    requirements = PropulsionRequirements(
+        climb_altitude_m=60.96,
+        climb_distance_m=152.4,
+    )
     assert requirements.climb_altitude_m == 60.96      # 200 ft
     assert requirements.climb_distance_m == 152.4      # 500 ft
     assert abs(requirements.required_climb_gradient - 0.4) < 1e-12

@@ -157,6 +157,36 @@ def test_mission_energy_is_split_between_straights_and_turns() -> None:
     assert result.cruise_power_w > cruise.selected_power_w[0]
 
 
+def test_mission_three_energy_uses_completed_integer_laps() -> None:
+    design, parameters, database, _, _, _ = _components()
+    result = evaluate_mission_propulsion(
+        design,
+        parameters,
+        mission=3,
+        mass_kg=5.0,
+        cruise_speed_mps=25.0,
+        stall_speed_mps=12.0,
+        lap_time_s=40.0,
+        prop_database=database,
+    )
+    completed_laps = max(1, int(300.0 // result.modeled_lap_time_s))
+
+    assert math.isclose(
+        result.straight_energy_wh,
+        result.cruise_power_w
+        * completed_laps
+        * result.straight_time_per_lap_s
+        / 3600.0,
+    )
+    assert math.isclose(
+        result.turn_energy_wh,
+        result.turn_power_w
+        * completed_laps
+        * result.turn_time_per_lap_s
+        / 3600.0,
+    )
+
+
 if __name__ == "__main__":
     for name, function in sorted(globals().items()):
         if name.startswith("test_") and callable(function):

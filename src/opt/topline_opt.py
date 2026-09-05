@@ -64,11 +64,14 @@ PD_MAX = 0.8
 TARGET_EVALS_PER_SECOND = 80.0
 TARGET_RUN_SECONDS = 3600.0
 TOP_CANDIDATE_LIMIT = 500
+DEFAULT_TOPLINE_WORKERS = 16
 
 PROP_DATABASE: ContinuousPropDatabase | None = None
 PARAMETER_VECTOR = ParameterVector()
 CALLBACK_HISTORY: list[dict] = []
 CALLBACK_GENERATION = 0
+CALLBACK_CHUNK_GENERATION = 0
+CALLBACK_COMPLETED_CANDIDATES = 0
 RUN_START_SECONDS: float | None = None
 CALLBACK_POPULATION_SIZE = 0
 CALLBACK_TARGET_CANDIDATES = 0
@@ -84,12 +87,12 @@ PROGRESS_BAR = None
 class ToplineConfig:
     """Settings for the long, SciPy-managed top-line DE run."""
 
-    workers: int = -1
+    workers: int = DEFAULT_TOPLINE_WORKERS
     popsize: int = 25
     # 300, not 100: decoupling sensor length took the design vector from 15 to
     # 16 variables, and 100 generations no longer converges. Same seed and
     # config, 100 gen -> 7.1232 while 300 gen -> 7.4917 (2026-09-04 study).
-    maxiter: int | None = 250
+    maxiter: int | None = 50
     target_seconds: float = TARGET_RUN_SECONDS
     assumed_evals_per_second: float = TARGET_EVALS_PER_SECOND
     init: str = "sobol"
@@ -105,7 +108,7 @@ class ToplineConfig:
     seed: int = 20260808
     output_dir: Path = Path("data_dump") / "opt_topline"
     round_payload: bool = True
-    continuous_lap_scoring: bool = True
+    continuous_lap_scoring: bool = False
     suppress_module_output: bool = True
     callback_score_best: bool = True
     save_best_visualization: bool = True
@@ -384,7 +387,7 @@ def _initial_population(
     container_index = names.index("extra_shipping_containers")
     max_sensor_weight_index = names.index("sensor_weight_kg")
     m3_sensor_weight_index = names.index("mission3_sensor_weight_kg")
-    diameter_index = names.index("prop_diameter_in")
+    prop_diameter_index = names.index("prop_diameter_in")
     pitch_index = names.index("prop_pitch_in")
 
     low, high = bounds[container_index].astype(int)
@@ -393,14 +396,14 @@ def _initial_population(
         high,
     )
     length_index = names.index("sensor_length_m")
-    diameter_index = names.index("sensor_diameter_m")
+    sensor_diameter_index = names.index("sensor_diameter_m")
     population[:, max_sensor_weight_index] = np.minimum(
         population[:, max_sensor_weight_index],
         np.array(
             [
                 maximum_sensor_weight_kg(length, diameter)
                 for length, diameter in zip(
-                    population[:, length_index], population[:, diameter_index]
+                    population[:, length_index], population[:, sensor_diameter_index]
                 )
             ]
         ),
@@ -433,7 +436,7 @@ def _initial_population(
 
     # Project propeller pitch into the P/D-feasible interval so population
     # slots are spent comparing aircraft rather than known constraint failures.
-    diameter = population[:, diameter_index]
+    diameter = population[:, prop_diameter_index]
     pitch_lower, pitch_upper = bounds[pitch_index]
     feasible_lower = np.maximum(pitch_lower, PD_MIN * diameter)
     feasible_upper = np.minimum(pitch_upper, PD_MAX * diameter)
@@ -441,6 +444,16 @@ def _initial_population(
     population[:, pitch_index] = (
         feasible_lower + pitch_unit * (feasible_upper - feasible_lower)
     )
+
+    for index, constraint in enumerate(_optimizer_constraints(config)):
+        values = np.asarray(
+            [constraint.fun(candidate) for candidate in population],
+            dtype=float,
+        )
+        if np.any(values < constraint.lb) or np.any(values > constraint.ub):
+            raise RuntimeError(
+                f"Initial population violates optimizer constraint {index}."
+            )
     return population
 
 
@@ -579,8 +592,11 @@ def _update_top_candidate_archive(
 
 def _callback(intermediate_result) -> bool:
     global CALLBACK_GENERATION
+    global CALLBACK_CHUNK_GENERATION
+    global CALLBACK_COMPLETED_CANDIDATES
 
     CALLBACK_GENERATION += 1
+    CALLBACK_CHUNK_GENERATION += 1
     xk = np.asarray(intermediate_result.x, dtype=float)
     convergence = float(intermediate_result.convergence)
     _update_payload_archive(
@@ -600,10 +616,14 @@ def _callback(intermediate_result) -> bool:
         if RUN_START_SECONDS is not None
         else 0.0
     )
-    completed_candidates = min(
-        CALLBACK_TARGET_CANDIDATES,
-        CALLBACK_POPULATION_SIZE * (CALLBACK_GENERATION + 1),
+    completed_increment = CALLBACK_POPULATION_SIZE * (
+        2 if CALLBACK_CHUNK_GENERATION == 1 else 1
     )
+    CALLBACK_COMPLETED_CANDIDATES = min(
+        CALLBACK_TARGET_CANDIDATES,
+        CALLBACK_COMPLETED_CANDIDATES + completed_increment,
+    )
+    completed_candidates = CALLBACK_COMPLETED_CANDIDATES
     rate = completed_candidates / elapsed if elapsed > 0.0 else 0.0
     eta = (
         (CALLBACK_TARGET_CANDIDATES - completed_candidates) / rate
@@ -775,6 +795,7 @@ def _combined_island_result(
 def _run_niching_islands(config: ToplineConfig) -> OptimizeResult:
     """Run full-range DE islands and restart weaker duplicate niches."""
     global ACTIVE_ISLAND
+    global CALLBACK_CHUNK_GENERATION
 
     if config.island_count <= 0:
         raise ValueError("island_count must be positive.")
@@ -814,6 +835,7 @@ def _run_niching_islands(config: ToplineConfig) -> OptimizeResult:
             if state["remaining"] <= 0:
                 continue
             ACTIVE_ISLAND = island
+            CALLBACK_CHUNK_GENERATION = 0
             chunk = min(config.epoch_generations, state["remaining"])
             run_seed = config.seed + 100_003 * epoch + 1009 * island
             result = differential_evolution(
@@ -973,7 +995,10 @@ def _write_top_candidate_archive(
 
 
 def _official_population_scores(result, config: ToplineConfig) -> np.ndarray:
-    """Re-evaluate finalists using official integer-lap scoring."""
+    """Return official scores, reevaluating only a relaxed-objective run."""
+    if not config.continuous_lap_scoring:
+        return -np.asarray(result.population_energies, dtype=float).copy()
+
     scores = np.full(len(result.population), -BAD_OBJECTIVE, dtype=float)
     for index, x in enumerate(np.asarray(result.population, dtype=float)):
         try:
@@ -1349,6 +1374,8 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     """Run the one-hour top-line SciPy differential-evolution optimization."""
 
     global CALLBACK_GENERATION
+    global CALLBACK_CHUNK_GENERATION
+    global CALLBACK_COMPLETED_CANDIDATES
     global CALLBACK_HISTORY
     global CALLBACK_POPULATION_SIZE
     global CALLBACK_SCORE_BEST
@@ -1367,6 +1394,8 @@ def run_topline_optimization(config: ToplineConfig | None = None):
 
     CALLBACK_HISTORY = []
     CALLBACK_GENERATION = 0
+    CALLBACK_CHUNK_GENERATION = 0
+    CALLBACK_COMPLETED_CANDIDATES = 0
     CALLBACK_POPULATION_SIZE = _expected_population_size(config)
     CALLBACK_TARGET_CANDIDATES = _target_candidate_count(config)
     CALLBACK_SCORE_BEST = config.callback_score_best
@@ -1377,6 +1406,7 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     print("Top-line differential evolution run")
     print(f"  output: {output_dir}")
     print(f"  workers: {config.workers}")
+    print("  progress: tqdm evaluation bar")
     print(f"  variables: {len(_optimizer_bounds(config))}")
     if config.optimize_battery_cell_count:
         print(
@@ -1420,6 +1450,7 @@ def run_topline_optimization(config: ToplineConfig | None = None):
         total=CALLBACK_TARGET_CANDIDATES,
         desc="Top-line evaluations",
         unit="eval",
+        dynamic_ncols=True,
     ) as progress_bar:
         PROGRESS_BAR = progress_bar
         try:
@@ -1444,7 +1475,13 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     )
 
     print_best_result(result, _optimizer_variable_names(config))
-    print("Re-ranking final population with official integer-lap scoring...", flush=True)
+    if config.continuous_lap_scoring:
+        print(
+            "Re-ranking final population with official integer-lap scoring...",
+            flush=True,
+        )
+    else:
+        print("Final population already uses official integer-lap scoring.", flush=True)
     official_scores = _official_population_scores(result, config)
     optimization_scores = -np.asarray(result.population_energies, dtype=float)
     official_order = np.lexsort((-optimization_scores, -official_scores))

@@ -1,0 +1,170 @@
+{
+  "finished_at": "2026-09-05T19:15:19-04:00",
+  "elapsed_seconds": 2061.9881693000207,
+  "database_load_seconds_parent": 0.46234470000490546,
+  "nfev": 17694,
+  "nit": 100,
+  "success": false,
+  "message": "Completed configured multimodal island generation budget.",
+  "best_optimization_objective": -5.071132394075554,
+  "best_optimization_score": 5.071132394075554,
+  "best_official_score": 5.071132394075554,
+  "reevaluated_best_score": 5.071132394075554,
+  "workers": 16,
+  "variables": 16,
+  "popsize": 25,
+  "expected_population_size": 512,
+  "maxiter": 100,
+  "target_candidate_slots": 57344,
+  "assumed_evals_per_second": 80.0,
+  "target_seconds": 3600.0,
+  "observed_nfev_per_second": 8.581038564351488,
+  "observed_candidate_slots_per_second": 27.810052867309352,
+  "scipy_version": "1.17.1",
+  "python_version": "3.12.0",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "cpu_count": 20,
+  "config": {
+    "workers": 16,
+    "popsize": 25,
+    "maxiter": 100,
+    "target_seconds": 3600.0,
+    "assumed_evals_per_second": 80.0,
+    "init": "sobol",
+    "island_count": 6,
+    "epoch_generations": 10,
+    "niche_radius": 0.18,
+    "restart_duplicate_islands": true,
+    "mutation": [
+      0.5,
+      1.0
+    ],
+    "recombination": 0.7,
+    "tol": 1e-05,
+    "atol": 0.0,
+    "polish": false,
+    "seed": 20260808,
+    "output_dir": "data_dump\\opt_topline",
+    "round_payload": true,
+    "continuous_lap_scoring": false,
+    "suppress_module_output": true,
+    "callback_score_best": true,
+    "save_best_visualization": true,
+    "scoring_references": {
+      "best_m2_weight_per_time_kg_s": 0.08270440400684,
+      "best_m3_lap_weight_kg": 114.7089744493,
+      "best_ground_weight_height_kg_in": 952.543977,
+      "seconds_per_mission": 300.0,
+      "m3_deployment_time_s": 0.0,
+      "m3_recovery_time_s": 0.0
+    },
+    "battery_cell_count": 8,
+    "optimize_battery_cell_count": false,
+    "battery_cell_count_bounds": [
+      8,
+      8
+    ],
+    "battery_cell_count_choices": null
+  },
+  "scoring_references": {
+    "flight_window_s": 300.0,
+    "mission_2": {
+      "best_weight_per_time_kg_s": 0.08270440400684,
+      "required_laps": 5
+    },
+    "mission_3": {
+      "best_lap_weight_kg": 114.7089744493,
+      "deployment_time_s": 0.0,
+      "recovery_time_s": 0.0
+    },
+    "ground": {
+      "drop_height_in": 60.0,
+      "reference_sensor_weight_lb": 35.0,
+      "best_weight_height_kg_in": 952.543977
+    }
+  },
+  "bounds": {
+    "wing_span": [
+      0.914,
+      1.8288
+    ],
+    "wing_chord": [
+      0.12,
+      0.4
+    ],
+    "tail_arm": [
+      0.3,
+      0.9
+    ],
+    "nose_length": [
+      0.08,
+      0.3
+    ],
+    "extra_shipping_containers": [
+      0,
+      10
+    ],
+    "sensor_length_m": [
+      0.15239999999999998,
+      0.6095999999999999
+    ],
+    "sensor_diameter_m": [
+      0.0127,
+      0.15239999999999998
+    ],
+    "sensor_weight_kg": [
+      0.05,
+      87.29199727826403
+    ],
+    "mission3_sensor_weight_kg": [
+      0.05,
+      87.29199727826403
+    ],
+    "batt_capacity": [
+      1.0,
+      3.378378378378378
+    ],
+    "prop_diameter_in": [
+      10.0,
+      25.0
+    ],
+    "prop_pitch_in": [
+      4.0,
+      18.0
+    ],
+    "motor_kv": [
+      200.0,
+      650.0
+    ],
+    "motor_max_power": [
+      1000.0,
+      3000.0
+    ],
+    "cruise_throttle": [
+      0.5,
+      1.0
+    ],
+    "mission3_cruise_throttle": [
+      0.5,
+      1.0
+    ]
+  },
+  "integrality": {
+    "wing_span": false,
+    "wing_chord": false,
+    "tail_arm": false,
+    "nose_length": false,
+    "extra_shipping_containers": true,
+    "sensor_length_m": false,
+    "sensor_diameter_m": false,
+    "sensor_weight_kg": false,
+    "mission3_sensor_weight_kg": false,
+    "batt_capacity": false,
+    "prop_diameter_in": false,
+    "prop_pitch_in": false,
+    "motor_kv": false,
+    "motor_max_power": false,
+    "cruise_throttle": false,
+    "mission3_cruise_throttle": false
+  }
+}

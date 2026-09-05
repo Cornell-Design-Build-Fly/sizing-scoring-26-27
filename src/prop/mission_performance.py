@@ -31,20 +31,15 @@ PROPULSION_VIOLATION_PENALTY_SCALE = 10.0
 class PropulsionRequirements:
     """Editable operational requirements used by the optimizer."""
 
-    maximum_takeoff_distance_m: float = 60.0
-    # The airplane must reach pattern altitude before the first turn: 200 ft of
-    # climb within the 500 ft from the start line to the turn marker. This is a
-    # climb-GRADIENT requirement, not a climb-rate one, and it is what physically
-    # limits takeoff weight -- excess thrust must lift the aircraft 200 ft over
-    # 500 ft of ground track, which needs (T - D) / W >= sin(atan(200/500)).
-    climb_altitude_m: float = 60.96          # 200 ft
-    climb_distance_m: float = 152.4          # 500 ft, start line to turn marker
-    # The 500 ft is measured from the START of the takeoff roll, not from
-    # liftoff: the airplane must be at 200 ft by the time it reaches the turn
-    # marker, so the ground roll eats into the available distance and only
-    # (500 ft - takeoff distance) is left to climb in.
-    climb_distance_includes_takeoff_roll: bool = True
-    minimum_climb_rate_mps: float = 2.0      # retained as a secondary floor
+    # The rules do not specify a runway limit, but the airplane still needs a
+    # finite operating runway. Keep the team's 60 m engineering requirement.
+    # The rules also specify no minimum course altitude, so the old 200 ft
+    # climb requirement is disabled unless explicitly requested for a study.
+    maximum_takeoff_distance_m: float | None = 60.0
+    climb_altitude_m: float = 0.0
+    climb_distance_m: float | None = None
+    climb_distance_includes_takeoff_roll: bool = False
+    minimum_climb_rate_mps: float = 2.0
     liftoff_stall_speed_factor: float = 1.20
     climb_stall_speed_factor: float = 1.30
     rolling_friction_coefficient: float = 0.04
@@ -56,10 +51,7 @@ class PropulsionRequirements:
 
     def __post_init__(self) -> None:
         positive = (
-            self.maximum_takeoff_distance_m,
             self.minimum_climb_rate_mps,
-            self.climb_altitude_m,
-            self.climb_distance_m,
             self.liftoff_stall_speed_factor,
             self.climb_stall_speed_factor,
             self.reacceleration_efficiency,
@@ -68,6 +60,19 @@ class PropulsionRequirements:
         )
         if not np.all(np.isfinite(positive)) or np.any(np.asarray(positive) <= 0.0):
             raise ValueError("Propulsion requirement values must be finite and positive.")
+        optional_positive = (
+            self.maximum_takeoff_distance_m,
+            self.climb_distance_m,
+        )
+        if any(
+            value is not None and (not math.isfinite(value) or value <= 0.0)
+            for value in optional_positive
+        ):
+            raise ValueError("Optional propulsion distances must be positive.")
+        if not math.isfinite(self.climb_altitude_m) or self.climb_altitude_m < 0.0:
+            raise ValueError("Climb altitude must be finite and nonnegative.")
+        if self.climb_altitude_m > 0.0 and self.climb_distance_m is None:
+            raise ValueError("A positive climb altitude requires a climb distance.")
         fractions = (
             self.rolling_friction_coefficient,
             self.takeoff_lift_coefficient_fraction,
@@ -82,6 +87,8 @@ class PropulsionRequirements:
     def required_climb_gradient(self) -> float:
         """Altitude gained per unit ground distance, i.e. tan(climb angle)."""
 
+        if self.climb_distance_m is None:
+            return 0.0
         return self.climb_altitude_m / self.climb_distance_m
 
 
@@ -338,22 +345,28 @@ def _penalty_and_limit(
     operating_point_failed: bool = False,
 ) -> tuple[float, str]:
     raw_violations = {
-        "takeoff_distance": max(
-            0.0,
-            takeoff_distance_m / requirements.maximum_takeoff_distance_m - 1.0,
+        "takeoff_distance": (
+            max(
+                0.0,
+                takeoff_distance_m / requirements.maximum_takeoff_distance_m
+                - 1.0,
+            )
+            if requirements.maximum_takeoff_distance_m is not None
+            else 0.0
         ),
         "climb_rate": max(
             0.0,
             1.0 - climb_rate_mps / requirements.minimum_climb_rate_mps,
         ),
-        # The binding physical limit on takeoff weight: reach 200 ft within the
-        # 500 ft to the turn marker.
-        "climb_to_pattern_altitude": max(
-            0.0,
-            climb_distance_required_m / climb_distance_allowed_m - 1.0,
-        )
-        if climb_distance_allowed_m > 0.0
-        else math.inf,
+        "climb_to_pattern_altitude": (
+            max(
+                0.0,
+                climb_distance_required_m / climb_distance_allowed_m - 1.0,
+            )
+            if requirements.climb_altitude_m > 0.0
+            and climb_distance_allowed_m > 0.0
+            else 0.0
+        ),
         "mission_energy": max(0.0, required_energy_wh / allowed_energy_wh - 1.0),
         "propeller_tip_mach": max(
             0.0,
@@ -520,9 +533,7 @@ def evaluate_mission_propulsion(
     climb_drag_n = float(
         _drag_n(design, parameters, climb_speed, weight_n, mission)
     )
-    # Steady climb: sin(gamma) = (T - D) / W. Work in the climb ANGLE rather
-    # than a small-angle rate, because the 200 ft / 500 ft requirement is a
-    # 21.8 degree climb where cos(gamma) = 0.93 is not negligible.
+    # Steady climb: sin(gamma) = (T - D) / W.
     excess_thrust_fraction = (climb_thrust_n - climb_drag_n) / weight_n
     sin_gamma = float(np.clip(excess_thrust_fraction, 0.0, 0.999))
     climb_angle_rad = math.asin(sin_gamma)
@@ -531,16 +542,27 @@ def evaluate_mission_propulsion(
     climb_gradient = (
         climb_rate / horizontal_speed if horizontal_speed > 1e-9 else 0.0
     )
-    if climb_gradient > 1e-9:
+    if requirements.climb_altitude_m <= 0.0:
+        climb_distance_required = 0.0
+    elif climb_gradient > 1e-9:
         climb_distance_required = requirements.climb_altitude_m / climb_gradient
     else:
         climb_distance_required = math.inf
-    climb_distance_allowed = requirements.climb_distance_m
-    if requirements.climb_distance_includes_takeoff_roll:
+    climb_distance_allowed = (
+        math.inf
+        if requirements.climb_distance_m is None
+        else requirements.climb_distance_m
+    )
+    if (
+        requirements.climb_distance_includes_takeoff_roll
+        and math.isfinite(climb_distance_allowed)
+    ):
         climb_distance_allowed = max(
             0.0, requirements.climb_distance_m - takeoff_distance
         )
-    if climb_rate <= 0.0 or full.failed_mask[climb_index]:
+    if requirements.climb_altitude_m <= 0.0:
+        climb_energy = 0.0
+    elif climb_rate <= 0.0 or full.failed_mask[climb_index]:
         climb_energy = math.inf
     else:
         climb_energy = climb_power_w * requirements.climb_altitude_m / climb_rate / 3600.0
@@ -581,9 +603,9 @@ def evaluate_mission_propulsion(
         cruise_energy = math.inf
         reacceleration_energy = math.inf
     else:
-        required_laps = {1: 3.0, 2: 5.0}.get(mission)
+        required_laps = {1: 3, 2: 5}.get(mission)
         lap_equivalents = (
-            300.0 / modeled_lap_time
+            max(1, int(300.0 // modeled_lap_time))
             if required_laps is None
             else required_laps
         )
@@ -620,6 +642,7 @@ def evaluate_mission_propulsion(
         or np.any(full.failed_mask)
         or cruise.failed_mask[0]
         or not turn.feasible
+        or not math.isfinite(takeoff_distance)
     )
     penalty, limiting = _penalty_and_limit(
         takeoff_distance,
@@ -634,9 +657,15 @@ def evaluate_mission_propulsion(
     )
     feasible = (
         not operating_point_failed
-        and takeoff_distance <= requirements.maximum_takeoff_distance_m
+        and (
+            requirements.maximum_takeoff_distance_m is None
+            or takeoff_distance <= requirements.maximum_takeoff_distance_m
+        )
         and climb_rate >= requirements.minimum_climb_rate_mps
-        and climb_distance_required <= climb_distance_allowed
+        and (
+            requirements.climb_altitude_m <= 0.0
+            or climb_distance_required <= climb_distance_allowed
+        )
         and required_energy <= allowed_energy
         and propeller_tip_mach <= requirements.maximum_propeller_tip_mach
     )
@@ -668,7 +697,11 @@ def evaluate_mission_propulsion(
         required_energy_wh=required_energy,
         allowed_energy_wh=allowed_energy,
         energy_margin_wh=allowed_energy - required_energy,
-        takeoff_distance_margin_m=requirements.maximum_takeoff_distance_m - takeoff_distance,
+        takeoff_distance_margin_m=(
+            math.inf
+            if requirements.maximum_takeoff_distance_m is None
+            else requirements.maximum_takeoff_distance_m - takeoff_distance
+        ),
         climb_rate_margin_mps=climb_rate - requirements.minimum_climb_rate_mps,
         climb_distance_margin_m=climb_distance_allowed - climb_distance_required,
         limiting_constraint=limiting,
@@ -694,19 +727,24 @@ def propulsion_margin_bonus(
         or not all(result.feasible for result in results)
     ):
         return 0.0
-    takeoff = min(
-        1.0,
+    takeoff = (
         min(
-            1.0 - result.takeoff_distance_m / requirements.maximum_takeoff_distance_m
-            for result in results
-        ),
+            1.0,
+            min(
+                1.0
+                - result.takeoff_distance_m
+                / requirements.maximum_takeoff_distance_m
+                for result in results
+            ),
+        )
+        if requirements.maximum_takeoff_distance_m is not None
+        else 0.0
     )
     climb = min(
         1.0,
         min(
-            result.climb_distance_margin_m / result.climb_distance_allowed_m
+            result.climb_rate_mps / requirements.minimum_climb_rate_mps - 1.0
             for result in results
-            if result.climb_distance_allowed_m > 0.0
         ),
     )
     energy = min(
