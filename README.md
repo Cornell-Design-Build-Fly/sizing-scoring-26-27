@@ -21,3 +21,65 @@ python -m pip freeze > requirements.txt
 If you only want to refresh the file after several installs, run just the last command once you are done adding packages.
 
 The current `requirements.txt` was generated from the packages already installed in this project's virtual environment.
+
+## Towed-sensor sizing envelope
+
+Run a nominal case, deterministic corner cases, and a seeded Monte Carlo
+sample with:
+
+```powershell
+python -m src.tow.envelope --monte-carlo 24 --safety-factor 1.5
+```
+
+The command writes `data_dump/tow_envelope/tow_load_envelope.json` for sizing
+code and `tow_load_cases.csv` for audit/plotting. The JSON separates nominal
+mean/RMS loads, sampled mission-peak percentiles, the worst sampled limit
+load, and the safety-factored ultimate load.
+
+For programmatic use, call `evaluate_design_tow_envelope()` from
+`src.tow.envelope`. It accepts a `DesignVector`, total Mission-3 aircraft mass,
+and Mission-3 airspeed. The model uses a prescribed flight path; required
+thrust and load factor are feasibility demands, not proof that the aircraft
+can fly that path.
+
+### Fast Mission-3 optimizer model
+
+`src.tow.surrogate.DEFAULT_M3_DOWNWARD_LOAD_SURROGATE` is a quadratic fit to
+a 2--50 lbf sensor-weight sweep. A positive residual correction prevents the
+fitted peak from falling below any sweep point. Mission 3 uses 80% of that
+predicted peak as its representative downward tow load by default:
+
+```text
+M3 supported mass = aircraft-only mass + 0.8 * fitted peak downward force / g
+```
+
+The actual sensor mass is removed first, so it is not counted both as onboard
+weight and tether load. Pass `m3_tow_load_surrogate=None` to `src.main.main()`
+to reproduce the previous onboard-sensor treatment. The current surrogate is
+valid only for its documented nominal rope, course, speed, sensor geometry,
+and 2--50 lbf calibration range; regenerate it when those assumptions change.
+
+Regenerate the fit, CSV audit data, and plot with:
+
+```powershell
+python -m src.tow.surrogate --minimum-weight 2 --maximum-weight 50 --points 25 --load-fraction 0.8
+```
+
+## Propulsion flyability checks
+
+Each candidate is now checked for more than steady cruise. The propulsion
+model requires:
+
+- takeoff within 60 m at 1.2 times stall speed;
+- at least 2.0 m/s climb rate at 1.3 times stall speed;
+- enough usable battery energy for takeoff, a 50 ft climb, the complete
+  mission, and kinetic-energy recovery after every modeled turn;
+- a five-percent usable-energy margin;
+- propeller tip Mach no greater than 0.75;
+- motor, ESC/current, 25C battery-discharge, voltage-sag, and power limits.
+
+The thresholds live in `src.prop.mission_performance.PropulsionRequirements`.
+An optimistic constant-static-thrust takeoff lower bound rejects obviously
+impossible candidates cheaply; candidates that pass it receive the detailed
+ground-roll integration. A small optimizer-only margin bonus breaks ties among
+fully scoring airplanes, while official scores remain unchanged.

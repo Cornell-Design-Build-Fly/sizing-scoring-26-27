@@ -88,7 +88,7 @@ class ToplineConfig:
     # 300, not 100: decoupling sensor length took the design vector from 15 to
     # 16 variables, and 100 generations no longer converges. Same seed and
     # config, 100 gen -> 7.1232 while 300 gen -> 7.4917 (2026-09-04 study).
-    maxiter: int | None = 300
+    maxiter: int | None = 250
     target_seconds: float = TARGET_RUN_SECONDS
     assumed_evals_per_second: float = TARGET_EVALS_PER_SECOND
     init: str = "sobol"
@@ -1128,6 +1128,7 @@ def _best_design_report(
             "mechanical_placement": float(mech_result.penalty_placement),
             "aero_m2": float(details.get("penalty_aero_m2", 0.0)),
             "aero_m3": float(details.get("penalty_aero_m3", 0.0)),
+            "propulsion": float(details.get("penalty_propulsion", 0.0)),
             "overweight": float(details.get("penalty_overweight", 0.0)),
             "max_takeoff_mass_kg": float(details.get("max_takeoff_mass_kg", 0.0)),
         },
@@ -1153,7 +1154,10 @@ def _best_design_report(
             ),
             "usable_fraction": battery.useable_fraction,
             "internal_resistance_ohm": battery.get_Rb(),
+            "c_rating": battery.Crat,
+            "maximum_current_a": battery.get_max_current(),
         },
+        "propulsion": details.get("propulsion", {}),
         "scoring_references": scoring_reference_values(config.scoring_references),
         "mechanical": mech_result,
         "aero": details,

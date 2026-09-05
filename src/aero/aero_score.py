@@ -159,6 +159,8 @@ class AeroScore:
     penalty_longitudinal:    float | None = None
     penalty_directional:     float | None = None
     penalty_spiral:          float | None = None
+    cruise_speed_mps:        float | None = None
+    stall_speed_mps:         float | None = None
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -393,6 +395,8 @@ def aero_score(
             penalty_longitudinal=0.0,
             penalty_directional=0.0,
             penalty_spiral=0.0,
+            cruise_speed_mps=float(cruise_speed),
+            stall_speed_mps=float(stall_speed),
         )
 
     # Compute how far each violated requirement is outside its boundary.
@@ -424,4 +428,6 @@ def aero_score(
         penalty_longitudinal=p_cma,
         penalty_directional=p_cnb,
         penalty_spiral=p_spiral,
+        cruise_speed_mps=float(cruise_speed),
+        stall_speed_mps=float(stall_speed),
     )

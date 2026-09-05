@@ -28,6 +28,7 @@ def aero_main(
         mass: float,
         disp_res: bool = False,
         debug: bool = False,
+        supported_mass: float | None = None,
 ) -> AeroScore:
 
     """
@@ -39,7 +40,10 @@ def aero_main(
         mission: Mission number being evaluated (1, 2, or 3).
         cg: The center of gravity of the airplane (x, y, z).
         inertia_matrix: The inertia matrix of the airplane.
-        mass: The mass of the airplane.
+        mass: Inertial mass of the airplane.
+        supported_mass: Optional equivalent mass used only for steady lift and
+            stall-speed calculations. This permits a downward tether force to
+            increase lift demand without incorrectly adding aircraft inertia.
     """
 
     analysis_start = perf_counter()
@@ -68,7 +72,13 @@ def aero_main(
     #     design_vector, parameter_vector, thrust_velocity, cg, mass, mission, debug
     # )
     cruise_condition = cruise_analysis_fast(
-        design_vector, parameter_vector, thrust_velocity, cg, mass, mission, debug
+        design_vector,
+        parameter_vector,
+        thrust_velocity,
+        cg,
+        mass if supported_mass is None else supported_mass,
+        mission,
+        debug,
     )
     if debug:
         print(f"[aero] Cruise analysis complete (converged={cruise_condition.converged}).", flush=True)

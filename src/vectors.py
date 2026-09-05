@@ -88,7 +88,7 @@ OPT_VARS = [
     ("batt_capacity", (1.0, 4.5)),
     ("prop_diameter_in", (10.0, 25.0)),
     ("prop_pitch_in", (5.0, 18.0)),
-    ("motor_kv", (200.0, 500.0)),
+    ("motor_kv", (200.0, 650.0)),
     ("motor_max_power", (1000.0, 3000.0)),
     ("cruise_throttle", (0.5, 1.0)),
     ("mission3_cruise_throttle", (0.5, 1.0)),

@@ -23,6 +23,7 @@ DEFAULT_MOTOR_MAX_POWER_W = 2000.0
 DEFAULT_CRUISE_THROTTLE = 0.90
 DEFAULT_MISSION3_CRUISE_THROTTLE = 0.85
 DEFAULT_MAX_CURRENT_A = 100.0
+DEFAULT_BATTERY_C_RATING = 25.0
 DEFAULT_USABLE_BATTERY_FRACTION = 0.85
 DEFAULT_BATTERY_CELL_COUNT = 6
 DEFAULT_BATTERY_CELL_COUNT_BOUNDS = (6, 8)
@@ -122,6 +123,8 @@ class Battery:
         return (0.013/self.capacity)*self.cells
     def get_useable_capacity(self) -> float:
         return self.capacity * self.useable_fraction
+    def get_max_current(self) -> float:
+        return self.Crat * self.capacity
 
 
 @dataclass(frozen=True, slots=True)

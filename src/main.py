@@ -2,14 +2,28 @@ from dataclasses import replace
 
 from src.aero.main_aero import aero_main
 from src.mech.main_mech import evaluate_mechanical_module
+from src.mech.mass_properties import inertia_tensor_about_cg
 from src.prop.main_prop import prop_main
-from src.prop.continuous_prop_database import ContinuousPropDatabase
+from src.prop.mission_performance import (
+    DEFAULT_PROPULSION_REQUIREMENTS,
+    PropulsionRequirements,
+    evaluate_mission_propulsion,
+    propulsion_margin_bonus,
+)
+from src.prop.continuous_prop_database import (
+    ContinuousPropDatabase,
+    load_default_continuous_prop_database,
+)
 from src.vectors import DesignVector, ParameterVector
 from src.opt.score import (
     DEFAULT_SCORING_REFERENCES,
     ScoringReferences,
     total_optimization_score,
     total_score,
+)
+from src.tow.surrogate import (
+    DEFAULT_M3_DOWNWARD_LOAD_SURROGATE,
+    DownwardLoadSurrogate,
 )
 
 
@@ -65,6 +79,12 @@ def main(
     return_details: bool = False,
     continuous_lap_scoring: bool = False,
     scoring_references: ScoringReferences = DEFAULT_SCORING_REFERENCES,
+    m3_tow_load_surrogate: DownwardLoadSurrogate | None = (
+        DEFAULT_M3_DOWNWARD_LOAD_SURROGATE
+    ),
+    propulsion_requirements: PropulsionRequirements = (
+        DEFAULT_PROPULSION_REQUIREMENTS
+    ),
 ) -> tuple[float, list[float]] | tuple[float, list[float], dict]:
     """Evaluate mechanics, propulsion, and aerodynamics for all missions.
 
@@ -73,6 +93,8 @@ def main(
     optimizer payload counts.
     """
     scoring_dv = dv
+    if prop_database is None:
+        prop_database = load_default_continuous_prop_database()
     if round_payload:
         scoring_dv = replace(
             dv,
@@ -140,18 +162,80 @@ def main(
         disp_res=disp_res,
     )
     m3_properties = mech_result.for_mission("M3")
+    m3_aero_mass_kg = m3_properties.total_mass_kg
+    m3_supported_mass_kg = m3_properties.total_mass_kg
+    m3_aero_cg = m3_properties.cg_m
+    m3_aero_inertia = m3_properties.inertia_tensor_kg_m2
+    representative_tow_down_lbf = None
+    predicted_peak_tow_down_lbf = None
+    if m3_tow_load_surrogate is not None:
+        aircraft_only_items = tuple(
+            item
+            for item in m3_properties.items
+            if item.category != "mission_3_payload"
+        )
+        aircraft_only_cg, aircraft_only_inertia = inertia_tensor_about_cg(
+            aircraft_only_items
+        )
+        m3_aero_mass_kg = float(
+            sum(item.mass_kg for item in aircraft_only_items)
+        )
+        sensor_mass_kg = float(resolved_dv.mission3_sensor_weight_kg)
+        sensor_weight_lbf = sensor_mass_kg / POUNDS_TO_KG
+        predicted_peak_tow_down_lbf = (
+            m3_tow_load_surrogate.peak_downward_force_lbf(sensor_weight_lbf)
+        )
+        representative_tow_down_lbf = (
+            m3_tow_load_surrogate.representative_downward_force_lbf(
+                sensor_weight_lbf
+            )
+        )
+        m3_supported_mass_kg = (
+            m3_aero_mass_kg
+            + m3_tow_load_surrogate.equivalent_supported_mass_kg(sensor_mass_kg)
+        )
+        m3_aero_cg = tuple(float(value) for value in aircraft_only_cg)
+        m3_aero_inertia = aircraft_only_inertia
     aero_m3 = aero_main(
         design_vector=resolved_dv,
         parameter_vector=pv,
         thrust_velocity=m3_thrust_curve,
         flight_time_fit=m3_flight_time_fit,
         mission=3,
-        cg=m3_properties.cg_m,
-        inertia_matrix=m3_properties.inertia_tensor_kg_m2,
-        mass=m3_properties.total_mass_kg,
+        cg=m3_aero_cg,
+        inertia_matrix=m3_aero_inertia,
+        mass=m3_aero_mass_kg,
+        supported_mass=m3_supported_mass_kg,
         disp_res=disp_res,
         debug=False,
     )
+
+    propulsion_result_list = []
+    for mission, mass, aero in (
+        (2, m2_properties.total_mass_kg, aero_m2),
+        (3, m3_properties.total_mass_kg, aero_m3),
+        (1, m1_properties.total_mass_kg, aero_m1),
+    ):
+        if aero.cruise_speed_mps is None or aero.stall_speed_mps is None:
+            continue
+        performance = evaluate_mission_propulsion(
+            resolved_dv,
+            pv,
+            mission=mission,
+            mass_kg=mass,
+            cruise_speed_mps=float(aero.cruise_speed_mps),
+            stall_speed_mps=float(aero.stall_speed_mps),
+            lap_time_s=float(aero.lap_time),
+            prop_database=prop_database,
+            requirements=propulsion_requirements,
+        )
+        propulsion_result_list.append(performance)
+        # M2 is the prerequisite flight and M3 is the long energy case. There
+        # is no value spending time evaluating lighter missions until each
+        # prerequisite is propulsion-feasible.
+        if mission in (2, 3) and not performance.feasible:
+            break
+    propulsion_results = tuple(propulsion_result_list)
 
     score_function = total_optimization_score if continuous_lap_scoring else total_score
     m2_payload_mass_kg = sum(
@@ -172,6 +256,16 @@ def main(
         + aero_m2.penalty
         + aero_m3.penalty
     )
+    propulsion_penalty = max(
+        (performance.penalty for performance in propulsion_results),
+        default=0.0,
+    )
+    tot_penalty += propulsion_penalty
+    if continuous_lap_scoring:
+        tot_score += propulsion_margin_bonus(
+            propulsion_results,
+            propulsion_requirements,
+        )
     max_takeoff_mass_kg = max(
         properties.total_mass_kg
         for properties in (m1_properties, m2_properties, m3_properties)
@@ -190,7 +284,16 @@ def main(
                 "penalty_aero_m2": aero_m2.penalty,
                 "penalty_aero_m3": aero_m3.penalty,
                 "penalty_overweight": overweight_penalty(max_takeoff_mass_kg),
+                "penalty_propulsion": propulsion_penalty,
+                "propulsion": {
+                    f"M{performance.mission}": performance.to_dict()
+                    for performance in propulsion_results
+                },
                 "max_takeoff_mass_kg": max_takeoff_mass_kg,
+                "m3_tow_predicted_peak_down_lbf": predicted_peak_tow_down_lbf,
+                "m3_tow_representative_down_lbf": representative_tow_down_lbf,
+                "m3_aircraft_only_mass_kg": m3_aero_mass_kg,
+                "m3_supported_mass_kg": m3_supported_mass_kg,
             },
         )
     return result

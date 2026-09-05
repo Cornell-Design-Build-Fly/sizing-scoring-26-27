@@ -14,6 +14,7 @@ from src.prop.prop_classes import (
     DEFAULT_VELOCITIES_MPS,
     battery_nominal_voltage_v,
     normalize_battery_cell_count,
+    DEFAULT_BATTERY_C_RATING,
 )
 
 
@@ -128,7 +129,7 @@ def make_battery_from_design(
     return Battery(
         vnom=vnom,
         cells=cells,
-        Crat=0.0,  # Placeholder until C-rating is actually modeled
+        Crat=DEFAULT_BATTERY_C_RATING,
         capacity=capacity_ah,
         useable_fraction=useable_fraction,
     )

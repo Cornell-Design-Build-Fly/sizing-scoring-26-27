@@ -1,0 +1,13 @@
+{
+  "coefficients": [
+    0.01518785698643812,
+    1.4591743220616114,
+    -2.428683399644092
+  ],
+  "upward_residual_lbf": 2.0444056470656737,
+  "minimum_weight_lbf": 2.0,
+  "maximum_weight_lbf": 50.0,
+  "representative_fraction": 0.8,
+  "fit_r_squared": 0.9978417248136906,
+  "description": "Generated from src.tow.model.simulate_tow."
+}
