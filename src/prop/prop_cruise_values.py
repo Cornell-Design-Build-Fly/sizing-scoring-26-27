@@ -37,6 +37,8 @@ class CruiseGridResult:
     selected_current_a: FloatArray
     selected_throttle: FloatArray
     selected_power_w: FloatArray
+    selected_torque_nm: FloatArray
+    selected_shaft_power_w: FloatArray
 
     valid_rpm_count: IntArray
     failed_mask: BoolArray
@@ -130,6 +132,15 @@ def evaluate_cruise_grid(
         velocity_mph=velocity_grid_mph,
         rpm=rpm_grid,
     )
+    data_support_grid = np.asarray(
+        prop_database.contains(
+            diameter_in=diameter_in,
+            pitch_in=pitch_in,
+            velocity_mph=velocity_grid_mph,
+            rpm=rpm_grid,
+        ),
+        dtype=bool,
+    )
 
     thrust_grid = np.asarray(thrust_grid, dtype=np.float64)
     torque_grid = np.asarray(torque_grid, dtype=np.float64)
@@ -144,6 +155,11 @@ def evaluate_cruise_grid(
         raise ValueError(
             "Prop database returned torque shape "
             f"{torque_grid.shape}; expected {expected_shape}."
+        )
+    if data_support_grid.shape != expected_shape:
+        raise ValueError(
+            "Prop database returned support-mask shape "
+            f"{data_support_grid.shape}; expected {expected_shape}."
         )
 
     kt_nm_per_a = float(motor.get_kt())
@@ -210,6 +226,10 @@ def evaluate_cruise_grid(
 
     base_valid_mask = (
         finite_mask
+        # Flight sizing may interpolate inside source-data hulls but may not
+        # extrapolate beyond them. Extrapolated values remain available from
+        # ContinuousPropDatabase.evaluate() for explicit trade studies.
+        & data_support_grid
         # This model does not represent battery regeneration.
         & (current_grid_a > MIN_POSITIVE_CURRENT_A)
         # Battery voltage must remain positive.
@@ -337,6 +357,10 @@ def select_cruise_points(
         selected_current_a=_take(grid.current_grid_a),
         selected_throttle=_take(grid.throttle_grid),
         selected_power_w=_take(grid.power_grid_w),
+        selected_torque_nm=_take(grid.torque_grid_nm),
+        selected_shaft_power_w=_take(
+            grid.torque_grid_nm * 2.0 * np.pi * grid.rpm_grid / 60.0
+        ),
         valid_rpm_count=valid_rpm_count,
         failed_mask=failed_mask,
     )

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 import math
 
 import numpy as np
@@ -40,10 +40,10 @@ class PropulsionRequirements:
     """Editable operational requirements used by the optimizer."""
 
     # The rules do not specify a runway limit, but the airplane still needs a
-    # finite operating runway. Keep the team's 60 m engineering requirement.
+    # finite operating runway. Keep the team's 75 m engineering requirement.
     # The rules also specify no minimum course altitude, so the old 200 ft
     # climb requirement is disabled unless explicitly requested for a study.
-    maximum_takeoff_distance_m: float | None = 60.0
+    maximum_takeoff_distance_m: float | None = 75.0
     # Pattern altitude. The aircraft climbs to it on every mission, retracts the
     # flaps there and flies the course clean, so this is an operating point, not
     # a rules gate -- the rules set no minimum course altitude. 200 ft is the
@@ -79,8 +79,17 @@ class PropulsionRequirements:
     climb_stall_speed_factor: float = 1.30
     rolling_friction_coefficient: float = 0.04
     takeoff_lift_coefficient_fraction: float = 0.80
+    # The detailed wing height and landing-gear compression are not design
+    # variables yet. Apply only a modest 10% reduction to lift-induced drag on
+    # the ground roll; profile, flap and fuselage drag receive no credit.
+    ground_effect_induced_drag_factor: float = 0.90
     reacceleration_efficiency: float = 0.65
     usable_energy_margin_fraction: float = 0.05
+    # APC's published maximum for Thin Electric propellers is RPM = 150,000 / D
+    # with D in inches. Apply an additional design margin so the optimizer does
+    # not deliberately operate on the manufacturer's absolute ceiling.
+    maximum_propeller_rpm_diameter_product: float = 150_000.0
+    propeller_rpm_limit_safety_factor: float = 0.90
     maximum_propeller_tip_mach: float = 0.75
     speed_of_sound_mps: float = 343.0
 
@@ -90,6 +99,8 @@ class PropulsionRequirements:
             self.liftoff_stall_speed_factor,
             self.climb_stall_speed_factor,
             self.reacceleration_efficiency,
+            self.maximum_propeller_rpm_diameter_product,
+            self.propeller_rpm_limit_safety_factor,
             self.maximum_propeller_tip_mach,
             self.speed_of_sound_mps,
         )
@@ -126,9 +137,12 @@ class PropulsionRequirements:
             self.takeoff_lift_coefficient_fraction,
             self.reacceleration_efficiency,
             self.usable_energy_margin_fraction,
+            self.propeller_rpm_limit_safety_factor,
         )
         if not all(0.0 <= value <= 1.0 for value in fractions):
             raise ValueError("Propulsion requirement fractions must lie in [0, 1].")
+        if not 0.0 < self.ground_effect_induced_drag_factor <= 1.0:
+            raise ValueError("Ground-effect induced-drag factor must lie in (0, 1].")
 
 
     @property
@@ -178,6 +192,12 @@ class MissionPropulsionPerformance:
     # Accelerating to cruise speed after the flaps come up at cruise altitude.
     flap_retraction_energy_wh: float
     maximum_propeller_tip_mach: float
+    maximum_propeller_rpm: float
+    manufacturer_propeller_rpm_limit: float
+    operating_propeller_rpm_limit: float
+    propeller_rpm_margin: float
+    maximum_propeller_shaft_power_w: float
+    maximum_propeller_disk_power_loading_w_m2: float
     cruise_power_w: float  # nominal-equivalent battery depletion power
     takeoff_energy_wh: float
     climb_energy_wh: float
@@ -200,6 +220,8 @@ class MissionPropulsionPerformance:
     straight_energy_wh: float
     turn_energy_wh: float
     # Propeller actually flown on this mission (M1/M2 share one; M3 has its own).
+    propeller_key: str
+    propeller_blade_count: int
     propeller_diameter_in: float
     propeller_pitch_in: float
     # ``aerodynamic_cruise_speed_mps`` is the trimmed speed at the propeller's
@@ -238,6 +260,7 @@ def _drag_n(
     lift_coefficient: np.ndarray | float | None = None,
     flap_deflection_deg: float = 0.0,
     flaps: FlapConfig = DEFAULT_FLAPS,
+    induced_drag_factor: float = 1.0,
 ):
     speed = np.asarray(speed_mps, dtype=float)
     q = 0.5 * parameters.rho * np.maximum(speed, 0.1) ** 2
@@ -253,7 +276,12 @@ def _drag_n(
         flap_deflection_deg=flap_deflection_deg,
         flaps=flaps,
     )
-    drag = q * design.wing_area * sum(coefficients.values())
+    induced_keys = {"wing_induced", "tail_induced", "interaction"}
+    drag_coefficient = sum(
+        value * induced_drag_factor if name in induced_keys else value
+        for name, value in coefficients.items()
+    )
+    drag = q * design.wing_area * drag_coefficient
     if mission == 3:
         drag += sensor_drag_force(design, parameters, speed)
     return np.asarray(drag, dtype=float)
@@ -268,10 +296,11 @@ class _TurnPerformance:
     required_thrust_n: float
     battery_power_w: float
     maximum_rpm: float
+    maximum_shaft_power_w: float
 
 
 _INFEASIBLE_TURN = _TurnPerformance(
-    False, math.nan, 1.0, 0.0, math.inf, math.inf, 0.0
+    False, math.nan, 1.0, 0.0, math.inf, math.inf, 0.0, 0.0
 )
 
 
@@ -463,6 +492,7 @@ def _solve_turn(
             required_thrust,
             math.inf,
             float(available.selected_rpm[best]),
+            float(available.selected_shaft_power_w[best]),
         )
     return _TurnPerformance(
         True,
@@ -474,6 +504,10 @@ def _solve_turn(
         max(
             float(available.selected_rpm[best]),
             float(operating_point.selected_rpm[best]),
+        ),
+        max(
+            float(available.selected_shaft_power_w[best]),
+            float(operating_point.selected_shaft_power_w[best]),
         ),
     )
 
@@ -488,6 +522,8 @@ def _penalty_and_limit(
     propeller_tip_mach: float,
     requirements: PropulsionRequirements,
     *,
+    propeller_rpm: float | None = None,
+    propeller_rpm_limit: float | None = None,
     operating_point_failed: bool = False,
     course_flight_failed: bool = False,
 ) -> tuple[float, str]:
@@ -528,6 +564,13 @@ def _penalty_and_limit(
         "propeller_tip_mach": max(
             0.0,
             propeller_tip_mach / requirements.maximum_propeller_tip_mach - 1.0,
+        ),
+        "propeller_rpm": (
+            max(0.0, propeller_rpm / propeller_rpm_limit - 1.0)
+            if propeller_rpm is not None
+            and propeller_rpm_limit is not None
+            and propeller_rpm_limit > 0.0
+            else 0.0
         ),
         "propulsion_operating_point": float(operating_point_failed),
     }
@@ -644,15 +687,25 @@ def evaluate_mission_propulsion(
     motor = make_motor_from_design(design, parameters)
     battery = make_battery_from_design(design, parameters)
     diameter_in, pitch_in = design.propeller_for_mission(mission)
+    try:
+        propeller_key = prop_database.catalog.get_by_geometry(
+            diameter_in, pitch_in
+        ).key
+    except KeyError:
+        propeller_key = "continuous-geometry-study"
     throttle_limit = design.cruise_throttle_for_mission(mission)
 
     # Flap configuration by phase. ``stall_speed_mps`` arrives clean, from the
     # aerodynamic trim, and stays clean for cruise and for every turn: the
     # aircraft would not carry flaps through a 2.5 g turn, and crediting the
     # turn envelope with flapped lift it does not have is exactly the mistake
-    # a single CLmax invites. Flaps are down for the ground roll, retracted
-    # once airborne, and down again on the approach.
-    flaps = requirements.flaps
+    # a single CLmax invites. Takeoff flaps remain down through the climb,
+    # retract at cruise altitude, and the landing setting is used diagnostically
+    # for the approach.
+    flaps = replace(
+        requirements.flaps,
+        takeoff_deflection_deg=float(design.takeoff_flap_deflection_deg),
+    )
     wing_aspect_ratio = design.wing_span**2 / design.wing_area
     takeoff_flap_deg = flaps.deflection_for("takeoff")
     landing_flap_deg = flaps.deflection_for("landing")
@@ -750,6 +803,7 @@ def evaluate_mission_propulsion(
         lift_coefficient=takeoff_cl,
         flap_deflection_deg=takeoff_flap_deg,
         flaps=flaps,
+        induced_drag_factor=requirements.ground_effect_induced_drag_factor,
     )
     takeoff_indices = np.searchsorted(sample_speeds, takeoff_speeds)
     takeoff_thrust_n = full.thrust_samples_n[takeoff_indices]
@@ -1045,6 +1099,17 @@ def evaluate_mission_propulsion(
     required_energy = fixed_energy + course.course_energy_wh
 
     maximum_rpm = max(float(np.max(full.selected_rpm)), turn.maximum_rpm)
+    maximum_shaft_power_w = max(
+        float(np.max(full.selected_shaft_power_w)),
+        turn.maximum_shaft_power_w,
+    )
+    propeller_disk_area_m2 = math.pi * (diameter_in * 0.0254) ** 2 / 4.0
+    manufacturer_rpm_limit = (
+        requirements.maximum_propeller_rpm_diameter_product / diameter_in
+    )
+    operating_rpm_limit = (
+        requirements.propeller_rpm_limit_safety_factor * manufacturer_rpm_limit
+    )
     propeller_tip_speed_mps = (
         math.pi
         * diameter_in
@@ -1070,6 +1135,8 @@ def evaluate_mission_propulsion(
         allowed_energy,
         propeller_tip_mach,
         requirements,
+        propeller_rpm=maximum_rpm,
+        propeller_rpm_limit=operating_rpm_limit,
         operating_point_failed=operating_point_failed,
         course_flight_failed=not course.feasible,
     )
@@ -1085,6 +1152,7 @@ def evaluate_mission_propulsion(
             or climb_distance_required <= climb_distance_allowed
         )
         and required_energy <= allowed_energy
+        and maximum_rpm <= operating_rpm_limit
         and propeller_tip_mach <= requirements.maximum_propeller_tip_mach
     )
     return MissionPropulsionPerformance(
@@ -1113,6 +1181,14 @@ def evaluate_mission_propulsion(
         climb_time_s=climb_time,
         flap_retraction_energy_wh=course.flap_retraction_energy_wh,
         maximum_propeller_tip_mach=propeller_tip_mach,
+        maximum_propeller_rpm=maximum_rpm,
+        manufacturer_propeller_rpm_limit=manufacturer_rpm_limit,
+        operating_propeller_rpm_limit=operating_rpm_limit,
+        propeller_rpm_margin=operating_rpm_limit - maximum_rpm,
+        maximum_propeller_shaft_power_w=maximum_shaft_power_w,
+        maximum_propeller_disk_power_loading_w_m2=(
+            maximum_shaft_power_w / propeller_disk_area_m2
+        ),
         cruise_power_w=cruise_power,
         takeoff_energy_wh=takeoff_energy,
         climb_energy_wh=climb_energy,
@@ -1138,6 +1214,8 @@ def evaluate_mission_propulsion(
         turn_power_w=turn.battery_power_w,
         straight_energy_wh=straight_energy,
         turn_energy_wh=turn_energy,
+        propeller_key=propeller_key,
+        propeller_blade_count=2,
         propeller_diameter_in=diameter_in,
         propeller_pitch_in=pitch_in,
         aerodynamic_cruise_speed_mps=float(cruise_speed_mps),

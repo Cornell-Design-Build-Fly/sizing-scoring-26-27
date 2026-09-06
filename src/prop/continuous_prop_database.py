@@ -424,6 +424,102 @@ class ContinuousPropDatabase:
 
         return blend
 
+    def nearest_catalog_surface(
+        self,
+        diameter_in: float,
+        pitch_in: float,
+        *,
+        minimum_diameter_in: float | None = None,
+        maximum_diameter_in: float | None = None,
+        minimum_pitch_in: float | None = None,
+        maximum_pitch_in: float | None = None,
+        minimum_pitch_diameter_ratio: float | None = None,
+        maximum_pitch_diameter_ratio: float | None = None,
+    ) -> CatalogPropSurface:
+        """Return the closest real catalog propeller to a requested geometry.
+
+        Distance is measured in log diameter/log pitch space, so equal
+        fractional changes in the two dimensions receive equal weight.  The
+        optional bounds let optimizers restrict snapping to their legal design
+        box without reintroducing virtual blended propellers.
+        """
+
+        point = np.asarray((diameter_in, pitch_in), dtype=np.float64)
+        if not np.all(np.isfinite(point)) or np.any(point <= 0.0):
+            raise ValueError("Diameter and pitch must be finite and positive.")
+
+        candidates = []
+        for surface in self.catalog.surfaces:
+            diameter = float(surface.diameter_in)
+            pitch = float(surface.pitch_in)
+            ratio = pitch / diameter
+            if minimum_diameter_in is not None and diameter < minimum_diameter_in:
+                continue
+            if maximum_diameter_in is not None and diameter > maximum_diameter_in:
+                continue
+            if minimum_pitch_in is not None and pitch < minimum_pitch_in:
+                continue
+            if maximum_pitch_in is not None and pitch > maximum_pitch_in:
+                continue
+            if (
+                minimum_pitch_diameter_ratio is not None
+                and ratio < minimum_pitch_diameter_ratio
+            ):
+                continue
+            if (
+                maximum_pitch_diameter_ratio is not None
+                and ratio > maximum_pitch_diameter_ratio
+            ):
+                continue
+            candidates.append(surface)
+
+        if not candidates:
+            raise ValueError("No catalog propeller satisfies the requested bounds.")
+
+        log_point = np.log(point)
+        return min(
+            candidates,
+            key=lambda surface: (
+                float(
+                    np.sum(
+                        (
+                            np.log(
+                                (surface.diameter_in, surface.pitch_in)
+                            )
+                            - log_point
+                        )
+                        ** 2
+                    )
+                ),
+                surface.key,
+            ),
+        )
+
+    def contains(
+        self,
+        diameter_in: float,
+        pitch_in: float,
+        velocity_mph: ArrayLike,
+        rpm: ArrayLike,
+    ) -> bool | NDArray[np.bool_]:
+        """Return whether every contributing surface contains each query.
+
+        Aerodynamic extrapolation remains available through :meth:`evaluate`
+        for standalone studies. Flight sizing uses this support mask to avoid
+        accepting operating points outside the measured/source-data envelope.
+        """
+
+        blend = self.geometry_blend(diameter_in, pitch_in)
+        support = None
+        for surface in blend.surfaces:
+            contained = np.asarray(surface.contains(velocity_mph, rpm), dtype=bool)
+            support = contained if support is None else support & contained
+        if support is None:
+            raise RuntimeError("Geometry blend contained no surfaces.")
+        if support.ndim == 0:
+            return bool(support)
+        return support
+
     def evaluate(
         self,
         diameter_in: float,

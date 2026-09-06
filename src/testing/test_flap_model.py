@@ -12,9 +12,10 @@ from src.aero.flaps import DEFAULT_FLAPS, FlapConfig, clean_cl_max
 from src.prop.continuous_prop_database import load_default_continuous_prop_database
 from src.prop.mission_performance import (
     DEFAULT_PROPULSION_REQUIREMENTS,
+    _drag_n,
     evaluate_mission_propulsion,
 )
-from src.vectors import DesignVector, ParameterVector
+from src.vectors import OPT_VARS, DesignVector, ParameterVector
 
 
 NO_FLAPS = FlapConfig(takeoff_deflection_deg=0.0, landing_deflection_deg=0.0)
@@ -84,6 +85,12 @@ def test_flap_drag_only_appears_when_deflected() -> None:
 
 
 def _evaluate(requirements, **overrides):
+    # Candidate-level takeoff deflection normally overrides this configuration.
+    # Mirror the supplied configuration unless a test explicitly selects an angle.
+    overrides.setdefault(
+        "takeoff_flap_deflection_deg",
+        requirements.flaps.takeoff_deflection_deg,
+    )
     design = DesignVector(batt_capacity=3.0, **overrides)
     return evaluate_mission_propulsion(
         design,
@@ -105,6 +112,103 @@ def test_flaps_shorten_the_takeoff_roll() -> None:
     assert with_flaps.takeoff_stall_speed_mps < with_flaps.clean_stall_speed_mps
     assert with_flaps.liftoff_speed_mps < without.liftoff_speed_mps
     assert with_flaps.takeoff_distance_m < without.takeoff_distance_m
+
+
+def test_takeoff_flap_deflection_is_an_optimizer_variable() -> None:
+    bounds = dict(OPT_VARS)
+    assert bounds["takeoff_flap_deflection_deg"] == (0.0, 40.0)
+
+    design = DesignVector(takeoff_flap_deflection_deg=13.0)
+    restored = DesignVector.from_array(design.to_array())
+    assert restored.takeoff_flap_deflection_deg == 13.0
+
+
+def test_design_selects_takeoff_flap_deflection() -> None:
+    clean = _evaluate(
+        DEFAULT_PROPULSION_REQUIREMENTS,
+        takeoff_flap_deflection_deg=0.0,
+    )
+    flapped = _evaluate(
+        DEFAULT_PROPULSION_REQUIREMENTS,
+        takeoff_flap_deflection_deg=20.0,
+    )
+    assert clean.takeoff_flap_deflection_deg == 0.0
+    assert flapped.takeoff_flap_deflection_deg == 20.0
+    assert flapped.takeoff_stall_speed_mps < clean.takeoff_stall_speed_mps
+    assert flapped.takeoff_distance_m < clean.takeoff_distance_m
+
+
+def test_ground_effect_credit_is_conservative_and_ground_roll_only() -> None:
+    without_credit = _evaluate(
+        replace(
+            DEFAULT_PROPULSION_REQUIREMENTS,
+            ground_effect_induced_drag_factor=1.0,
+        )
+    )
+    with_credit = _evaluate(DEFAULT_PROPULSION_REQUIREMENTS)
+
+    assert DEFAULT_PROPULSION_REQUIREMENTS.ground_effect_induced_drag_factor == 0.90
+    assert with_credit.takeoff_distance_m < without_credit.takeoff_distance_m
+    # Ground effect does not change the flap lift model or airborne climb model.
+    assert with_credit.takeoff_stall_speed_mps == pytest.approx(
+        without_credit.takeoff_stall_speed_mps
+    )
+    assert with_credit.climb_rate_mps == pytest.approx(without_credit.climb_rate_mps)
+
+
+def test_ground_effect_factor_reduces_only_induced_drag_terms() -> None:
+    design = DesignVector()
+    parameters = ParameterVector()
+    speed_mps = 15.0
+    lift_coefficient = 0.8
+    full_drag = float(
+        _drag_n(
+            design,
+            parameters,
+            speed_mps,
+            50.0,
+            2,
+            lift_coefficient=lift_coefficient,
+            flap_deflection_deg=20.0,
+            induced_drag_factor=1.0,
+        )
+    )
+    reduced_drag = float(
+        _drag_n(
+            design,
+            parameters,
+            speed_mps,
+            50.0,
+            2,
+            lift_coefficient=lift_coefficient,
+            flap_deflection_deg=20.0,
+            induced_drag_factor=0.90,
+        )
+    )
+    coefficients = drag_coefficients(
+        design,
+        parameters,
+        speed_mps,
+        lift_coefficient,
+        0.0,
+        fuselage_drag_geometry(design),
+        flap_deflection_deg=20.0,
+    )
+    induced_cd = sum(
+        coefficients[name]
+        for name in ("wing_induced", "tail_induced", "interaction")
+    )
+    expected_reduction_n = (
+        0.10
+        * 0.5
+        * parameters.rho
+        * speed_mps**2
+        * design.wing_area
+        * induced_cd
+    )
+    assert full_drag - reduced_drag == pytest.approx(expected_reduction_n)
+    # Profile/body/flap drag remains, so total drag is not reduced by 10%.
+    assert reduced_drag > 0.90 * full_drag
 
 
 def test_flaps_do_not_touch_cruise_or_the_turn() -> None:

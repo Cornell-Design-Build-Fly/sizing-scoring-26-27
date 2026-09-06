@@ -15,6 +15,10 @@ from src.prop.continuous_prop_database import (
     ContinuousPropDatabase,
     load_default_continuous_prop_database,
 )
+from src.prop.catalog_selection import (
+    catalog_propeller_keys,
+    resolve_catalog_propellers,
+)
 from src.vectors import DesignVector, ParameterVector
 from src.opt.score import (
     DEFAULT_SCORING_REFERENCES,
@@ -153,6 +157,12 @@ def main(
             dv,
             extra_shipping_containers=round(dv.extra_shipping_containers),
         )
+    # Competition sizing must describe purchasable hardware. The continuous
+    # database remains useful for trade studies, but every scored aircraft is
+    # resolved to exact two-blade catalog geometries before mass, aero, or
+    # propulsion are evaluated.
+    scoring_dv = resolve_catalog_propellers(scoring_dv, prop_database)
+    selected_propeller_keys = catalog_propeller_keys(scoring_dv, prop_database)
 
     mech_result = evaluate_mechanical_module(
         scoring_dv,
@@ -368,6 +378,10 @@ def main(
                 "propulsion": {
                     f"M{performance.mission}": performance.to_dict()
                     for performance in propulsion_results
+                },
+                "catalog_propellers": {
+                    f"M{mission}": key
+                    for mission, key in selected_propeller_keys.items()
                 },
                 "max_takeoff_mass_kg": max_takeoff_mass_kg,
                 "m3_tow_predicted_peak_down_lbf": predicted_peak_tow_down_lbf,

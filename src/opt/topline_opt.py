@@ -87,12 +87,12 @@ PROGRESS_BAR = None
 class ToplineConfig:
     """Settings for the long, SciPy-managed top-line DE run."""
 
-    workers: int = DEFAULT_TOPLINE_WORKERS
+    workers: int = -1
     popsize: int = 25
     # 300, not 100: decoupling sensor length took the design vector from 15 to
-    # 16 variables, and 100 generations no longer converges. Same seed and
+    # 17 variables, and 100 generations no longer converges. Same seed and
     # config, 100 gen -> 7.1232 while 300 gen -> 7.4917 (2026-09-04 study).
-    maxiter: int | None = 50
+    maxiter: int | None = 100
     target_seconds: float = TARGET_RUN_SECONDS
     assumed_evals_per_second: float = TARGET_EVALS_PER_SECOND
     init: str = "sobol"
@@ -315,6 +315,39 @@ def _integrality_mask(config: ToplineConfig | None = None) -> np.ndarray:
     )
 
 
+def _resolved_propeller_coordinates(
+    x: np.ndarray,
+    config: ToplineConfig,
+) -> np.ndarray:
+    """Return an optimizer vector with both prop requests snapped to catalog."""
+
+    values = np.asarray(x, dtype=float).copy()
+    names = _optimizer_variable_names(config)
+    bounds_by_name = dict(zip(names, _optimizer_bounds(config)))
+    _ensure_prop_database_loaded(config)
+    if PROP_DATABASE is None:
+        raise RuntimeError("Propeller database did not load.")
+    for diameter_name, pitch_name in (
+        ("prop_diameter_in", "prop_pitch_in"),
+        ("mission3_prop_diameter_in", "mission3_prop_pitch_in"),
+    ):
+        diameter_index = names.index(diameter_name)
+        pitch_index = names.index(pitch_name)
+        surface = PROP_DATABASE.nearest_catalog_surface(
+            values[diameter_index],
+            values[pitch_index],
+            minimum_diameter_in=bounds_by_name[diameter_name][0],
+            maximum_diameter_in=bounds_by_name[diameter_name][1],
+            minimum_pitch_in=bounds_by_name[pitch_name][0],
+            maximum_pitch_in=bounds_by_name[pitch_name][1],
+            minimum_pitch_diameter_ratio=PD_MIN,
+            maximum_pitch_diameter_ratio=PD_MAX,
+        )
+        values[diameter_index] = surface.diameter_in
+        values[pitch_index] = surface.pitch_in
+    return values
+
+
 def _design_vector_from_optimizer(
     x: np.ndarray,
     config: ToplineConfig,
@@ -339,8 +372,11 @@ def _design_vector_from_optimizer(
             f"battery_cell_count must be one of "
             f"{_allowed_battery_cell_counts(config)}; got {cell_count}."
         )
-    design = DesignVector.from_array(values[:base_count])
-    return replace(design, battery_cell_count=cell_count)
+    resolved_values = _resolved_propeller_coordinates(values, config)
+    return replace(
+        DesignVector.from_array(resolved_values[:base_count]),
+        battery_cell_count=cell_count,
+    )
 
 
 def _expected_population_size(config: ToplineConfig) -> int:
@@ -449,17 +485,36 @@ def _initial_population(
         maximum_capacity_ah,
     )
 
-    # Project propeller pitch into the P/D-feasible interval so population
-    # slots are spent comparing aircraft rather than known constraint failures.
-    # Both the M1/M2 and the M3 propeller are projected.
+    # Seed both missions with real two-blade catalog choices. Later DE trial
+    # vectors are resolved through the same catalog in
+    # _design_vector_from_optimizer, so no scored candidate is a virtual blend.
+    _ensure_prop_database_loaded(config)
+    if PROP_DATABASE is None:
+        raise RuntimeError("Propeller database did not load.")
+    diameter_bounds = bounds[propeller_index_pairs[0][0]]
+    pitch_bounds = bounds[propeller_index_pairs[0][1]]
+    eligible_propellers = tuple(
+        surface
+        for surface in PROP_DATABASE.catalog.surfaces
+        if diameter_bounds[0] <= surface.diameter_in <= diameter_bounds[1]
+        and pitch_bounds[0] <= surface.pitch_in <= pitch_bounds[1]
+        and PD_MIN <= surface.pitch_in / surface.diameter_in <= PD_MAX
+    )
+    if not eligible_propellers:
+        raise RuntimeError("No two-blade catalog propellers fit optimizer bounds.")
     for prop_diameter_index, pitch_index in propeller_index_pairs:
-        diameter = population[:, prop_diameter_index]
-        pitch_lower, pitch_upper = bounds[pitch_index]
-        feasible_lower = np.maximum(pitch_lower, PD_MIN * diameter)
-        feasible_upper = np.minimum(pitch_upper, PD_MAX * diameter)
-        pitch_unit = unit_population[:, pitch_index]
-        population[:, pitch_index] = (
-            feasible_lower + pitch_unit * (feasible_upper - feasible_lower)
+        choice_indices = np.minimum(
+            (
+                unit_population[:, prop_diameter_index]
+                * len(eligible_propellers)
+            ).astype(int),
+            len(eligible_propellers) - 1,
+        )
+        population[:, prop_diameter_index] = np.asarray(
+            [eligible_propellers[index].diameter_in for index in choice_indices]
+        )
+        population[:, pitch_index] = np.asarray(
+            [eligible_propellers[index].pitch_in for index in choice_indices]
         )
 
     for index, constraint in enumerate(_optimizer_constraints(config)):
@@ -529,6 +584,8 @@ def _update_payload_archive(
     container_index = variable_names.index("extra_shipping_containers")
     updates = 0
     for population_index, (vector, objective) in enumerate(zip(population, energies)):
+        if config is not None:
+            vector = _resolved_propeller_coordinates(vector, config)
         objective = float(objective)
         if not math.isfinite(objective) or objective >= BAD_OBJECTIVE:
             continue
@@ -582,6 +639,8 @@ def _update_top_candidate_archive(
 
     updates = 0
     for vector, objective_value in zip(population, energies):
+        if config is not None:
+            vector = _resolved_propeller_coordinates(vector, config)
         objective = float(objective_value)
         if not math.isfinite(objective) or objective >= BAD_OBJECTIVE:
             continue
@@ -609,6 +668,36 @@ def _update_top_candidate_archive(
     return updates
 
 
+def _population_convergence_metrics(
+    population_energies: np.ndarray,
+    scipy_convergence: float,
+) -> tuple[float, float, float]:
+    """Return honest callback convergence and finite-population health."""
+
+    energies = np.asarray(population_energies, dtype=float)
+    if energies.size == 0:
+        return math.nan, math.nan, math.nan
+
+    finite_energies = energies[np.isfinite(energies)]
+    feasible_fraction = float(finite_energies.size / energies.size)
+    if finite_energies.size:
+        relative_std = float(
+            np.std(finite_energies)
+            / (abs(np.mean(finite_energies)) + np.finfo(float).eps)
+        )
+    else:
+        relative_std = math.nan
+
+    # SciPy maps any infinite population energy to callback convergence zero.
+    # Report that value as unavailable instead of presenting a false zero.
+    reported_convergence = (
+        float(scipy_convergence)
+        if finite_energies.size == energies.size
+        else math.nan
+    )
+    return reported_convergence, feasible_fraction, relative_std
+
+
 def _callback(intermediate_result) -> bool:
     global CALLBACK_GENERATION
     global CALLBACK_CHUNK_GENERATION
@@ -616,8 +705,20 @@ def _callback(intermediate_result) -> bool:
 
     CALLBACK_GENERATION += 1
     CALLBACK_CHUNK_GENERATION += 1
+    config = ACTIVE_TOPLINE_CONFIG or ToplineConfig()
     xk = np.asarray(intermediate_result.x, dtype=float)
-    convergence = float(intermediate_result.convergence)
+    xk_reported = _resolved_propeller_coordinates(xk, config)
+    population_energies = np.asarray(
+        intermediate_result.population_energies, dtype=float
+    )
+    (
+        scipy_convergence,
+        feasible_population_fraction,
+        finite_energy_relative_std,
+    ) = _population_convergence_metrics(
+        population_energies,
+        float(intermediate_result.convergence),
+    )
     _update_payload_archive(
         intermediate_result.population,
         intermediate_result.population_energies,
@@ -649,9 +750,21 @@ def _callback(intermediate_result) -> bool:
         if rate > 0.0
         else math.nan
     )
-    config = ACTIVE_TOPLINE_CONFIG or ToplineConfig()
     objective = _objective(xk, config=config) if CALLBACK_SCORE_BEST else math.nan
     score = -objective if math.isfinite(objective) else math.nan
+    previous_incumbent = (
+        float(CALLBACK_HISTORY[-1].get("global_best_score", -math.inf))
+        if CALLBACK_HISTORY
+        else -math.inf
+    )
+    finite_incumbent_candidates = [
+        value for value in (previous_incumbent, score) if math.isfinite(value)
+    ]
+    global_best_score = (
+        max(finite_incumbent_candidates)
+        if finite_incumbent_candidates
+        else math.nan
+    )
 
     row = {
         "generation": CALLBACK_GENERATION,
@@ -660,11 +773,14 @@ def _callback(intermediate_result) -> bool:
         "elapsed_seconds": elapsed,
         "estimated_candidates_per_second": rate,
         "eta_seconds": eta,
-        "convergence": float(convergence),
+        "convergence": scipy_convergence,
+        "feasible_population_fraction": feasible_population_fraction,
+        "finite_energy_relative_std": finite_energy_relative_std,
         "best_objective": float(objective),
         "best_score": float(score),
+        "global_best_score": global_best_score,
     }
-    for name, value in zip(_optimizer_variable_names(config), xk):
+    for name, value in zip(_optimizer_variable_names(config), xk_reported):
         row[name] = float(value)
     CALLBACK_HISTORY.append(row)
 
@@ -676,7 +792,8 @@ def _callback(intermediate_result) -> bool:
             {
                 "gen": CALLBACK_GENERATION,
                 "score": f"{score:.4g}",
-                "conv": f"{convergence:.3g}",
+                "feasible": f"{feasible_population_fraction:.1%}",
+                "spread": f"{finite_energy_relative_std:.3g}",
             },
             refresh=False,
         )
@@ -686,7 +803,8 @@ def _callback(intermediate_result) -> bool:
             "[topline] "
             f"gen={CALLBACK_GENERATION} "
             f"score={score:.6g} "
-            f"conv={convergence:.3g} "
+            f"feasible={feasible_population_fraction:.1%} "
+            f"spread={finite_energy_relative_std:.3g} "
             f"elapsed={elapsed / 60.0:.1f} min "
             f"eta={eta / 60.0:.1f} min"
         )
@@ -1216,6 +1334,7 @@ def _best_design_report(
         },
         "propulsion_feasible": bool(details.get("propulsion_feasible", False)),
         "propulsion_requirements": asdict(DEFAULT_PROPULSION_REQUIREMENTS),
+        "catalog_propellers": details.get("catalog_propellers", {}),
         "propulsion": details.get("propulsion", {}),
         "scoring_references": scoring_reference_values(config.scoring_references),
         "mechanical": mech_result,
@@ -1479,6 +1598,19 @@ def run_topline_optimization(config: ToplineConfig | None = None):
                 PROGRESS_BAR.update(CALLBACK_TARGET_CANDIDATES - PROGRESS_BAR.n)
             PROGRESS_BAR = None
     elapsed_seconds = time.perf_counter() - RUN_START_SECONDS
+
+    # Objective values were computed from these exact catalog choices. Store
+    # those choices, not the pre-snap continuous requests, in every final table
+    # and plot so output artifacts cannot suggest a nonexistent propeller.
+    result.population = np.asarray(
+        [
+            _resolved_propeller_coordinates(candidate, config)
+            for candidate in np.asarray(result.population, dtype=float)
+        ],
+        dtype=float,
+    )
+    best_index = int(np.nanargmin(result.population_energies))
+    result.x = np.asarray(result.population[best_index], dtype=float)
 
     _update_payload_archive(
         result.population,

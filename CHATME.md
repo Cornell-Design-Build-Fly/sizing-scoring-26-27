@@ -54,6 +54,85 @@ Aero solver expectations:
 
 ## Session Log
 
+### 2026-09-06h - Codex
+Changed:
+- Added a conservative ground-effect assumption to the takeoff roll: a 0.90
+  multiplier applies only to wing/tail/interaction induced drag. It does not
+  reduce profile, flap, or fuselage drag and gives no credit in airborne flight.
+- Added takeoff flap deflection (0--40 deg) as the 17th optimizer variable for
+  the existing fixed 25%-chord, 60%-span plain flap. Landing remains fixed at
+  40 deg; flap geometry/type are not optimized without their hardware costs.
+
+Learned:
+- The Sobol population remains 512 because both 16x25 and 17x25 round up to
+  512. The standard 100-generation configuration therefore remains at 57,344
+  candidate evaluations; the new per-candidate arithmetic is negligible.
+- On `run_20260906_163754`'s fixed design, a five-angle replay took 8.56 s.
+  Raising takeoff deflection from 20 to 30 deg cut M2 ground roll from 48.35 to
+  46.00 m and changed the discrete-lap score from 5.6968 to 5.7939 under the
+  new model. This is a sensitivity check, not a replacement optimization run.
+
+Open notes:
+- The 0.90 factor is an intentionally modest engineering assumption, not a
+  height/span-resolved ground-effect model. Replace it with test-derived data
+  when wing height and gear compression are known.
+
+### 2026-09-06g - Codex
+Changed:
+- Raised the team's engineering takeoff-distance limit from 60 m to 75 m in
+  `PropulsionRequirements`; updated the README and added a default-value
+  regression assertion. The posted 2026-27 rules explicitly impose no takeoff
+  distance limit, so 75 m remains a team design margin rather than a rules gate.
+
+Learned:
+- On `run_20260906_163754`'s fixed airframe, the zero-penalty M2 sensor boundary
+  moves from about 7.61 kg at 60 m to 8.58 kg at 75 m. A coarse fixed-airframe
+  sweep peaks near 7.97 kg / score 5.879 before discrete M3-lap effects reduce
+  the total; M2 takeoff still becomes the first hard failure above 8.58 kg.
+- High-impact unmodeled/fixed levers worth studying next are flap geometry/type
+  and per-design deflection, airfoil/section CLmax, propwash over the flapped
+  wing, multi-motor/distributed propulsion, and measured wheel/runway rolling
+  resistance. The rules allow multiple motors/propellers, per-attempt propeller
+  changes, thrust vectoring, and blown surfaces.
+
+### 2026-09-06f - Codex
+Changed:
+- Replaced the misleading SciPy-zero convergence trace with a two-panel
+  progress/health graph: global incumbent plus island-local score on top,
+  feasible-population fraction plus finite-energy relative spread below.
+- Callback history now records `global_best_score`,
+  `feasible_population_fraction`, and `finite_energy_relative_std`. SciPy's
+  callback convergence is recorded as unavailable (`nan`) whenever any
+  population energy is infinite; live progress reports feasibility and spread.
+
+Learned:
+- SciPy 1.17.1 maps any population containing an infinite energy to callback
+  convergence zero, so the old flat-zero curve was an infeasibility sentinel,
+  not evidence that the best score was stationary.
+
+Artifacts:
+- Regenerated the 2026-09-06 14:29 run's convergence PNG with the honest legacy
+  fallback; per-generation population health was not stored by that old run.
+
+### 2026-09-06e - Codex
+Changed:
+- Excluded every APC-style `E-3`/`E-4` entry before the prop database is built.
+- Integrated scoring and optimizer outputs now resolve both mission propeller
+  requests to exact two-blade catalog products; unsupported velocity/RPM
+  extrapolation is ineligible for flight sizing.
+- Added the APC Thin Electric `150,000 / diameter_in` RPM limit with a 0.90
+  design factor. Reports now expose product key, blade count, manufacturer and
+  operating RPM limits/margin, peak shaft power, and disk power loading.
+
+Learned:
+- The old 11.70x7.68 / 12.18x6.91 winner resolves to 12x8E / 13x6.5E but is
+  rejected for RPM. The same airframe with 21x13E and 220 Kv is feasible,
+  scores 5.8374, peaks at 6000 RPM, and has 5.7 kW/m^2 disk power loading.
+
+Artifacts:
+- No new `data_dump` output. Added `src/testing/test_propeller_safety.py`; 51
+  directly callable tests pass. `pytest` is not installed in the current venv.
+
 ### 2026-09-06d - Claude
 Changed:
 - Nothing in `src/`. Audit of the 100 Wh rule after the team asked why the

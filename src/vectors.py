@@ -113,20 +113,23 @@ OPT_VARS = [
         (MIN_MISSION3_SENSOR_WEIGHT_KG, OPTIMIZER_SENSOR_WEIGHT_UPPER_KG),
     ),
     ("batt_capacity", (1.0, MAX_BATT_CAPACITY_AH)),
-    # Mission 1 and Mission 2 propeller. The rules permit a different propeller
-    # on each flight, and M2 (loaded shipping containers) and M3 (towing the
-    # sensor at a different weight and speed) do not want the same one, so the
-    # two are sized independently instead of being forced to share.
+    # Mission 1 and Mission 2 propeller request. Integrated scoring resolves
+    # the continuous optimizer coordinates to the nearest real two-blade
+    # catalog product before evaluating the airplane.
     ("prop_diameter_in", (10.0, 25.0)),
     # The database reaches 3 in and the P/D >= 0.4 constraint imposes an
     # effective 4 in floor at the 10 in minimum diameter.  A 5 in box bound was
     # therefore an artificial active cap in the latest optimum.
     ("prop_pitch_in", (4.0, 18.0)),
-    # Mission 3 propeller.
+    # Mission 3 propeller request, resolved independently to the catalog.
     ("mission3_prop_diameter_in", (10.0, 25.0)),
     ("mission3_prop_pitch_in", (4.0, 18.0)),
     ("motor_kv", (200.0, 650.0)),
     ("motor_max_power", (1000.0, 3000.0)),
+    # Existing plain-flap hardware; only its commanded takeoff deflection is
+    # optimized. Geometry/type stay fixed until their mass, aileron-space and
+    # control-authority trades are modeled.
+    ("takeoff_flap_deflection_deg", (0.0, 40.0)),
     # ``cruise_throttle`` and ``mission3_cruise_throttle`` are deliberately NOT
     # optimizer variables. Cruise power is now set by the mission energy budget
     # (see src/prop/mission_performance.py): the aircraft flies at the highest
@@ -171,6 +174,7 @@ class DesignVector:
     mission3_prop_pitch_in: float | None = None  # [in]
     motor_kv: float = 335.0  # [RPM/V]
     motor_max_power: float = 2200.0  # [W]
+    takeoff_flap_deflection_deg: float = 20.0
     cruise_throttle: float = 1.0
     mission3_cruise_throttle: float = 1.0
 
@@ -273,6 +277,13 @@ class DesignVector:
             )
         self.mission3_prop_diameter_in = float(self.mission3_prop_diameter_in)
         self.mission3_prop_pitch_in = float(self.mission3_prop_pitch_in)
+        if (
+            not np.isfinite(self.takeoff_flap_deflection_deg)
+            or not 0.0 <= self.takeoff_flap_deflection_deg <= 40.0
+        ):
+            raise ValueError(
+                "takeoff_flap_deflection_deg must lie in [0, 40] degrees."
+            )
 
         self.wing_area   = self.wing_span * self.wing_chord
 
@@ -427,6 +438,9 @@ class ASBDesignVector(DesignVector):
             mission3_prop_pitch_in=design_vector.mission3_prop_pitch_in,
             motor_kv=design_vector.motor_kv,
             motor_max_power=design_vector.motor_max_power,
+            takeoff_flap_deflection_deg=(
+                design_vector.takeoff_flap_deflection_deg
+            ),
             cruise_throttle=design_vector.cruise_throttle,
             mission3_cruise_throttle=design_vector.mission3_cruise_throttle,
             fuselage_width=design_vector.fuselage_width * unit_scale,

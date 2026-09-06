@@ -74,16 +74,29 @@ flights, and the loaded-container and towed-sensor cases differ enough in weight
 and cruise speed that one compromise propeller was costing both. Leaving the
 Mission-3 pair unset falls back to the shared propeller.
 
+Scored designs use real two-blade catalog propellers. Three- and four-blade
+entries are excluded when the source database is loaded, and each continuous
+diameter/pitch request from the optimizer is resolved to the nearest eligible
+catalog geometry before mass or performance is evaluated. Reports include the
+exact catalog key, blade count, maximum RPM and RPM margin, peak shaft power,
+and disk power loading. Source-data interpolation in velocity/RPM is allowed,
+but an operating point outside the source surface's data hull is not eligible.
+
 Each candidate is now checked for more than steady cruise. The propulsion
 model requires:
 
-- takeoff within 60 m at 1.2 times the *takeoff-flap* stall speed;
+- takeoff within 75 m at 1.2 times the *takeoff-flap* stall speed;
+- a conservative ground-effect credit during the ground roll: only the wing,
+  tail, and interaction induced-drag terms are multiplied by 0.90; profile,
+  flap, and fuselage drag receive no reduction;
 - a 2.0 m/s climb-rate floor, evaluated in the flapped climb configuration.
   The rules set no minimum course altitude, so the climb-to-altitude *distance*
   check is off by default; set `climb_distance_m` to enable it;
 - enough usable battery energy for takeoff, climb, straight segments,
   propulsion-limited turns, and kinetic-energy recovery after each turn;
 - a five-percent usable-energy margin;
+- maximum propeller RPM no greater than 90% of the APC Thin Electric limit
+  `150,000 / diameter_in`;
 - propeller tip Mach no greater than 0.75;
 - motor, ESC/current, 25C battery-discharge, voltage-sag, and power limits.
 
@@ -111,8 +124,11 @@ variables; they remain as an optional hard throttle ceiling for studies.
 `src/aero/flaps.py` models a plain 25%-chord flap over the inboard 60% of the
 span as coefficient increments only — a shifted CLmax and an added CD0, with no
 geometry, so the AeroSandbox airplane and the stability derivatives are
-untouched. Deflections are fixed constants: 25 degrees for takeoff, 40 for
-landing.
+untouched. The optimizer selects takeoff deflection from 0 to 40 degrees for
+this existing hardware; 20 degrees remains the ordinary `DesignVector` default.
+Landing stays fixed at 40 degrees. Flap chord, span, and type are deliberately
+fixed until their hardware mass, aileron-space, and control-authority costs are
+modeled.
 
 The wing has three different maximum lift coefficients and the model keeps them
 apart. **Clean** applies to cruise and to every turn on the course — crediting

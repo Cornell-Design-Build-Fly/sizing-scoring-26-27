@@ -24,6 +24,14 @@ _PROP_SIZE_PATTERN = re.compile(
 
 _NUMBER_PATTERN = re.compile(r"\d+(?:\.\d+)?")
 
+# APC identifies multi-blade electric propellers with a suffix such as
+# ``E-3`` or ``E-4``.  The airplane is restricted to conventional two-blade
+# propellers, so these entries must not participate in either exact catalog
+# selection or continuous geometry interpolation.
+_MULTI_BLADE_PATTERN = re.compile(
+    r"E-(?P<blade_count>[3-9])(?:$|\D)", re.IGNORECASE
+)
+
 # For duplicate diameter/pitch groups that do not have a normal
 # key ending exactly in "E", explicitly choose which entry to keep.
 DUPLICATE_GEOMETRY_OVERRIDES: dict[
@@ -60,6 +68,13 @@ class PropellerData:
     @property
     def sample_count(self) -> int:
         return sum(table.sample_count for table in self.rpm_data)
+
+
+def propeller_blade_count(prop_key: str) -> int:
+    """Return the blade count encoded by an APC-style propeller key."""
+
+    match = _MULTI_BLADE_PATTERN.search(prop_key)
+    return int(match.group("blade_count")) if match is not None else 2
 
 
 def parse_prop_geometry(prop_key: str) -> tuple[float, float]:
@@ -293,8 +308,9 @@ def load_prop_data(
     """
     Load and strictly validate the raw propeller JSON database.
 
-    No entries are skipped, no arrays are truncated, and no duplicate
-    points are averaged.
+    Multi-blade entries are deliberately excluded. Within the supported
+    two-blade set, no malformed entries are skipped, no output arrays are
+    truncated, and no duplicate points are averaged.
     """
 
     path = Path(json_path)
@@ -315,10 +331,15 @@ def load_prop_data(
         raise ValueError("Prop data JSON contains no propellers.")
 
     propellers: list[PropellerData] = []
+    excluded_multiblade_keys: list[str] = []
 
     for prop_key, prop_entry in raw_data.items():
         if not isinstance(prop_key, str):
             raise ValueError("Every propeller key must be a string.")
+
+        if propeller_blade_count(prop_key) != 2:
+            excluded_multiblade_keys.append(prop_key)
+            continue
 
         if not isinstance(prop_entry, dict) or not prop_entry:
             raise ValueError(
@@ -419,6 +440,12 @@ def load_prop_data(
     propellers, removed_duplicate_keys = (
         resolve_duplicate_geometries(propellers)
     )
+
+    if excluded_multiblade_keys:
+        print("Excluded non-two-blade propellers:")
+
+        for key in sorted(excluded_multiblade_keys):
+            print(f"  {key}")
 
     if removed_duplicate_keys:
         print("Removed duplicate-geometry propeller variants:")

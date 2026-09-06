@@ -276,7 +276,7 @@ def plot_generation_convergence(
     save_path: str | None = None,
     show: bool = True,
 ) -> None:
-    """Plot callback-level best score and SciPy convergence metric."""
+    """Plot global score progress and population-health diagnostics."""
 
     if not history:
         print("[opt] No generation history to plot.")
@@ -284,33 +284,107 @@ def plot_generation_convergence(
 
     generations = np.array([row["generation"] for row in history], dtype=float)
     scores = np.array([row["best_score"] for row in history], dtype=float)
-    convergence = np.array([row["convergence"] for row in history], dtype=float)
+    incumbent_scores = []
+    incumbent = -np.inf
+    for row, score in zip(history, scores):
+        reported_incumbent = float(row.get("global_best_score", np.nan))
+        candidate = reported_incumbent if np.isfinite(reported_incumbent) else score
+        if np.isfinite(candidate):
+            incumbent = max(incumbent, candidate)
+        incumbent_scores.append(incumbent if np.isfinite(incumbent) else np.nan)
+    incumbent_scores = np.asarray(incumbent_scores, dtype=float)
+    feasible_fraction = np.array(
+        [row.get("feasible_population_fraction", np.nan) for row in history],
+        dtype=float,
+    )
+    relative_spread = np.array(
+        [row.get("finite_energy_relative_std", np.nan) for row in history],
+        dtype=float,
+    )
 
-    fig, score_axis = plt.subplots(figsize=(12, 7), constrained_layout=True)
-    score_axis.plot(generations, scores, "-", color="tab:blue", label="Best score")
-    score_axis.set_xlabel("Generation")
+    fig, (score_axis, health_axis) = plt.subplots(
+        2,
+        1,
+        figsize=(12, 8),
+        sharex=True,
+        gridspec_kw={"height_ratios": (3, 2)},
+        constrained_layout=True,
+    )
+    score_axis.plot(
+        generations,
+        scores,
+        "-",
+        color="tab:blue",
+        alpha=0.3,
+        label="Current island best",
+    )
+    score_axis.plot(
+        generations,
+        incumbent_scores,
+        "-",
+        color="tab:blue",
+        linewidth=2.2,
+        label="Global incumbent score",
+    )
     score_axis.set_ylabel("Best score", color="tab:blue")
     score_axis.tick_params(axis="y", labelcolor="tab:blue")
-    score_axis.xaxis.set_major_locator(MaxNLocator(nbins=13, integer=True))
-    score_axis.xaxis.set_minor_locator(AutoMinorLocator(5))
     score_axis.yaxis.set_major_locator(MaxNLocator(nbins=8))
     score_axis.grid(True, which="major", alpha=0.3)
-    score_axis.grid(True, which="minor", axis="x", alpha=0.1)
+    score_axis.legend(loc="best")
 
-    convergence_axis = score_axis.twinx()
-    convergence_axis.plot(
-        generations,
-        convergence,
-        "-",
-        color="tab:orange",
-        alpha=0.75,
-        label="SciPy convergence",
-    )
-    convergence_axis.set_ylabel("SciPy convergence", color="tab:orange")
-    convergence_axis.tick_params(axis="y", labelcolor="tab:orange")
-    convergence_axis.yaxis.set_major_locator(MaxNLocator(nbins=8))
+    has_health_history = np.any(np.isfinite(feasible_fraction))
+    if has_health_history:
+        health_axis.plot(
+            generations,
+            feasible_fraction,
+            "-",
+            color="tab:green",
+            linewidth=1.8,
+            label="Feasible population",
+        )
+        health_axis.set_ylim(-0.03, 1.03)
+        health_axis.set_ylabel("Feasible fraction", color="tab:green")
+        health_axis.tick_params(axis="y", labelcolor="tab:green")
 
-    fig.suptitle("Top-Line DE Convergence")
+        spread_axis = health_axis.twinx()
+        spread_axis.plot(
+            generations,
+            relative_spread,
+            "-",
+            color="tab:purple",
+            alpha=0.8,
+            label="Finite-energy relative spread",
+        )
+        spread_axis.set_yscale("symlog", linthresh=1.0e-4)
+        spread_axis.set_ylabel(
+            "Finite-energy relative spread (lower is tighter)",
+            color="tab:purple",
+        )
+        spread_axis.tick_params(axis="y", labelcolor="tab:purple")
+        health_lines = health_axis.get_lines() + spread_axis.get_lines()
+        health_axis.legend(
+            health_lines,
+            [line.get_label() for line in health_lines],
+            loc="best",
+        )
+    else:
+        health_axis.text(
+            0.5,
+            0.5,
+            "Population-health telemetry was not recorded for this run",
+            ha="center",
+            va="center",
+            transform=health_axis.transAxes,
+        )
+        health_axis.set_yticks([])
+
+    health_axis.set_xlabel("Generation")
+    health_axis.xaxis.set_major_locator(MaxNLocator(nbins=13, integer=True))
+    health_axis.xaxis.set_minor_locator(AutoMinorLocator(5))
+    health_axis.grid(True, which="major", alpha=0.3)
+    health_axis.grid(True, which="minor", axis="x", alpha=0.1)
+
+    fig.suptitle("Top-Line DE Progress and Population Health")
     if save_path is not None:
         fig.savefig(save_path, dpi=200, bbox_inches="tight")
     if show:

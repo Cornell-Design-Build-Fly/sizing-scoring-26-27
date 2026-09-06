@@ -38,6 +38,12 @@ def _performance(**overrides) -> MissionPropulsionPerformance:
         "climb_time_s": 20.3,
         "flap_retraction_energy_wh": 1.1,
         "maximum_propeller_tip_mach": 0.6,
+        "maximum_propeller_rpm": 10_000.0,
+        "manufacturer_propeller_rpm_limit": 10_714.0,
+        "operating_propeller_rpm_limit": 9_642.6,
+        "propeller_rpm_margin": -357.4,
+        "maximum_propeller_shaft_power_w": 1_500.0,
+        "maximum_propeller_disk_power_loading_w_m2": 15_000.0,
         "cruise_power_w": 700.0,
         "takeoff_energy_wh": 2.0,
         "climb_energy_wh": 3.0,
@@ -59,6 +65,8 @@ def _performance(**overrides) -> MissionPropulsionPerformance:
         "turn_power_w": 900.0,
         "straight_energy_wh": 30.0,
         "turn_energy_wh": 20.0,
+        "propeller_key": "14x10E",
+        "propeller_blade_count": 2,
         "propeller_diameter_in": 14.0,
         "propeller_pitch_in": 10.0,
         "aerodynamic_cruise_speed_mps": 30.0,
@@ -86,6 +94,7 @@ def test_battery_current_limit_uses_capacity_and_c_rating() -> None:
 
 def test_propulsion_penalty_identifies_takeoff_climb_and_energy_failures() -> None:
     requirements = PropulsionRequirements()
+    assert requirements.maximum_takeoff_distance_m == 75.0
     assert _penalty_and_limit(60.0, 2.0, 100.0, 152.4, 70.0, 80.0, 0.7, requirements)[0] == 0.0
     # Keep a finite runway gate, but do not invent a minimum pattern altitude.
     assert _penalty_and_limit(60.0, 2.0, 400.0, 152.4, 70.0, 80.0, 0.7, requirements)[0] == 0.0
@@ -112,6 +121,21 @@ def test_propulsion_penalty_identifies_takeoff_climb_and_energy_failures() -> No
         requirements,
         operating_point_failed=True,
     )[1] == "propulsion_operating_point"
+
+    rpm_penalty, rpm_limit = _penalty_and_limit(
+        60.0,
+        2.0,
+        100.0,
+        152.4,
+        70.0,
+        80.0,
+        0.5,
+        requirements,
+        propeller_rpm=13_000.0,
+        propeller_rpm_limit=12_000.0,
+    )
+    assert rpm_penalty > PROPULSION_INFEASIBLE_BASE_PENALTY
+    assert rpm_limit == "propeller_rpm"
 
 
 def test_optional_climb_to_pattern_altitude_trade_study() -> None:
