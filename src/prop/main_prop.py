@@ -37,6 +37,7 @@ def prop_main(
     disp_res: bool = False,
     knockdown: bool = False,
     knockdown_factor: float = 0.9,
+    maximum_battery_power_w: float | None = None,
 ) -> tuple[CurveFit, CurveFit]:
     """
     Return the throttled thrust and flight-time quadratic fits.
@@ -90,28 +91,15 @@ def prop_main(
             "Fit velocities cannot be negative."
         )
 
-    diameter_in = float(
-        _get_value(
-            design_vector,
-            "prop_diameter_in",
-            14.0,
-        )
-    )
-
-    pitch_in = float(
-        _get_value(
-            design_vector,
-            "prop_pitch_in",
-            10.0,
-        )
-    )
+    # Missions 1 and 2 fly one propeller; Mission 3 flies its own.
+    diameter_in, pitch_in = design_vector.propeller_for_mission(mission)
 
     if mission in (1, 2):
         cruise_throttle = float(
             _get_value(
                 design_vector,
                 "cruise_throttle",
-                0.90,
+                1.0,
             )
         )
     else:
@@ -119,7 +107,7 @@ def prop_main(
             _get_value(
                 design_vector,
                 "mission3_cruise_throttle",
-                0.85,
+                1.0,
             )
         )
 
@@ -147,6 +135,7 @@ def prop_main(
         rpm_step=100,
         knockdown=knockdown,
         knockdown_factor=knockdown_factor,
+        maximum_battery_power_w=maximum_battery_power_w,
     )
 
     thrust_samples_n = (

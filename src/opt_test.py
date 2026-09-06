@@ -102,6 +102,14 @@ pd_constraint = NonlinearConstraint(
     0.8,   # maximum P/D
 )
 
+# Mission 3 flies its own propeller and needs the same geometric ratio bound.
+mission3_pd_constraint = NonlinearConstraint(
+    lambda x: x[optimizer_variable_names().index("mission3_prop_pitch_in")]
+    / x[optimizer_variable_names().index("mission3_prop_diameter_in")],
+    0.4,   # minimum P/D
+    0.8,   # maximum P/D
+)
+
 def _prepare_output_dir() -> None:
     """Create the output directory and clear inapplicable old history."""
 
@@ -306,24 +314,28 @@ def _random_pd_feasible_vector(rng: np.random.Generator) -> np.ndarray:
         if is_integer:
             lower, upper = bounds[index]
             values[index] = rng.integers(int(lower), int(upper) + 1)
-    diameter_index = names.index("prop_diameter_in")
-    pitch_index = names.index("prop_pitch_in")
-    diameter = values[diameter_index]
-    pitch_lower, pitch_upper = bounds[pitch_index]
+    for diameter_name, pitch_name in (
+        ("prop_diameter_in", "prop_pitch_in"),
+        ("mission3_prop_diameter_in", "mission3_prop_pitch_in"),
+    ):
+        diameter_index = names.index(diameter_name)
+        pitch_index = names.index(pitch_name)
+        diameter = values[diameter_index]
+        pitch_lower, pitch_upper = bounds[pitch_index]
 
-    constrained_lower = max(pitch_lower, 0.4 * diameter)
-    constrained_upper = min(pitch_upper, 0.8 * diameter)
-    if constrained_lower > constrained_upper:
-        values[pitch_index] = np.clip(
-            values[pitch_index],
-            pitch_lower,
-            pitch_upper,
-        )
-    else:
-        values[pitch_index] = rng.uniform(
-            constrained_lower,
-            constrained_upper,
-        )
+        constrained_lower = max(pitch_lower, 0.4 * diameter)
+        constrained_upper = min(pitch_upper, 0.8 * diameter)
+        if constrained_lower > constrained_upper:
+            values[pitch_index] = np.clip(
+                values[pitch_index],
+                pitch_lower,
+                pitch_upper,
+            )
+        else:
+            values[pitch_index] = rng.uniform(
+                constrained_lower,
+                constrained_upper,
+            )
 
     return values
 
@@ -652,7 +664,7 @@ def _differential_evolution_kwargs() -> dict:
     return {
         "func": fitness,
         "bounds": optimizer_bounds(),
-        "constraints": (pd_constraint,),
+        "constraints": (pd_constraint, mission3_pd_constraint),
         "maxiter": MAXITER,
         "popsize": POPSIZE,
         "polish": False,

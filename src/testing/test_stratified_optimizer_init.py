@@ -27,6 +27,8 @@ def test_full_range_population_is_reproducible_and_feasible() -> None:
     battery_capacity = first[:, names.index("batt_capacity")]
     diameter = first[:, names.index("prop_diameter_in")]
     pitch = first[:, names.index("prop_pitch_in")]
+    m3_diameter = first[:, names.index("mission3_prop_diameter_in")]
+    m3_pitch = first[:, names.index("mission3_prop_pitch_in")]
     max_sensor_weight = first[:, names.index("sensor_weight_kg")]
     m3_sensor_weight = first[:, names.index("mission3_sensor_weight_kg")]
 
@@ -39,6 +41,10 @@ def test_full_range_population_is_reproducible_and_feasible() -> None:
     )
     assert np.all(pitch / diameter >= PD_MIN)
     assert np.all(pitch / diameter <= PD_MAX)
+    # Mission 3 carries its own propeller and needs the same projection.
+    assert np.all(m3_pitch / m3_diameter >= PD_MIN)
+    assert np.all(m3_pitch / m3_diameter <= PD_MAX)
+    assert not np.allclose(m3_diameter, diameter)
     assert np.all(m3_sensor_weight <= max_sensor_weight)
     assert set(containers.astype(int)) == set(range(11))
 

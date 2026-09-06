@@ -8,6 +8,7 @@ from aerosandbox.aerodynamics.aero_3D.aero_buildup_submodels.fuselage_aerodynami
     fuselage_form_factor,
 )
 
+from src.aero.flaps import DEFAULT_FLAPS, FlapConfig
 from src.vectors import (
     ASBDesignVector,
     DesignVector,
@@ -70,8 +71,15 @@ def drag_coefficients(
     wing_cl,
     tail_cl,
     fuselage_geometry: tuple[float, float, float, float] | None = None,
+    flap_deflection_deg: float = 0.0,
+    flaps: FlapConfig = DEFAULT_FLAPS,
 ) -> dict:
-    """Return calibrated profile, induced, and fuselage drag coefficients."""
+    """Return calibrated profile, induced, and fuselage drag coefficients.
+
+    ``flap_deflection_deg`` adds the deflected-flap profile drag. It is zero
+    everywhere except the takeoff ground roll; the flaps are up for cruise and
+    for every turn on the course.
+    """
     s, st, sv = design.wing_area, design.hstab_area, design.vstab_area
     ar = design.wing_span**2 / s
     art, ratio = design.hstab_span**2 / st, st / s
@@ -103,4 +111,5 @@ def drag_coefficients(
         "tail_induced": tail_induced,
         "interaction": interaction,
         "body": body,
+        "flap_profile": flaps.delta_cd0(flap_deflection_deg),
     }

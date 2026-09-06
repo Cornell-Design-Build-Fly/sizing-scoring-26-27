@@ -315,26 +315,51 @@ def build_local_fuselage_assembly(
         )
 
     electronics_position = local_layout.position_m
-    electronics_items = tuple(
-        MassItem(
+
+    def _electronics_item(
+        component_name: str,
+        component_mass: float,
+        missions: frozenset[str] = ALL_MISSIONS,
+    ) -> MassItem:
+        return MassItem(
             name=component_name,
             mass_kg=component_mass,
             position_m=electronics_position,
             dimensions_m=(local_layout.length_m, 0.0, 0.0),
-            missions=ALL_MISSIONS,
+            missions=missions,
             category="propulsion_and_electronics",
             notes=(
                 f"Equivalent {local_layout.profile} electronics-area CM, packed "
                 "inside the fuselage before airplane installation."
             ),
         )
+
+    # Missions 1 and 2 fly one propeller and Mission 3 flies its own, so the
+    # installed propeller mass is charged per mission rather than once for all
+    # three. Only one propeller is bolted on at a time.
+    mission12_propeller_diameter_in = float(design_vector.prop_diameter_in)
+    mission3_propeller_diameter_in = float(design_vector.mission3_prop_diameter_in)
+    electronics_items = tuple(
+        _electronics_item(component_name, component_mass)
         for component_name, component_mass in airframe.electronics_component_masses_kg(
             design_vector.batt_capacity,
             battery_nominal_voltage_v,
             design_vector.motor_kv,
             design_vector.motor_max_power,
-            design_vector.prop_diameter_in,
+            mission12_propeller_diameter_in,
         )
+        if component_name != "Propeller"
+    ) + (
+        _electronics_item(
+            "Propeller (M1/M2)",
+            airframe.propeller_mass_model.mass_kg(mission12_propeller_diameter_in),
+            frozenset({"M1", "M2"}),
+        ),
+        _electronics_item(
+            "Propeller (M3)",
+            airframe.propeller_mass_model.mass_kg(mission3_propeller_diameter_in),
+            frozenset({"M3"}),
+        ),
     )
     if sum(item.mass_kg for item in electronics_items) <= 0:
         raise ValueError("Permanent electronics mass must be positive.")

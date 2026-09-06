@@ -10,6 +10,13 @@ pd_constraint = NonlinearConstraint(
     0.9,   # maximum P/D
 )
 
+mission3_pd_constraint = NonlinearConstraint(
+    lambda x: x[DesignVector.opt_names().index("mission3_prop_pitch_in")]
+    / x[DesignVector.opt_names().index("mission3_prop_diameter_in")],
+    0.3,   # minimum P/D
+    0.9,   # maximum P/D
+)
+
 mission3_sensor_weight_constraint = NonlinearConstraint(
     lambda x: x[DesignVector.opt_names().index("sensor_weight_kg")]
     - x[DesignVector.opt_names().index("mission3_sensor_weight_kg")],
@@ -29,7 +36,11 @@ def run_optimization() -> OptimizeResult:
     results = differential_evolution(
         func=fitness,
         bounds=DesignVector.bounds(),
-        constraints=(pd_constraint, mission3_sensor_weight_constraint),
+        constraints=(
+            pd_constraint,
+            mission3_pd_constraint,
+            mission3_sensor_weight_constraint,
+        ),
         workers=-1,
         updating="deferred",
     )

@@ -5,6 +5,7 @@ from aerosandbox import OperatingPoint
 from scipy.optimize import brentq
 
 from src.aero.custom_classes import CruiseCondition
+from src.aero.flaps import clean_cl_max
 from src.aero.drag_model import sensor_drag_force, drag_coefficients, fuselage_drag_geometry
 from src.vectors import DesignVector, ParameterVector
 
@@ -113,7 +114,7 @@ def cruise_analysis_fast(
 
     _, velocity, alpha, elevator, residual = min(candidates)
     converged = residual <= 1e-2
-    cl_max = 1.45 * wing_ar / (wing_ar + 2.0)
+    cl_max = clean_cl_max(wing_ar)
     stall_speed = np.sqrt(2 * weight / (parameter_vector.rho * design_vector.wing_area * cl_max))
     if debug:
         print(f"[aero] Fast trim finished in {perf_counter() - start:.4f} s (converged={converged}).", flush=True)

@@ -6,9 +6,10 @@ from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
 import math
 
+from src.aero.aero_score import FLIGHT_WINDOW_S, GROUND_TIME_S
 from src.vectors import DesignVector
 
-SECONDS_PER_MISSION = 300.0
+SECONDS_PER_MISSION = FLIGHT_WINDOW_S
 M1_REQUIRED_LAPS = 3
 M2_REQUIRED_LAPS = 5
 GROUND_DROP_HEIGHT_IN = 60.0
@@ -28,6 +29,12 @@ class ScoringReferences:
         GM_REFERENCE_SENSOR_MASS_KG * GROUND_DROP_HEIGHT_IN
     )
     seconds_per_mission: float = SECONDS_PER_MISSION
+    # Takeoff, the climb out and the landing all burn mission clock without
+    # completing a scored lap. The best-team M2 and M3 reference values below
+    # were produced by a course model that reserved this same 20 s, and the
+    # propulsion energy budget sizes the pack against the same usable window,
+    # so all three have to agree. See src/aero/aero_score.py.
+    ground_time_s: float = GROUND_TIME_S
     m3_deployment_time_s: float = 0.0
     m3_recovery_time_s: float = 0.0
 
@@ -40,15 +47,26 @@ class ScoringReferences:
         )
         if any(not math.isfinite(value) or value <= 0.0 for value in values):
             raise ValueError("Scoring references must be finite and positive.")
-        overheads = (self.m3_deployment_time_s, self.m3_recovery_time_s)
+        overheads = (
+            self.ground_time_s,
+            self.m3_deployment_time_s,
+            self.m3_recovery_time_s,
+        )
         if any(not math.isfinite(value) or value < 0.0 for value in overheads):
             raise ValueError(
-                "Mission-3 deployment/recovery times must be finite and nonnegative."
+                "Ground, deployment and recovery times must be finite and nonnegative."
             )
         if sum(overheads) >= self.seconds_per_mission:
             raise ValueError(
-                "Mission-3 deployment/recovery must fit in the flight window."
+                "Ground time and Mission-3 deployment/recovery must fit in the "
+                "flight window."
             )
+
+    @property
+    def usable_window_s(self) -> float:
+        """Mission clock available for scored laps."""
+
+        return self.seconds_per_mission - self.ground_time_s
 
 
 DEFAULT_SCORING_REFERENCES = ScoringReferences()
@@ -72,6 +90,8 @@ def scoring_reference_values(
 ) -> dict[str, object]:
     return {
         "flight_window_s": refs.seconds_per_mission,
+        "ground_time_s": refs.ground_time_s,
+        "usable_window_s": refs.usable_window_s,
         "mission_2": {
             "best_weight_per_time_kg_s": refs.best_m2_weight_per_time_kg_s,
             "required_laps": M2_REQUIRED_LAPS,
@@ -108,7 +128,7 @@ def m1_score(
     if not math.isfinite(lap_time_s) or lap_time_s <= 0.0:
         return 0.0
     mission_time = round_half_up(M1_REQUIRED_LAPS * lap_time_s)
-    return float(mission_time <= refs.seconds_per_mission)
+    return float(mission_time <= refs.usable_window_s)
 
 
 def m1_optimization_score(
@@ -117,7 +137,7 @@ def m1_optimization_score(
 ) -> float:
     if not math.isfinite(lap_time_s) or lap_time_s <= 0.0:
         return 0.0
-    return min(1.0, refs.seconds_per_mission / (M1_REQUIRED_LAPS * lap_time_s))
+    return min(1.0, refs.usable_window_s / (M1_REQUIRED_LAPS * lap_time_s))
 
 
 def m2_score(
@@ -135,7 +155,7 @@ def m2_score(
     ):
         return 0.0
     elapsed = round_half_up(M2_REQUIRED_LAPS * lap_time_s)
-    if elapsed > refs.seconds_per_mission:
+    if elapsed > refs.usable_window_s:
         return 0.0
     performance = _official_mass_kg(payload_mass_kg) / elapsed
     return 1.0 + min(1.0, performance / refs.best_m2_weight_per_time_kg_s)
@@ -157,7 +177,7 @@ def m2_optimization_score(
         return 0.0
     completion = min(
         1.0,
-        refs.seconds_per_mission / (M2_REQUIRED_LAPS * lap_time_s),
+        refs.usable_window_s / (M2_REQUIRED_LAPS * lap_time_s),
     )
     performance = payload_mass_kg / (M2_REQUIRED_LAPS * lap_time_s)
     normalized = min(1.0, performance / refs.best_m2_weight_per_time_kg_s)
@@ -171,7 +191,7 @@ def completed_m3_laps(
     if not math.isfinite(lap_time_s) or lap_time_s <= 0.0:
         return 0
     lap_window = (
-        refs.seconds_per_mission
+        refs.usable_window_s
         - refs.m3_deployment_time_s
         - refs.m3_recovery_time_s
     )
@@ -200,7 +220,7 @@ def m3_optimization_score(
     if completed_m3_laps(lap_time_s, refs) < 1:
         return 0.0
     lap_window = (
-        refs.seconds_per_mission
+        refs.usable_window_s
         - refs.m3_deployment_time_s
         - refs.m3_recovery_time_s
     )

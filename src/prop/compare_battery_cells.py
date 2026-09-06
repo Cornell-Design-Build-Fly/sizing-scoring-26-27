@@ -78,6 +78,12 @@ def _summarize_run(run_dir: Path) -> dict[str, Any]:
         "motor_max_power_w": float(vector["motor_max_power"]),
         "prop_diameter_in": float(vector["prop_diameter_in"]),
         "prop_pitch_in": float(vector["prop_pitch_in"]),
+        "mission3_prop_diameter_in": float(
+            vector.get("mission3_prop_diameter_in", vector["prop_diameter_in"])
+        ),
+        "mission3_prop_pitch_in": float(
+            vector.get("mission3_prop_pitch_in", vector["prop_pitch_in"])
+        ),
         "cruise_throttle": float(vector["cruise_throttle"]),
         "mission3_cruise_throttle": float(vector["mission3_cruise_throttle"]),
         "extra_shipping_containers": int(

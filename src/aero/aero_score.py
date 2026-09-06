@@ -62,6 +62,18 @@ TURN_360_COUNT:    int   = 1             # number of 360° loops per lap
 TURN_360_RAD:      float = 2.0 * np.pi   # each 360° loop [rad]
 N_ZS:              float = 2.5           # structural limit load factor (civil)
 
+# ── Mission Timing ─────────────────────────────────────────────────────────
+# Each flight mission has a five-minute window.  Takeoff, the climb out to
+# pattern altitude and the landing all consume part of it and none of that time
+# is spent completing scored laps, so the window available for laps is shorter
+# than the clock.  Twenty seconds is the team's reserve and matches the
+# assumption behind the Mission-2 and Mission-3 best-team reference values in
+# src/opt/score.py; those normalizers were produced by the same course model,
+# so scoring and the propulsion energy budget must use the same window.
+FLIGHT_WINDOW_S:   float = 300.0         # full mission clock [s]
+GROUND_TIME_S:     float = 20.0          # takeoff + landing overhead [s]
+USABLE_WINDOW_S:   float = FLIGHT_WINDOW_S - GROUND_TIME_S
+
 # ── Flyability Thresholds ──────────────────────────────────────────────────
 CMA_LIMIT:    float = 0.0   # Cma must be strictly below this
 CNB_LIMIT:    float = 0.0   # Cnb must be strictly above this

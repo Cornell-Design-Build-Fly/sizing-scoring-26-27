@@ -26,11 +26,17 @@ def _performance(**overrides) -> MissionPropulsionPerformance:
         "optimistic_takeoff_distance_lower_bound_m": 20.0,
         "takeoff_screened_early": False,
         "takeoff_time_s": 3.0,
+        "acceleration_distance_m": 25.0,
+        "acceleration_time_s": 1.4,
+        "acceleration_energy_wh": 0.4,
         "climb_speed_mps": 16.0,
         "climb_rate_mps": 3.0,
         "climb_gradient": 0.50,
         "climb_distance_required_m": 121.9,
         "climb_distance_allowed_m": 152.4,
+        "cruise_altitude_m": 60.96,
+        "climb_time_s": 20.3,
+        "flap_retraction_energy_wh": 1.1,
         "maximum_propeller_tip_mach": 0.6,
         "cruise_power_w": 700.0,
         "takeoff_energy_wh": 2.0,
@@ -53,6 +59,20 @@ def _performance(**overrides) -> MissionPropulsionPerformance:
         "turn_power_w": 900.0,
         "straight_energy_wh": 30.0,
         "turn_energy_wh": 20.0,
+        "propeller_diameter_in": 14.0,
+        "propeller_pitch_in": 10.0,
+        "aerodynamic_cruise_speed_mps": 30.0,
+        "cruise_speed_mps": 30.0,
+        "cruise_power_cap_w": float("inf"),
+        "energy_limited": False,
+        "completed_laps": 5,
+        "mission_flight_time_s": 160.0,
+        "usable_window_s": 280.0,
+        "clean_stall_speed_mps": 12.5,
+        "takeoff_stall_speed_mps": 11.3,
+        "landing_stall_speed_mps": 10.8,
+        "takeoff_flap_deflection_deg": 25.0,
+        "landing_flap_deflection_deg": 40.0,
     }
     values.update(overrides)
     return MissionPropulsionPerformance(**values)
@@ -71,7 +91,7 @@ def test_propulsion_penalty_identifies_takeoff_climb_and_energy_failures() -> No
     assert _penalty_and_limit(60.0, 2.0, 400.0, 152.4, 70.0, 80.0, 0.7, requirements)[0] == 0.0
     trade_study_requirements = PropulsionRequirements(
         maximum_takeoff_distance_m=60.0,
-        climb_altitude_m=60.96,
+        cruise_altitude_m=60.96,
         climb_distance_m=152.4,
     )
     takeoff_penalty, takeoff_limit = _penalty_and_limit(
@@ -96,10 +116,10 @@ def test_propulsion_penalty_identifies_takeoff_climb_and_energy_failures() -> No
 
 def test_optional_climb_to_pattern_altitude_trade_study() -> None:
     requirements = PropulsionRequirements(
-        climb_altitude_m=60.96,
+        cruise_altitude_m=60.96,
         climb_distance_m=152.4,
     )
-    assert requirements.climb_altitude_m == 60.96      # 200 ft
+    assert requirements.cruise_altitude_m == 60.96      # 200 ft
     assert requirements.climb_distance_m == 152.4      # 500 ft
     assert abs(requirements.required_climb_gradient - 0.4) < 1e-12
 

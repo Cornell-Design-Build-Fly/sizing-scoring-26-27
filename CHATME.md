@@ -54,6 +54,304 @@ Aero solver expectations:
 
 ## Session Log
 
+### 2026-09-06d - Claude
+Changed:
+- Nothing in `src/`. Audit of the 100 Wh rule after the team asked why the
+  allowance always reads in the 60s.
+
+Learned:
+- **The 100 Wh cap is modelled correctly and is not the reason.**
+  `MAX_BATT_CAPACITY_AH = 100 / (8 * 3.7) = 3.3784 Ah` is exactly the rules
+  limit at 8S, it is the optimizer's box bound, `DesignVector.__post_init__`
+  raises above it, and `_initial_population` clamps to it. Two other things
+  produce the 56.6 Wh figure:
+    1. **The archived design only bought 70% of the legal pack** (2.3696 of
+       3.3784 Ah = 70.14 Wh nominal).
+    2. **Two stacked derates**: `DEFAULT_USABLE_BATTERY_FRACTION = 0.85`
+       (depth of discharge) times `usable_energy_margin_fraction = 0.05`
+       (model margin) = **0.8075**. A full legal pack therefore allows
+       **80.75 Wh**, not 100.
+- **A bigger battery is now strictly better, and the optimizer will walk to the
+  cap.** Sweeping capacity on the archived design with everything else fixed,
+  score rises monotonically 5.0642 -> 5.1469 from 1.5 Ah to the full 3.3784 Ah.
+  Battery mass is cheap: 0.232 kg at 1.0 Ah to 0.773 kg at the cap, so the
+  0.23 kg to go from the archived pack to a legal one buys 24 Wh. The 70% pack
+  is a **stale artifact of the old model**, where energy was a pass/fail cliff
+  and battery mass was pure cost with no speed to buy. Under the energy-set
+  cruise power it is simply money left on the table.
+- Gains flatten but never reverse. Past about 2.7 Ah M2 stops being
+  energy-limited and pins at 41.1 m/s -- the pitch-speed ceiling of its
+  10.2x6.4 propeller -- using only 58.4 of 80.8 Wh. M3 keeps improving to 9 laps
+  and then pins at 31.9 m/s. Beyond that point more battery buys nothing on
+  *this* airframe because the propeller, not the pack, is the limit.
+- Each mission is given a full pack. That is the intended reading of the rule
+  (the aircraft is recharged between flights), not an oversight.
+
+Open notes:
+- **The 0.85 x 0.95 derate is worth a team decision.** The two factors are
+  conceptually distinct -- battery chemistry versus model uncertainty -- but
+  they compound to a 19.25% haircut. The 5% margin is the arbitrary one;
+  dropping it would allow 85 Wh instead of 80.75 Wh. Left alone because it is a
+  conservatism choice, not a modelling error.
+- Do not read the archived run's 70 Wh pack as evidence about battery sizing
+  any more. It predates the energy model.
+
+### 2026-09-06c - Claude
+Changed (climb, after the team asked whether flaps were used there -- they were
+not, and chasing it turned up two holes):
+- **`climb_altitude_m` is gone; `cruise_altitude_m = 60.96` (200 ft) replaces
+  it.** It was a rules gate defaulting to 0, which meant the model paid **zero
+  energy to reach altitude**. It is now an operating point that is always
+  climbed to and always charged. `climb_distance_m` stays as the optional
+  distance gate (default None) and now measures against the cruise altitude.
+- **The liftoff-to-climb-speed gap is integrated, not skipped.** New level
+  acceleration segment on the flapped wing, same trapezoid treatment as the
+  ground roll but with lift equal to weight and no rolling friction. It reports
+  `acceleration_distance_m`, `acceleration_time_s`, `acceleration_energy_wh` and
+  counts against `climb_distance_m` when that gate is on. It is airborne, so it
+  does NOT count against the 60 m runway limit.
+- **The climb is flown flapped.** `climb_speed` is now
+  `1.3 * takeoff_stall_speed` rather than `1.3 * clean_stall_speed`, and the
+  climb drag carries the flap increment. Flaps retract at cruise altitude; the
+  acceleration from climb speed to cruise speed is charged once per mission as
+  recovered kinetic energy (`flap_retraction_energy_wh`), the same treatment the
+  turn exits get. It lives inside `_CourseState` because it depends on the
+  cruise speed the energy budget selects.
+- Takeoff flap default 25 -> **20 deg**, now an empirical choice (below).
+
+Learned:
+- **The free speed jump was real and flaps had widened it.** On the archived
+  design M2 lifted off at 16.10 m/s and the climb was evaluated at 19.45 m/s --
+  3.36 m/s crossed with no distance, time or energy. Referencing climb speed to
+  the flapped stall speed closes most of it on its own (gap now 1.34 m/s); the
+  integration charges the rest at 8.9 m / 0.53 s / 0.14 Wh.
+- **Climb energy was the bigger hole.** M2 now pays 3.6 Wh and M3 2.3 Wh to
+  reach 200 ft, against a 56.6 Wh allowance -- about 6% of the budget that
+  previously cost nothing. Charging it alone dropped the archived design from
+  5.292 to 5.135.
+- **The takeoff-flap deflection now has a genuine interior optimum**, which is
+  the real fix for the artifact flagged in 2026-09-06b. Sweeping M2:
+    0 / 10 / 15 / 20 / 25 / 30 / 40 deg
+    roll   47.9 / 43.9 / 42.6 / 41.6 / 40.8 / 40.3 / 40.0 m
+    climb   5.52 / 5.23 / 5.01 / 4.75 / 4.47 / 4.19 / 3.61 m/s
+    score  5.1346 / 5.1358 / 5.1362 / **5.1365** / 5.1324 / 5.1325 / 5.1294
+  Deflection past 20 deg buys ground roll the design does not need and pays for
+  it in climb rate and climb energy. Previously the sweep was monotone to 40 deg.
+- **Flaps are now a trade, not a free gain.** On the archived design, where
+  takeoff distance is not binding (40.8 m of 60 m), flaps at 25 deg scored
+  *below* no flaps (5.1324 vs 5.1346). They pay only when the roll actually
+  binds. Do not expect them to rescue a design that is energy-limited.
+
+Verified:
+- Per-module run, all passing: test_flap_model 10, test_turn_energy_model 12,
+  test_propulsion_requirements 5, opt_score_test 6, test_aero_endurance 6,
+  test_continuous_lap_scoring 2, test_niching_islands 2, test_spiral_criterion 9,
+  test_stratified_optimizer_init 2, test_top_candidate_archive 1,
+  test_tow_envelope 4, topline_payload_archive_test 2.
+- `test_mission_energy_is_split_between_straights_and_turns` caught the changed
+  energy identity and now asserts the full seven-term balance.
+- Three new flap tests: the flapped climb costing rate and energy, the
+  liftoff-to-climb segment no longer being free, and the retraction
+  acceleration being charged exactly once.
+
+Open notes:
+- `cruise_altitude_m = 200 ft` is the team's own pattern-altitude number,
+  carried over from the disabled climb gate. It is a judgement call worth a
+  second opinion: it costs roughly 6% of the energy budget.
+- The descent back from cruise altitude is not modelled. Ignoring the energy it
+  would return is conservative.
+- The takeoff deflection is still a constant. Now that it has a real optimum,
+  making it a design variable would actually buy something -- but it would be a
+  17th variable on an already search-limited vector.
+
+### 2026-09-06b - Claude
+Changed (flaps, at the team's request; plain flap, fixed deflections, plus the
+landing-speed limit they asked for):
+- New `src/aero/flaps.py`. `FlapConfig` is a plain 25%-chord flap over the
+  inboard 60% of span, takeoff 25 deg, landing 40 deg. Lift increment is
+  Raymer Eq. 12.21 (`0.9 * dclmax_2d * S_flapped/S_ref`) on a Table 12.2
+  reference `dclmax_2d = 0.9` at 60 deg, scaled by `sin(delta)`. Drag is the
+  Roskam/Torenbeek plain-flap form
+  `1.7 * (cf/c)^1.38 * (Sf/S) * sin^2(delta)`. Everything is a coefficient
+  increment; no geometry, so `make_airplane` and the stability chain are
+  untouched. All constants are editable dataclass fields.
+- `clean_cl_max()` is now the single definition of `1.45*AR/(AR+2)`, which was
+  copy-pasted in `cruise_analysis_fast`, `cruise_analysis_coarse` and
+  `mission_performance`.
+- **Three CLmax configurations, deliberately kept apart.** Clean for cruise and
+  for every turn; takeoff for the ground roll and liftoff only; landing for the
+  approach. A single flapped CLmax would have credited the 2.5 g turn envelope
+  with lift the aircraft does not have. `drag_coefficients` gained
+  `flap_deflection_deg`, nonzero only on the ground roll.
+- A maximum-landing-speed constraint was added at 12 m/s and then **removed the
+  same session at the team's direction** ("I don't think it makes sense"). The
+  penalty term, the feasibility gate and the `maximum_landing_speed_mps`
+  requirement are all gone; there is no landing-speed or landing-distance
+  constraint. `landing_stall_speed_mps` and `landing_flap_deflection_deg`
+  survive as reported diagnostics only.
+
+Learned:
+- **Why the landing limit was dropped, and what it showed while it was in.**
+  At the largest wing the optimizer can build (span 1.8288 m x chord 0.40 m =
+  0.732 m^2, AR 4.57, flapped CLmax 1.37) a 12 m/s landing stall caps TOGW at
+  **9.01 kg = 19.9 lb**; 14 / 16 m/s give 27.0 / 35.3 lb. The archived 5.088
+  optimum lands at 12.78 m/s and took an 11.93-point penalty. So the limit was
+  binding *hard* and mostly against the `wing_chord <= 0.40 m` box rather than
+  against anything aerodynamic. The constraint is gone, but the measurement it
+  produced stands and is the useful part: **this airframe lands fast because its
+  wing is small, and MATLAB reaches 42 lb only with S = 1.52 m^2 at the same
+  6 ft span, i.e. a 0.83 m chord at AR 2.2.** The chord bound is still the thing
+  to question.
+- Flaps alone are a modest takeoff gain, much smaller than the +0.55 dCLmax
+  quoted before implementation. The implemented landing increment is +0.36 and
+  the takeoff increment +0.24: the earlier figure was the raw 2-D section value
+  with neither the 0.9 three-dimensional factor nor deflection scaling off the
+  60 deg reference. On the archived design, takeoff distance falls 47.9 -> 40.8 m
+  (-15%) and liftoff speed 18.0 -> 16.1 m/s.
+- **Takeoff distance falls monotonically with deflection out to 40 deg**
+  (47.9 / 43.9 / 42.6 / 41.6 / 40.8 / 40.3 / 40.0 m at 0 / 10 / 15 / 20 / 25 /
+  30 / 40 deg), so there is no interior optimum to find. That is a model
+  artifact, not physics: flaps retract instantly at liftoff here, so nothing
+  charges the flapped second-segment climb, which is the real reason light
+  aircraft take off at 10-25 deg rather than 40. The default is left at 25 deg
+  for that reason; do not read the monotonicity as a reason to raise it.
+
+Verified:
+- `python -m compileall -q src` clean.
+- New `src/testing/test_flap_model.py`, 8 tests: the single clean-CLmax
+  definition, monotone increments that vanish when retracted, the three
+  configurations kept apart, flap drag appearing only when deflected and moving
+  nothing else in the build-up, a shorter roll with flaps, cruise and turn
+  speeds provably unchanged by flaps, and the landing stall speed being
+  reported without ever constraining anything.
+
+Open notes:
+- The takeoff flap setting is a fixed constant by the team's choice. Selecting
+  the best deflection per design would be nearly free (the ground-roll
+  integration is already cheap) but is only worth doing once the climb-out
+  charges the flapped configuration.
+- Nothing in the model now constrains the landing at all -- not speed, not
+  distance, not approach. The reported `landing_stall_speed_mps` is the only
+  visibility into it, and it is computed at the mission's full inertial mass.
+
+### 2026-09-06 - Claude
+Changed (two asks: split the propellers, fix the energy model):
+- **Mission 3 flies its own propeller.** `mission3_prop_diameter_in` /
+  `mission3_prop_pitch_in` are new `OPT_VARS`; `DesignVector.propeller_for_
+  mission(m)` returns the M1/M2 pair for missions 1-2 and the M3 pair for
+  mission 3. Both are plumbed through `prop_main`, `evaluate_mission_
+  propulsion`, and the P/D constraint + stratified init in `topline_opt`,
+  `opt_test` and `main_opt`. Installed propeller mass is now charged per
+  mission in `airframe_assembly` ("Propeller (M1/M2)" / "Propeller (M3)")
+  instead of once for all three. `None` falls back to the shared propeller, so
+  every archived 14-variable vector still replays.
+- **Cruise power is now set by the mission energy budget, not by a throttle
+  knob.** This is the MATLAB scripts' central idea: `P_elec = 1100 W` is just
+  100 Wh spread over the mission window, and cruise speed follows from
+  `Preq(V) = P_avail`. `evaluate_mission_propulsion` now receives the aero
+  cruise speed as an *upper bound* and searches the pack-power caps the battery
+  can actually sustain for the whole mission, flying the quickest lap among the
+  affordable ones. Heavier -> more power for the same speed -> the same
+  watt-hours buy a slower lap. `cruise_throttle` / `mission3_cruise_throttle`
+  were therefore **removed from `OPT_VARS`** (kept as fields, default 1.0):
+  under an energy-set power, flying below the cap is never worth points.
+- `solve_cruise_samples` gained `maximum_battery_power_w` (a cap on the
+  nominal-equivalent pack draw) and was split into `evaluate_cruise_grid` +
+  `select_cruise_points`. The database query dominates runtime and every cap is
+  a pure mask over the same grid, so one query now serves the whole power
+  search. Verified bit-identical to the old function on 24 randomized cases.
+- **20 s of ground time** is reserved out of the 300 s window
+  (`FLIGHT_WINDOW_S`, `GROUND_TIME_S`, `USABLE_WINDOW_S` in `aero_score.py`).
+  Scoring (`ScoringReferences.ground_time_s`) and the propulsion energy budget
+  both use the 280 s usable window. The `0.182332 lb/s` / `252.890 lb` best-team
+  normalizers came out of the MATLAB scripts, which reserve the same 20 s, so
+  all three now agree.
+- **Turn radius guard rail**, `PropulsionRequirements.maximum_turn_radius_m`,
+  default `STRAIGHT_LENGTH_M / 2 = 76.2 m`. See the open note below.
+
+Learned:
+- **The takeoff-distance limit, not energy, is what pins the optimum at 15.6 lb.**
+  Sweeping sensor weight on `opt_topline/run_20260905_193357` (score 5.088):
+  the design stays penalty-free to 3.6 kg of sensor and then dies on
+  `takeoff_distance` (47.6 m -> 75.8 m -> 227 m at 5 / 9 kg). Its propeller is
+  10.2x6.4, which makes only 34 N static thrust. Raising span/chord/prop does
+  not rescue it because `wing_chord <= 0.40 m` caps wing area at 0.73 m^2 --
+  MATLAB's own optimum needs 1.52 m^2 (2360 in^2) at 6 ft span, i.e. AR 2.2.
+  **That chord bound is the next thing to question**, not the energy model.
+- Mission energy is **not** monotone in the power cap. Cutting power widens the
+  turn faster than it lowers turn power, so total energy can go *up*. A
+  bisection on energy walks the wrong way; the search scans caps and minimizes
+  lap time subject to the budget, over two families (throttle the straights
+  only, or throttle the whole lap).
+- The budget usually bites the **turn** first, not the straights: level cruise
+  at 30 m/s is cheap next to a 2.5 g turn. Without a radius bound the model then
+  buys laps with 75-125 m turns that would leave the field, which is why the
+  guard rail above exists.
+- The old model charged cruise at "max thrust available at the design
+  throttle". Cruise is now the least-current operating point that meets level
+  drag, which is what throttling back to hold speed actually costs.
+- **Pinning throttle to 1.0 costs trim convergence, so `main` retries.** On 200
+  designs sampled from the Sobol initial population, only 3 trimmed on both M2
+  and M3 at full throttle; retrying at 0.85/0.70/0.55 (`CRUISE_TRIM_THROTTLES`)
+  raises that to 9 and the best sampled score from 5.215 to 5.257. At full
+  throttle those airframes balance at a speed whose trim alpha is below the
+  model's -4 deg limit; they fly fine throttled back. The retry only sets the
+  thrust curve the trim solves against -- propulsion still owns the flown speed.
+- Splitting the propellers buys almost nothing on the *current* design: a
+  15x15 propeller-pair scan at three payload splits gained +0.0003 to +0.0017.
+  The freedom costs nothing and should be re-measured after a real run, but it
+  is not the lever. Takeoff distance and wing area are.
+- Cost: 0.41 -> 0.51 s per `main()` evaluation (+25%). 98% of that is still
+  `prop_extrapolation.evaluate`, a Python loop doing one KD-tree query and one
+  `lstsq` **per grid point** (~24k lstsq calls per design). Vectorizing it is
+  the single biggest available speedup and is untouched.
+
+Verified:
+- `python -m compileall -q src` clean.
+- `src/testing/test_turn_energy_model.py` rewritten for the new API: 12 tests
+  covering the power cap, the per-mission propeller, the fallback for archived
+  vectors, the 280 s window, the radius guard rail, and the two MATLAB
+  behaviours (a small pack slows the aircraft instead of overdrawing, and at
+  fixed energy a heavier aircraft flies a slower lap and completes fewer).
+- `test_propulsion_requirements` and `test_stratified_optimizer_init` fixtures
+  updated for the new fields/variables.
+- `opt_score_test` had two tests encoding the old 300 s clock
+  (`m1_score(100.0) == 1.0`, five M3 laps at 60 s). Updated to the 280 s usable
+  window, plus a new `test_ground_time_shortens_every_mission_window`.
+- Per-module run: mech_test (no test functions), opt_score_test 6,
+  test_aero_endurance 6, test_continuous_lap_scoring 2, test_niching_islands 2,
+  test_propulsion_requirements 5, test_spiral_criterion 9,
+  test_stratified_optimizer_init 2, test_top_candidate_archive 1,
+  test_tow_envelope 4, test_turn_energy_model 12,
+  topline_payload_archive_test 2 -- all passing.
+- End-to-end: a 2-generation / 32-individual `run_topline_optimization` completes
+  through the real optimizer path with 16 variables including both propellers.
+
+Open notes:
+- **`maximum_turn_radius_m` is a guard rail, not a measurement.** 76.2 m (half a
+  500 ft leg) only blocks the absurd cases; a hard-turning airplane at corner
+  speed naturally sits near 10-20 m and MATLAB's 60 deg / stall-speed turn is
+  8.5 m. The team should replace it with the real flying-site limit. It binds.
+- MATLAB's turn is optimistic in the other direction: n = 1/cos(60 deg) = 2.0 at
+  *stall speed* is not attainable (n <= (V/Vstall)^2 = 1 there). Our corner-speed
+  turn was left as the better physics; only the radius bound was borrowed.
+- A mission that cannot hold level flight or sustain a legal turn used to report
+  `mission_energy` as its limiting constraint (infinite required energy is a
+  side effect). It now reports `course_flight`, so the battery does not get
+  blamed for an airplane that cannot fly the course.
+- **`pytest src/testing` hangs, and always did.** `geometry_test.py` and
+  `vector_test.py` match pytest's `*_test.py` pattern but contain no tests --
+  they are demo scripts that call `airplane.draw_three_view()` at import and
+  block on the window. Collection stops there. Run modules individually
+  (`scratchpad/run_tests.sh`) or rename those two files.
+- Still pre-existing and unrelated: `src/testing/aero_score_test.py` imports
+  `SPIRAL_RATE_MAX`, which no longer exists, so the module cannot be collected;
+  `compare_stability_models` imports a nonexistent
+  `load_default_prop_database`.
+- `propulsion_margin_bonus` rewards leftover energy margin. Now that the budget
+  is deliberately saturated, that tie-breaker mildly favours designs carrying
+  battery they do not use. It is capped at 0.015 points, so it was left alone.
+
 ### 2026-09-05 - Codex
 Changed:
 - Replaced the course-energy shortcut with segment-resolved straight/turn

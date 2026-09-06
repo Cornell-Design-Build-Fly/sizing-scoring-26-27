@@ -113,15 +113,26 @@ OPT_VARS = [
         (MIN_MISSION3_SENSOR_WEIGHT_KG, OPTIMIZER_SENSOR_WEIGHT_UPPER_KG),
     ),
     ("batt_capacity", (1.0, MAX_BATT_CAPACITY_AH)),
+    # Mission 1 and Mission 2 propeller. The rules permit a different propeller
+    # on each flight, and M2 (loaded shipping containers) and M3 (towing the
+    # sensor at a different weight and speed) do not want the same one, so the
+    # two are sized independently instead of being forced to share.
     ("prop_diameter_in", (10.0, 25.0)),
     # The database reaches 3 in and the P/D >= 0.4 constraint imposes an
     # effective 4 in floor at the 10 in minimum diameter.  A 5 in box bound was
     # therefore an artificial active cap in the latest optimum.
     ("prop_pitch_in", (4.0, 18.0)),
+    # Mission 3 propeller.
+    ("mission3_prop_diameter_in", (10.0, 25.0)),
+    ("mission3_prop_pitch_in", (4.0, 18.0)),
     ("motor_kv", (200.0, 650.0)),
     ("motor_max_power", (1000.0, 3000.0)),
-    ("cruise_throttle", (0.5, 1.0)),
-    ("mission3_cruise_throttle", (0.5, 1.0)),
+    # ``cruise_throttle`` and ``mission3_cruise_throttle`` are deliberately NOT
+    # optimizer variables. Cruise power is now set by the mission energy budget
+    # (see src/prop/mission_performance.py): the aircraft flies at the highest
+    # power that still empties no more than the legal pack over the mission
+    # window, and flying below that is never worth points. The fields remain as
+    # an optional hard throttle ceiling for studies.
 ]
 
 @dataclass
@@ -154,10 +165,14 @@ class DesignVector:
     battery_cell_count: int = DEFAULT_BATTERY_CELL_COUNT
     prop_diameter_in: float = 14.0  # [in]
     prop_pitch_in: float = 10.0  # [in]
+    # Mission 3 flies its own propeller. ``None`` means "same as M1/M2", which
+    # keeps every previously archived design vector replayable.
+    mission3_prop_diameter_in: float | None = None  # [in]
+    mission3_prop_pitch_in: float | None = None  # [in]
     motor_kv: float = 335.0  # [RPM/V]
     motor_max_power: float = 2200.0  # [W]
-    cruise_throttle: float = 0.90
-    mission3_cruise_throttle: float = 0.85
+    cruise_throttle: float = 1.0
+    mission3_cruise_throttle: float = 1.0
 
     # Packaging geometry. The mechanical module expands this starting
     # cross-section as needed to enclose the M2 container arrangement.
@@ -240,6 +255,25 @@ class DesignVector:
                 f"[0, {MAX_EXTRA_SHIPPING_CONTAINERS}]."
             )
 
+        if self.mission3_prop_diameter_in is None:
+            self.mission3_prop_diameter_in = float(self.prop_diameter_in)
+        if self.mission3_prop_pitch_in is None:
+            self.mission3_prop_pitch_in = float(self.prop_pitch_in)
+        propeller_dimensions = (
+            self.prop_diameter_in,
+            self.prop_pitch_in,
+            self.mission3_prop_diameter_in,
+            self.mission3_prop_pitch_in,
+        )
+        if not np.all(np.isfinite(propeller_dimensions)) or np.any(
+            np.asarray(propeller_dimensions, dtype=float) <= 0.0
+        ):
+            raise ValueError(
+                "Propeller diameters and pitches must be finite and positive."
+            )
+        self.mission3_prop_diameter_in = float(self.mission3_prop_diameter_in)
+        self.mission3_prop_pitch_in = float(self.mission3_prop_pitch_in)
+
         self.wing_area   = self.wing_span * self.wing_chord
 
         self.hstab_area  = V_H * self.wing_area * self.wing_chord / self.tail_arm
@@ -262,6 +296,33 @@ class DesignVector:
         )
         if self.batt_energy > MAX_PROPULSION_ENERGY_WH + 1e-9:
             raise ValueError("Total propulsion battery energy cannot exceed 100 Wh.")
+
+    def propeller_for_mission(self, mission: int) -> tuple[float, float]:
+        """Return ``(diameter_in, pitch_in)`` of the propeller flown on a mission.
+
+        Missions 1 and 2 share one propeller; Mission 3 has its own. Nothing in
+        the rules forces a single propeller across flights, and the two cases
+        differ enough in weight and cruise speed that one compromise propeller
+        was costing both.
+        """
+
+        if mission not in (1, 2, 3):
+            raise ValueError("mission must be 1, 2, or 3.")
+        if mission == 3:
+            return (
+                float(self.mission3_prop_diameter_in),
+                float(self.mission3_prop_pitch_in),
+            )
+        return (float(self.prop_diameter_in), float(self.prop_pitch_in))
+
+    def cruise_throttle_for_mission(self, mission: int) -> float:
+        """Return the hard throttle ceiling for a mission."""
+
+        if mission not in (1, 2, 3):
+            raise ValueError("mission must be 1, 2, or 3.")
+        return float(
+            self.mission3_cruise_throttle if mission == 3 else self.cruise_throttle
+        )
 
     def to_array(self) -> np.ndarray:
         """Returns the optimizer variables in the same order as bounds()."""
@@ -362,6 +423,8 @@ class ASBDesignVector(DesignVector):
             battery_cell_count=design_vector.battery_cell_count,
             prop_diameter_in=design_vector.prop_diameter_in,
             prop_pitch_in=design_vector.prop_pitch_in,
+            mission3_prop_diameter_in=design_vector.mission3_prop_diameter_in,
+            mission3_prop_pitch_in=design_vector.mission3_prop_pitch_in,
             motor_kv=design_vector.motor_kv,
             motor_max_power=design_vector.motor_max_power,
             cruise_throttle=design_vector.cruise_throttle,

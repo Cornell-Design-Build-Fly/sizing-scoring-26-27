@@ -183,7 +183,16 @@ def _pd_ratio(x: np.ndarray) -> float:
     return float(x[names.index("prop_pitch_in")] / x[names.index("prop_diameter_in")])
 
 
+def _mission3_pd_ratio(x: np.ndarray) -> float:
+    names = DesignVector.opt_names()
+    return float(
+        x[names.index("mission3_prop_pitch_in")]
+        / x[names.index("mission3_prop_diameter_in")]
+    )
+
+
 PD_CONSTRAINT = NonlinearConstraint(_pd_ratio, PD_MIN, PD_MAX)
+MISSION3_PD_CONSTRAINT = NonlinearConstraint(_mission3_pd_ratio, PD_MIN, PD_MAX)
 
 
 def _mission3_sensor_weight_margin(x: np.ndarray) -> float:
@@ -261,6 +270,7 @@ def _candidate_battery_energy_wh(
 def _optimizer_constraints(config: ToplineConfig) -> tuple[NonlinearConstraint, ...]:
     constraints = [
         PD_CONSTRAINT,
+        MISSION3_PD_CONSTRAINT,
         MISSION3_SENSOR_WEIGHT_CONSTRAINT,
         SENSOR_DENSITY_CONSTRAINT,
     ]
@@ -387,8 +397,13 @@ def _initial_population(
     container_index = names.index("extra_shipping_containers")
     max_sensor_weight_index = names.index("sensor_weight_kg")
     m3_sensor_weight_index = names.index("mission3_sensor_weight_kg")
-    prop_diameter_index = names.index("prop_diameter_in")
-    pitch_index = names.index("prop_pitch_in")
+    propeller_index_pairs = (
+        (names.index("prop_diameter_in"), names.index("prop_pitch_in")),
+        (
+            names.index("mission3_prop_diameter_in"),
+            names.index("mission3_prop_pitch_in"),
+        ),
+    )
 
     low, high = bounds[container_index].astype(int)
     population[:, container_index] = np.minimum(
@@ -436,14 +451,16 @@ def _initial_population(
 
     # Project propeller pitch into the P/D-feasible interval so population
     # slots are spent comparing aircraft rather than known constraint failures.
-    diameter = population[:, prop_diameter_index]
-    pitch_lower, pitch_upper = bounds[pitch_index]
-    feasible_lower = np.maximum(pitch_lower, PD_MIN * diameter)
-    feasible_upper = np.minimum(pitch_upper, PD_MAX * diameter)
-    pitch_unit = unit_population[:, pitch_index]
-    population[:, pitch_index] = (
-        feasible_lower + pitch_unit * (feasible_upper - feasible_lower)
-    )
+    # Both the M1/M2 and the M3 propeller are projected.
+    for prop_diameter_index, pitch_index in propeller_index_pairs:
+        diameter = population[:, prop_diameter_index]
+        pitch_lower, pitch_upper = bounds[pitch_index]
+        feasible_lower = np.maximum(pitch_lower, PD_MIN * diameter)
+        feasible_upper = np.minimum(pitch_upper, PD_MAX * diameter)
+        pitch_unit = unit_population[:, pitch_index]
+        population[:, pitch_index] = (
+            feasible_lower + pitch_unit * (feasible_upper - feasible_lower)
+        )
 
     for index, constraint in enumerate(_optimizer_constraints(config)):
         values = np.asarray(
@@ -464,6 +481,8 @@ def _objective(x: np.ndarray, *, config: ToplineConfig | None = None) -> float:
     if not np.all(np.isfinite(x)):
         return BAD_OBJECTIVE
     if not PD_MIN <= _pd_ratio(x) <= PD_MAX:
+        return BAD_OBJECTIVE
+    if not PD_MIN <= _mission3_pd_ratio(x) <= PD_MAX:
         return BAD_OBJECTIVE
     try:
         _ensure_prop_database_loaded(config)

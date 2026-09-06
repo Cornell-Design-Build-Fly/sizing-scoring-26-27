@@ -38,6 +38,58 @@ OVERWEIGHT_BASE_PENALTY = 10.0
 # kept because the limit is a hard legality cliff, not a soft preference.
 OVERWEIGHT_PENALTY_PER_KG = 0.5
 
+# Cruise power is set by the mission energy budget, not by a throttle design
+# variable, so the thrust curve handed to the aerodynamic trim is the full
+# curve. Some airframes have no trimmable equilibrium there -- at full throttle
+# they balance at a speed whose trim alpha falls below the model's -4 deg limit
+# -- yet fly perfectly well throttled back. Retrying at these settings recovers
+# those designs instead of scoring them as untrimmable. The resolved speed is
+# only an upper bound for the propulsion energy search, which owns the flown
+# speed, so the reduced setting does not otherwise restrict the airplane.
+CRUISE_TRIM_THROTTLES = (1.0, 0.85, 0.70, 0.55)
+
+
+def _trimmed_cruise(
+    design_vector: DesignVector,
+    parameter_vector: ParameterVector,
+    *,
+    mission: int,
+    prop_database: ContinuousPropDatabase,
+    disp_res: bool,
+    aero_kwargs: dict,
+):
+    """Return ``(aero_result, thrust_curve, flight_time_fit)`` for a mission."""
+
+    result = thrust_curve = flight_time_fit = None
+    for throttle in CRUISE_TRIM_THROTTLES:
+        trim_dv = (
+            design_vector
+            if throttle >= 1.0
+            else replace(
+                design_vector,
+                cruise_throttle=throttle,
+                mission3_cruise_throttle=throttle,
+            )
+        )
+        thrust_curve, flight_time_fit = prop_main(
+            trim_dv,
+            parameter_vector,
+            mission=mission,
+            prop_database=prop_database,
+            disp_res=disp_res,
+        )
+        result = aero_main(
+            design_vector=design_vector,
+            parameter_vector=parameter_vector,
+            thrust_velocity=thrust_curve,
+            flight_time_fit=flight_time_fit,
+            mission=mission,
+            **aero_kwargs,
+        )
+        if result.cruise_speed_mps is not None:
+            break
+    return result, thrust_curve, flight_time_fit
+
 
 def overweight_penalty(max_takeoff_mass_kg: float) -> float:
     """Return the takeoff-weight penalty, graded above the 55 lb limit."""
@@ -113,55 +165,38 @@ def main(
     resolved_dv = resolved_aerodynamic_design_vector(scoring_dv, mech_result)
 
     # M1 run
-    m1_thrust_curve, m1_flight_time_fit = prop_main(
+    m1_properties = mech_result.for_mission("M1")
+    aero_m1, m1_thrust_curve, m1_flight_time_fit = _trimmed_cruise(
         resolved_dv,
         pv,
         mission=1,
         prop_database=prop_database,
         disp_res=disp_res,
-    )
-    m1_properties = mech_result.for_mission("M1")
-    aero_m1 = aero_main(
-        design_vector=resolved_dv,
-        parameter_vector=pv,
-        thrust_velocity=m1_thrust_curve,
-        flight_time_fit=m1_flight_time_fit,
-        mission=1,
-        cg=m1_properties.cg_m,
-        inertia_matrix=m1_properties.inertia_tensor_kg_m2,
-        mass=m1_properties.total_mass_kg,
-        debug=False,
+        aero_kwargs=dict(
+            cg=m1_properties.cg_m,
+            inertia_matrix=m1_properties.inertia_tensor_kg_m2,
+            mass=m1_properties.total_mass_kg,
+            debug=False,
+        ),
     )
 
     # M2 run
-    m2_thrust_curve, m2_flight_time_fit = prop_main(
+    m2_properties = mech_result.for_mission("M2")
+    aero_m2, m2_thrust_curve, m2_flight_time_fit = _trimmed_cruise(
         resolved_dv,
         pv,
         mission=2,
         prop_database=prop_database,
         disp_res=disp_res,
-    )
-    m2_properties = mech_result.for_mission("M2")
-    aero_m2 = aero_main(
-        design_vector=resolved_dv,
-        parameter_vector=pv,
-        thrust_velocity=m2_thrust_curve,
-        flight_time_fit=m2_flight_time_fit,
-        mission=2,
-        cg=m2_properties.cg_m,
-        inertia_matrix=m2_properties.inertia_tensor_kg_m2,
-        mass=m2_properties.total_mass_kg,
-        debug=False,
+        aero_kwargs=dict(
+            cg=m2_properties.cg_m,
+            inertia_matrix=m2_properties.inertia_tensor_kg_m2,
+            mass=m2_properties.total_mass_kg,
+            debug=False,
+        ),
     )
 
     # M3 run
-    m3_thrust_curve, m3_flight_time_fit = prop_main(
-        resolved_dv,
-        pv,
-        mission=3,
-        prop_database=prop_database,
-        disp_res=disp_res,
-    )
     m3_properties = mech_result.for_mission("M3")
     m3_aero_mass_kg = m3_properties.total_mass_kg
     m3_supported_mass_kg = m3_properties.total_mass_kg
@@ -197,18 +232,20 @@ def main(
         )
         m3_aero_cg = tuple(float(value) for value in aircraft_only_cg)
         m3_aero_inertia = aircraft_only_inertia
-    aero_m3 = aero_main(
-        design_vector=resolved_dv,
-        parameter_vector=pv,
-        thrust_velocity=m3_thrust_curve,
-        flight_time_fit=m3_flight_time_fit,
+    aero_m3, m3_thrust_curve, m3_flight_time_fit = _trimmed_cruise(
+        resolved_dv,
+        pv,
         mission=3,
-        cg=m3_aero_cg,
-        inertia_matrix=m3_aero_inertia,
-        mass=m3_aero_mass_kg,
-        supported_mass=m3_supported_mass_kg,
+        prop_database=prop_database,
         disp_res=disp_res,
-        debug=False,
+        aero_kwargs=dict(
+            cg=m3_aero_cg,
+            inertia_matrix=m3_aero_inertia,
+            mass=m3_aero_mass_kg,
+            supported_mass=m3_supported_mass_kg,
+            disp_res=disp_res,
+            debug=False,
+        ),
     )
 
     propulsion_result_list = []
