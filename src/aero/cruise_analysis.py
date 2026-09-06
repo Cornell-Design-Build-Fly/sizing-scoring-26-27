@@ -5,7 +5,7 @@ from time import perf_counter
 
 from src.aero.aero_analysis import aero_analysis
 from src.aero.custom_classes import CruiseCondition
-from src.aero.drag_model import banner_drag_force
+from src.aero.tow_line_model import tow_line_force_components
 from src.aero.utils import require_scalar
 from src.vectors import DesignVector, ASBDesignVector, ParameterVector
 import numpy as np
@@ -220,14 +220,16 @@ def m3_drag(
     """
     Calculate additional drag from Mission 3-specific attachments.
 
-    For the 2025-2026 competition, this consists only of the towed
-    banner, modeled with an aspect ratio of 5 and a drag coefficient of 0.08.
+    For the 2026-2027 competition, this is the towed cylindrical sensor.
     """
 
     if mission != 3:
         return 0.0
 
-    return banner_drag_force(design_vector, parameter_vector, velocity)
+    backward_force, _, _ = tow_line_force_components(
+        design_vector, parameter_vector, velocity
+    )
+    return backward_force
 
 
 def cruise_analysis(
@@ -295,6 +297,11 @@ def cruise_analysis(
     
     # Define weight and thrust
     weight = mass * parameter_vector.gravity  # N
+    if mission == 3:
+        _, tow_downward, _ = tow_line_force_components(
+            design_vector, parameter_vector, velocity
+        )
+        weight += tow_downward
 
     # Residual minimization approach
     lift_residual = (lift - weight) / weight
@@ -396,7 +403,11 @@ def cruise_analysis(
     calculated_stall_speed = calc_stall_speed(
         design_vector,
         cruise_condition,
-        mass,
+        (
+            mass + design_vector.sensor_weight_kg
+            if mission == 3
+            else mass
+        ),
         parameter_vector,
     )
 

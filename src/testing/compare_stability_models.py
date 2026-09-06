@@ -36,7 +36,7 @@ DATA_DIR = Path("data_dump/accuracy_designs")
 OUTPUT_DIR = Path("data_dump/accuracy_results/stability_diagnostics_after_derivative_correction")
 DERIVATIVES = ("CLa", "Cma", "Cmq", "CYb", "CYr", "Clb", "Clp", "Clr", "Cnb", "Cnr")
 MODES = ("phugoid", "short_period", "dutch_roll", "spiral", "roll_subsidence")
-GEOMETRY = ("wing_span", "wing_chord", "tail_arm", "nose_length", "ducks_num", "pucks_num", "banner_length", "batt_capacity")
+GEOMETRY = ("wing_span", "wing_chord", "tail_arm", "nose_length", "extra_shipping_containers", "sensor_weight_kg", "batt_capacity")
 
 
 def write_csv(path: Path, rows: list[dict]) -> None:

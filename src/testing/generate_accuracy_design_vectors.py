@@ -18,8 +18,7 @@ def randomized(rng: np.random.Generator) -> list[dict[str, float]]:
     rows = []
     for _ in range(COUNT):
         row = {name: float(rng.uniform(*limit)) for name, limit in bounds.items()}
-        row["ducks_num"] = int(rng.integers(3, 11))
-        row["pucks_num"] = int(rng.integers(1, 11))
+        row["extra_shipping_containers"] = int(rng.integers(0, 11))
         rows.append(row)
     return rows
 
@@ -27,19 +26,16 @@ def randomized(rng: np.random.Generator) -> list[dict[str, float]]:
 def warmed(rng: np.random.Generator) -> list[dict[str, float]]:
     rows = []
     for _ in range(COUNT):
-        span = rng.uniform(1.10, 1.60)
+        span = rng.uniform(1.10, 1.524)
         chord = np.clip(span / rng.uniform(4.2, 6.0), 0.20, 0.33)
-        ducks = int(rng.integers(3, 8))
-        pucks = int(rng.integers(1, 6))
+        containers = int(rng.integers(0, 3))
         rows.append({
             "wing_span": float(span),
             "wing_chord": float(chord),
             "tail_arm": float(np.clip(rng.uniform(2.3, 3.1) * chord, 0.55, 0.90)),
             "nose_length": float(np.clip(rng.uniform(0.65, 0.95) * chord, 0.14, 0.29)),
-            "ducks_num": ducks,
-            "pucks_num": pucks,
-            "banner_length": float(np.clip(2.2 + 1.2 * (span - 1.1) + rng.normal(0, 0.35), 1.5, 4.2)),
-            "batt_capacity": float(np.clip(3.0 + 0.35 * ducks + 0.18 * pucks + rng.normal(0, 0.5), 3.5, 7.5)),
+            "extra_shipping_containers": containers,
+            "batt_capacity": float(np.clip(3.0 + 0.35 * containers + rng.normal(0, 0.5), 1.0, 4.5)),
         })
     return rows
 

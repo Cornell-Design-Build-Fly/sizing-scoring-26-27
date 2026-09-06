@@ -31,7 +31,7 @@ from src.opt.view_results import (
     plot_final_population,
     plot_final_population_spread,
     plot_generation_convergence,
-    plot_payload_score_heatmap,
+    plot_payload_scores,
     plot_population_parallel_coordinates,
     plot_population_score_correlations,
     plot_population_score_vs_variables,
@@ -48,7 +48,6 @@ from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 BAD_OBJECTIVE = 1.0e6
 PD_MIN = 0.4
 PD_MAX = 0.8
-MIN_DUCKS_PER_PUCK = 3.0
 TARGET_EVALS_PER_SECOND = 80.0
 TARGET_RUN_SECONDS = 3600.0
 
@@ -60,7 +59,7 @@ RUN_START_SECONDS: float | None = None
 CALLBACK_POPULATION_SIZE = 0
 CALLBACK_TARGET_CANDIDATES = 0
 CALLBACK_SCORE_BEST = True
-PAYLOAD_ARCHIVE: dict[tuple[int, int], dict[str, Any]] = {}
+PAYLOAD_ARCHIVE: dict[int, dict[str, Any]] = {}
 PROGRESS_BAR = None
 
 
@@ -114,30 +113,17 @@ def _ensure_prop_database_loaded(config: ToplineConfig) -> float:
 
 
 def _pd_ratio(x: np.ndarray) -> float:
-    return float(x[9] / x[8])
+    names = DesignVector.opt_names()
+    return float(x[names.index("prop_pitch_in")] / x[names.index("prop_diameter_in")])
 
 
 PD_CONSTRAINT = NonlinearConstraint(_pd_ratio, PD_MIN, PD_MAX)
 
 
-def _ducks_per_puck(x: np.ndarray) -> float:
-    names = DesignVector.opt_names()
-    ducks = x[names.index("ducks_num")]
-    pucks = x[names.index("pucks_num")]
-    return float(ducks / pucks)
-
-
-DUCKS_PER_PUCK_CONSTRAINT = NonlinearConstraint(
-    _ducks_per_puck,
-    MIN_DUCKS_PER_PUCK,
-    np.inf,
-)
-
-
 def _integrality_mask() -> np.ndarray:
     names = DesignVector.opt_names()
     return np.array(
-        [name in {"ducks_num", "pucks_num"} for name in names],
+        [name == "extra_shipping_containers" for name in names],
         dtype=bool,
     )
 
@@ -173,8 +159,6 @@ def _objective(x: np.ndarray, *, config: ToplineConfig | None = None) -> float:
         return BAD_OBJECTIVE
     if not PD_MIN <= _pd_ratio(x) <= PD_MAX:
         return BAD_OBJECTIVE
-    if _ducks_per_puck(x) < MIN_DUCKS_PER_PUCK:
-        return BAD_OBJECTIVE
 
     try:
         _ensure_prop_database_loaded(config)
@@ -204,9 +188,9 @@ def _update_payload_archive(
     population: np.ndarray,
     population_energies: np.ndarray,
     generation: int,
-    archive: dict[tuple[int, int], dict[str, Any]] | None = None,
+    archive: dict[int, dict[str, Any]] | None = None,
 ) -> int:
-    """Retain the highest-scoring design seen for each payload combination."""
+    """Retain the highest-scoring design seen for each shipping-container count."""
     archive = PAYLOAD_ARCHIVE if archive is None else archive
     population = np.asarray(population, dtype=float)
     energies = np.asarray(population_energies, dtype=float)
@@ -216,25 +200,22 @@ def _update_payload_archive(
     if energies.shape != (population.shape[0],):
         raise ValueError("Population energies have an unexpected shape.")
 
-    ducks_index = variable_names.index("ducks_num")
-    pucks_index = variable_names.index("pucks_num")
+    containers_index = variable_names.index("extra_shipping_containers")
     updates = 0
     for population_index, (vector, objective) in enumerate(zip(population, energies)):
         objective = float(objective)
         if not math.isfinite(objective) or objective >= BAD_OBJECTIVE:
             continue
 
-        ducks = int(round(vector[ducks_index]))
-        pucks = int(round(vector[pucks_index]))
+        containers = int(round(vector[containers_index]))
         score = -objective
-        key = (ducks, pucks)
+        key = containers
         previous = archive.get(key)
         if previous is not None and score <= previous["score"]:
             continue
 
         row = {
-            "ducks_num": ducks,
-            "pucks_num": pucks,
+            "extra_shipping_containers": containers,
             "score": score,
             "objective": objective,
             "generation": int(generation),
@@ -242,8 +223,7 @@ def _update_payload_archive(
         }
         for name, value in zip(variable_names, vector):
             row[name] = float(value)
-        row["ducks_num"] = ducks
-        row["pucks_num"] = pucks
+        row["extra_shipping_containers"] = containers
         archive[key] = row
         updates += 1
 
@@ -329,7 +309,7 @@ def _differential_evolution_kwargs(config: ToplineConfig) -> dict:
     kwargs = {
         "func": partial(_objective, config=config),
         "bounds": DesignVector.bounds(),
-        "constraints": (PD_CONSTRAINT, DUCKS_PER_PUCK_CONSTRAINT),
+        "constraints": (PD_CONSTRAINT,),
         "maxiter": _resolved_maxiter(config),
         "popsize": config.popsize,
         "polish": config.polish,
@@ -390,16 +370,16 @@ def _payload_archive_rows() -> list[dict[str, Any]]:
 
 
 def _write_payload_archive(output_dir: Path) -> tuple[Path, Path]:
-    """Write best scores and complete design vectors for each payload pair."""
+    """Write best scores and complete design vectors for each shipping-container count."""
     rows = _payload_archive_rows()
     csv_path = output_dir / "payload_score_archive.csv"
     _write_csv(csv_path, rows)
 
     variable_names = DesignVector.opt_names()
-    pairs = np.asarray(
-        [[row["ducks_num"], row["pucks_num"]] for row in rows],
+    counts = np.asarray(
+        [row["extra_shipping_containers"] for row in rows],
         dtype=int,
-    ).reshape(-1, 2)
+    ).reshape(-1)
     design_vectors = np.asarray(
         [[row[name] for name in variable_names] for row in rows],
         dtype=float,
@@ -407,7 +387,7 @@ def _write_payload_archive(output_dir: Path) -> tuple[Path, Path]:
     npz_path = output_dir / "payload_score_archive.npz"
     np.savez_compressed(
         npz_path,
-        payload_pairs=pairs,
+        container_counts=counts,
         scores=np.asarray([row["score"] for row in rows], dtype=float),
         objectives=np.asarray([row["objective"] for row in rows], dtype=float),
         generations=np.asarray([row["generation"] for row in rows], dtype=int),
@@ -444,12 +424,8 @@ def _best_design_report(result, config: ToplineConfig, output_dir: Path) -> dict
     best_design = DesignVector.from_array(result.x)
     scoring_design = replace(
         best_design,
-        ducks_num=round(best_design.ducks_num)
-        if config.round_payload
-        else best_design.ducks_num,
-        pucks_num=round(best_design.pucks_num)
-        if config.round_payload
-        else best_design.pucks_num,
+        extra_shipping_containers=round(best_design.extra_shipping_containers)
+        if config.round_payload else best_design.extra_shipping_containers,
     )
 
     score, breakdown, details = cast(
@@ -578,7 +554,7 @@ def _save_plots(result, output_dir: Path) -> list[Path]:
         "score_vs_variables": output_dir / "final_score_vs_variables.png",
         "score_correlations": output_dir / "final_score_correlations.png",
         "parallel_coordinates": output_dir / "final_parallel_coordinates.png",
-        "payload_score_heatmap": output_dir / "duck_puck_score_heatmap.png",
+        "payload_scores": output_dir / "container_scores.png",
     }
 
     plot_generation_convergence(
@@ -628,13 +604,12 @@ def _save_plots(result, output_dir: Path) -> list[Path]:
         show=False,
     )
     archive_rows = _payload_archive_rows()
-    plot_payload_score_heatmap(
-        [[row["ducks_num"], row["pucks_num"]] for row in archive_rows],
+    plot_payload_scores(
+        [row["extra_shipping_containers"] for row in archive_rows],
         [row["score"] for row in archive_rows],
         variable_names,
         bounds,
-        min_ducks_per_puck=MIN_DUCKS_PER_PUCK,
-        save_path=str(paths["payload_score_heatmap"]),
+        save_path=str(paths["payload_scores"]),
         show=False,
     )
     return list(paths.values())

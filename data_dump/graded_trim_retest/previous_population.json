@@ -1,0 +1,171 @@
+[
+  {
+    "score": -49.77899261771596,
+    "penalties": {
+      "M1": 16.942956426913995,
+      "M2": 17.73997525262987,
+      "M3": 16.59606093817209
+    },
+    "reasons": {
+      "M1": "Cruise trim failed. Closest sampled/refined attempt: V=32.71 m/s, thrust-drag=10.45 N, alpha=-0.15 deg (allowed -4 to 15), elevator=-2.59 deg (allowed -20 to 20).",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-180.28 N, alpha=19.80 deg (allowed -4 to 15), elevator=-23.72 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=31.85 m/s, thrust-drag=-47.30 N, alpha=11.19 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  },
+  {
+    "score": -50.45000303461098,
+    "penalties": {
+      "M1": 17.536171595175546,
+      "M2": 18.14729766797376,
+      "M3": 16.266533771461674
+    },
+    "reasons": {
+      "M1": "Cruise trim failed. Closest sampled/refined attempt: V=34.98 m/s, thrust-drag=14.84 N, alpha=-0.12 deg (allowed -4 to 15), elevator=-2.81 deg (allowed -20 to 20).",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-220.78 N, alpha=21.61 deg (allowed -4 to 15), elevator=-26.80 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=33.70 m/s, thrust-drag=-42.43 N, alpha=10.09 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  },
+  {
+    "score": -47.70628443241121,
+    "penalties": {
+      "M1": 18.43922315397925,
+      "M2": 14.940749847335287,
+      "M3": 15.826311431096666
+    },
+    "reasons": {
+      "M1": "Cruise trim failed. Closest sampled/refined attempt: V=36.38 m/s, thrust-drag=25.17 N, alpha=-0.46 deg (allowed -4 to 15), elevator=-2.26 deg (allowed -20 to 20).",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-83.46 N, alpha=14.70 deg (allowed -4 to 15), elevator=-18.24 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=33.26 m/s, thrust-drag=-34.39 N, alpha=10.27 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  },
+  {
+    "score": -43.81183451163355,
+    "penalties": {
+      "M1": 10.0,
+      "M2": 18.51084465628781,
+      "M3": 16.80098985534574
+    },
+    "reasons": {
+      "M1": "The airplane does not reach 200 ft before the first turn: it needs 293.1 m, but only 152.4 m is available.",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-281.69 N, alpha=23.31 deg (allowed -4 to 15), elevator=-29.20 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=35.45 m/s, thrust-drag=-53.19 N, alpha=9.87 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  },
+  {
+    "score": -49.91015402633067,
+    "penalties": {
+      "M1": 15.129876722879057,
+      "M2": 18.813447495367537,
+      "M3": 17.46682980808408
+    },
+    "reasons": {
+      "M1": "Cruise trim failed. Closest sampled/refined attempt: V=22.04 m/s, thrust-drag=-4.83 N, alpha=4.13 deg (allowed -4 to 15), elevator=-10.17 deg (allowed -20 to 20).",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-311.03 N, alpha=26.50 deg (allowed -4 to 15), elevator=-33.11 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=37.09 m/s, thrust-drag=-71.57 N, alpha=9.83 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  },
+  {
+    "score": -44.582262469440934,
+    "penalties": {
+      "M1": 10.0,
+      "M2": 19.113202487282997,
+      "M3": 16.96905998215794
+    },
+    "reasons": {
+      "M1": "The airplane does not reach 200 ft before the first turn: it needs 586.6 m, but only 152.4 m is available.",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-413.47 N, alpha=31.32 deg (allowed -4 to 15), elevator=-38.43 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=37.45 m/s, thrust-drag=-55.55 N, alpha=10.36 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  },
+  {
+    "score": -43.639962627815024,
+    "penalties": {
+      "M1": 10.0,
+      "M2": 18.118093899104366,
+      "M3": 17.021868728710658
+    },
+    "reasons": {
+      "M1": "The airplane does not reach 200 ft before the first turn: it needs 478.1 m, but only 152.4 m is available.",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-274.65 N, alpha=20.51 deg (allowed -4 to 15), elevator=-25.42 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=32.81 m/s, thrust-drag=-59.98 N, alpha=9.96 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  },
+  {
+    "score": -49.293756591158214,
+    "penalties": {
+      "M1": 18.148995827785768,
+      "M2": 17.009137419952282,
+      "M3": 15.63562334342016
+    },
+    "reasons": {
+      "M1": "Cruise trim failed. Closest sampled/refined attempt: V=38.92 m/s, thrust-drag=19.67 N, alpha=-0.93 deg (allowed -4 to 15), elevator=-1.45 deg (allowed -20 to 20).",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-140.07 N, alpha=18.20 deg (allowed -4 to 15), elevator=-21.53 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=31.03 m/s, thrust-drag=-30.23 N, alpha=11.05 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  },
+  {
+    "score": -47.72620345105009,
+    "penalties": {
+      "M1": 18.407884672377918,
+      "M2": 16.14339427275181,
+      "M3": 14.674924505920366
+    },
+    "reasons": {
+      "M1": "Cruise trim failed. Closest sampled/refined attempt: V=46.17 m/s, thrust-drag=25.53 N, alpha=-1.37 deg (allowed -4 to 15), elevator=-0.87 deg (allowed -20 to 20).",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-124.49 N, alpha=17.14 deg (allowed -4 to 15), elevator=-19.57 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=31.90 m/s, thrust-drag=-21.96 N, alpha=10.11 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  },
+  {
+    "score": -47.21844926021227,
+    "penalties": {
+      "M1": 14.488657512567972,
+      "M2": 17.40478720491749,
+      "M3": 16.825004542726802
+    },
+    "reasons": {
+      "M1": "Cruise trim failed. Closest sampled/refined attempt: V=19.21 m/s, thrust-drag=-3.79 N, alpha=3.90 deg (allowed -4 to 15), elevator=-9.11 deg (allowed -20 to 20).",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-195.58 N, alpha=20.75 deg (allowed -4 to 15), elevator=-20.52 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=30.35 m/s, thrust-drag=-51.73 N, alpha=10.87 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  },
+  {
+    "score": -49.71916980777097,
+    "penalties": {
+      "M1": 16.58473015124487,
+      "M2": 18.155736688808577,
+      "M3": 16.478702967717524
+    },
+    "reasons": {
+      "M1": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=8.54 N, alpha=-1.54 deg (allowed -4 to 15), elevator=-0.45 deg (allowed -20 to 20).",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-211.10 N, alpha=22.29 deg (allowed -4 to 15), elevator=-25.33 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=32.56 m/s, thrust-drag=-47.05 N, alpha=11.79 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  },
+  {
+    "score": -50.258630668316115,
+    "penalties": {
+      "M1": 16.919108150681986,
+      "M2": 18.297967246273824,
+      "M3": 16.541555271360306
+    },
+    "reasons": {
+      "M1": "Cruise trim failed. Closest sampled/refined attempt: V=34.05 m/s, thrust-drag=10.43 N, alpha=0.04 deg (allowed -4 to 15), elevator=-3.02 deg (allowed -20 to 20).",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-224.68 N, alpha=21.74 deg (allowed -4 to 15), elevator=-27.95 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=33.37 m/s, thrust-drag=-43.48 N, alpha=10.18 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  },
+  {
+    "score": -50.128967095978666,
+    "penalties": {
+      "M1": 16.95772543775353,
+      "M2": 18.25024165685994,
+      "M3": 16.42100000136519
+    },
+    "reasons": {
+      "M1": "Cruise trim failed. Closest sampled/refined attempt: V=41.55 m/s, thrust-drag=10.78 N, alpha=-0.81 deg (allowed -4 to 15), elevator=-1.57 deg (allowed -20 to 20).",
+      "M2": "Cruise trim failed. Closest sampled/refined attempt: V=50.00 m/s, thrust-drag=-238.21 N, alpha=21.91 deg (allowed -4 to 15), elevator=-27.35 deg (allowed -20 to 20).",
+      "M3": "Cruise trim failed. Closest sampled/refined attempt: V=32.94 m/s, thrust-drag=-44.88 N, alpha=10.52 deg (allowed -4 to 15), elevator=-20.00 deg (allowed -20 to 20)."
+    }
+  }
+]

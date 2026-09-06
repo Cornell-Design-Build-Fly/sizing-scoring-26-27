@@ -18,7 +18,7 @@ from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 INPUT = Path("data_dump/accuracy_results/aero_cruise_coarse_full/raw_results.csv")
 OUTPUT_DIR = Path("data_dump/accuracy_results/aero_force_diagnostics")
 QUANTITIES = ("CL", "CD", "Cm", "L", "D", "m_b")
-GEOMETRY = ("wing_span", "wing_chord", "tail_arm", "nose_length", "ducks_num", "pucks_num", "banner_length", "batt_capacity")
+GEOMETRY = ("wing_span", "wing_chord", "tail_arm", "nose_length", "extra_shipping_containers", "sensor_weight_kg", "batt_capacity")
 
 
 def scalar(value):

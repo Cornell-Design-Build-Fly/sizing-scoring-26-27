@@ -1,0 +1,40 @@
+{
+  "static_calibration_20260906": {
+    "cases": 150,
+    "geometries": 50,
+    "training_geometries": 35,
+    "holdout_geometries": 15,
+    "disjoint_split": true,
+    "finite_predictions": true,
+    "coupled_pitch_identity": true,
+    "full_cg_trends": {
+      "pitch_slope_positive": 50,
+      "yaw_slope_negative": 48,
+      "designs": 50
+    },
+    "candidate_cg_trends": {
+      "pitch_slope_positive": 50,
+      "yaw_slope_negative": 50,
+      "designs": 50
+    }
+  },
+  "under_55lb": {
+    "cases": 150,
+    "geometries": 50,
+    "training_geometries": 35,
+    "holdout_geometries": 15,
+    "disjoint_split": true,
+    "finite_predictions": true,
+    "coupled_pitch_identity": true,
+    "full_cg_trends": {
+      "pitch_slope_positive": 50,
+      "yaw_slope_negative": 45,
+      "designs": 50
+    },
+    "candidate_cg_trends": {
+      "pitch_slope_positive": 50,
+      "yaw_slope_negative": 50,
+      "designs": 50
+    }
+  }
+}

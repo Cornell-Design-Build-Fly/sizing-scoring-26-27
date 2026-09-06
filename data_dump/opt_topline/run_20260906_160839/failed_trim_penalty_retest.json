@@ -1,0 +1,24 @@
+{
+  "previous_score": 1.5,
+  "new_score": -28.5,
+  "breakdown": [
+    1.5,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "missions": {
+    "M1": {
+      "penalty": 10.0,
+      "reason": "Cruise trim failed: no acceptable converged cruise condition."
+    },
+    "M2": {
+      "penalty": 10.0,
+      "reason": "Cruise trim failed: no acceptable converged cruise condition."
+    },
+    "M3": {
+      "penalty": 10.0,
+      "reason": "Cruise trim failed: no acceptable converged cruise condition."
+    }
+  }
+}

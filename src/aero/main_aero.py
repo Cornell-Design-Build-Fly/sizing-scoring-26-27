@@ -77,8 +77,17 @@ def aero_main(
     if not cruise_condition.converged:
         if debug:
             print("[aero] Stopping evaluation because cruise trim did not converge.", flush=True)
+        # Keep failed trim at least as costly as the maximum downstream
+        # mission penalty (10), while preserving a gradient among failures.
+        miss = cruise_condition.trim_violation
+        penalty = (20.0 if miss is None or not np.isfinite(miss)
+                   else 10.0 + 10.0 * max(0.0, miss) / (1.0 + max(0.0, miss)))
         return AeroScore(
-            can_fly = False,
+            can_fly=False,
+            penalty=penalty,
+            penalty_trim=penalty,
+            flight_profile_reason=(cruise_condition.trim_failure_reason
+                                   or "Cruise trim failed; no finite trim diagnostics available."),
         )
 
     # Stability model selection: leave exactly one call active.
@@ -89,7 +98,14 @@ def aero_main(
 
     # Return final score for design vector based on cruise speed, stall speed, and stability numbers.
     score = aero_score(
-        cruise_condition, stability_result, parameter_vector, flight_time_fit, mission
+        cruise_condition,
+        stability_result,
+        parameter_vector,
+        flight_time_fit,
+        mission,
+        design_vector,
+        thrust_velocity,
+        mass,
     )
     if debug:
         print(

@@ -2,11 +2,25 @@ from time import perf_counter
 
 import numpy as np
 from aerosandbox import OperatingPoint
-from scipy.optimize import brentq
+from scipy.optimize import brentq, minimize_scalar
 
 from src.aero.custom_classes import CruiseCondition
-from src.aero.drag_model import banner_drag_force, drag_coefficients, fuselage_drag_geometry
+from src.aero.drag_model import drag_coefficients, fuselage_drag_geometry
+from src.aero.tow_line_model import tow_line_force_components
 from src.vectors import DesignVector, ParameterVector
+
+
+def _trim_violation(alpha, elevator, drag, thrust, weight):
+    """Search scales: 10% weight force mismatch or 5 degrees excess = 1.
+
+    Both thrust excess and shortfall matter at the selected fixed throttle.
+    This objective guides failed designs; it never grants mission completion.
+    """
+    force = np.abs(drag - thrust) / (0.10 * weight)
+    angle = np.maximum(0., np.maximum(-4. - alpha, alpha - 15.)) / 5.
+    control = np.maximum(0., np.abs(elevator) - 20.) / 5.
+    value = force + angle + control
+    return np.where(np.isfinite(value), value, np.inf)
 
 
 def cruise_analysis_fast(
@@ -66,9 +80,14 @@ def cruise_analysis_fast(
     cme = -tail_ratio * tail_cle * tail_lever
     trim_determinant = cla * cme - cle * cma
     if abs(trim_determinant) < 1e-10:
-        return CruiseCondition(OperatingPoint(velocity=-1.0, alpha=-999.0), None, False)
+        return CruiseCondition(OperatingPoint(velocity=-1.0, alpha=-999.0), None, False,
+                               trim_violation=float("inf"), trim_failure_reason="Singular lift/moment trim equations.")
 
     weight = mass * parameter_vector.gravity
+    if mission == 3:
+        # M3 mass is airplane-only; the sensor weight reaches it through the
+        # tow line and therefore belongs in the required lift, not its inertia.
+        weight += design_vector.sensor_weight_kg * parameter_vector.gravity
     thrust_a, thrust_b, thrust_c = thrust_velocity
     fuselage_geometry = fuselage_drag_geometry(design_vector)
 
@@ -83,7 +102,10 @@ def cruise_analysis_fast(
         cd = sum(drag_coefficients(design_vector, parameter_vector, velocity, wing_cl, tail_cl, fuselage_geometry).values())
         drag = q * design_vector.wing_area * cd
         if mission == 3:
-            drag += banner_drag_force(design_vector, parameter_vector, velocity)
+            tow_backward, _, _ = tow_line_force_components(
+                design_vector, parameter_vector, velocity
+            )
+            drag += tow_backward
         thrust = thrust_a * velocity**2 + thrust_b * velocity + thrust_c
         return alpha_rad, elevator_rad, drag, thrust
 
@@ -102,6 +124,9 @@ def cruise_analysis_fast(
         elif f_left * f_right < 0:
             roots.append(float(brentq(drag_residual, left, right)))
 
+    if residuals[-1] == 0:
+        roots.append(float(velocity_grid[-1]))
+
     candidates = []
     for velocity in roots:
         alpha_rad, elevator_rad, drag, thrust = state(velocity)
@@ -109,7 +134,30 @@ def cruise_analysis_fast(
         if -4.0 <= alpha <= 15.0 and -20.0 <= elevator <= 20.0:
             candidates.append((abs(velocity - 18.0), velocity, alpha, elevator, abs(drag - thrust) / weight))
     if not candidates:
-        return CruiseCondition(OperatingPoint(velocity=-1.0, alpha=-999.0), None, False)
+        def violation(velocity):
+            a, e, drag, thrust = state(velocity)
+            return _trim_violation(np.degrees(a), np.degrees(e), drag, thrust, weight)
+
+        # Retain endpoints and invalid roots, then refine each sampled local
+        # minimum. A coarse speed grid alone can hide a near-trim improvement.
+        values = np.asarray(violation(velocity_grid), dtype=float)
+        trials = [(float(value), float(v)) for value, v in zip(values, velocity_grid)]
+        trials.extend((float(violation(v)), v) for v in roots)
+        for i in range(1, len(velocity_grid) - 1):
+            if values[i] <= values[i-1] and values[i] <= values[i+1] and np.isfinite(values[i]):
+                result = minimize_scalar(violation, bounds=(velocity_grid[i-1], velocity_grid[i+1]),
+                                         method="bounded", options={"xatol": 1e-5})
+                if result.success:
+                    trials.append((float(result.fun), float(result.x)))
+        miss, velocity = min(trials)
+        a, e, drag, thrust = state(velocity)
+        alpha, elevator = float(np.degrees(a)), float(np.degrees(e))
+        reason = (f"Cruise trim failed. Closest sampled/refined attempt: V={velocity:.2f} m/s, "
+                  f"thrust-drag={float(thrust-drag):.2f} N, alpha={alpha:.2f} deg "
+                  f"(allowed -4 to 15), elevator={elevator:.2f} deg (allowed -20 to 20).")
+        return CruiseCondition(OperatingPoint(velocity=velocity, alpha=alpha), None, False,
+                               elevator_deflection=elevator, trim_violation=miss,
+                               trim_failure_reason=reason)
 
     _, velocity, alpha, elevator, residual = min(candidates)
     converged = residual <= 1e-2

@@ -184,7 +184,7 @@ def create_plots(rows: list[dict], obs: list[dict]) -> None:
         ax.scatter(full, coarse, s=12, alpha=.5); ax.plot([0, 10], [0, 10], "k--"); ax.set(title=penalty, xlabel="Full", ylabel="Coarse"); ax.grid(True)
     fig.tight_layout(); fig.savefig(OUTPUT_DIR / "penalty_components.png", dpi=180); plt.close(fig)
 
-    geometry = ("wing_span", "wing_chord", "tail_arm", "nose_length", "ducks_num", "pucks_num", "banner_length", "batt_capacity")
+    geometry = ("wing_span", "wing_chord", "tail_arm", "nose_length", "extra_shipping_containers", "sensor_weight_kg", "batt_capacity")
     absolute_error = np.abs(relative)
     fig, axes = plt.subplots(4, 2, figsize=(11, 14))
     for ax, name in zip(axes.flat, geometry):

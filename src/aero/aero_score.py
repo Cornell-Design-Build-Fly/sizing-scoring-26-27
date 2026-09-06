@@ -32,7 +32,8 @@ import numpy as np
 from dataclasses import dataclass
 
 from src.aero.custom_classes import CruiseCondition, StabilityResult
-from src.vectors import ParameterVector
+from src.aero.flight_profile import FlightProfileResult, compute_flight_profile
+from src.vectors import DesignVector, ParameterVector
 
 # ── DBF Course Geometry ────────────────────────────────────────────────────
 # Per 26-27 DBF rules (Figure 3.1.1; confirmed from course diagram):
@@ -107,8 +108,8 @@ class AeroScore:
         True if ALL four flyability requirements are met:
         Cma < 0, Cnb > 0, static_margin > 0, spiral doubling time ≥ 4 s.
     penalty : float
-        0.0 when can_fly is True.  Otherwise a value in (0, 10] on a log
-        scale.  Use as a soft constraint in the optimizer.
+        0.0 when can_fly is True. Flight-check penalties are capped at 10.
+        Failed trim is assigned 10..20 by aero_main based on trim mismatch.
     penalty_static_margin : float
         Component penalty from static-margin violation (before weighting).
     penalty_longitudinal : float
@@ -127,6 +128,23 @@ class AeroScore:
     penalty_longitudinal:    float | None = None
     penalty_directional:     float | None = None
     penalty_spiral:          float | None = None
+    takeoff_time_s:           float = 0.0
+    climb_time_s:             float = 0.0
+    landing_time_s:           float = 0.0
+    mission_overhead_time_s:  float = 0.0
+    takeoff_distance_m:       float = 0.0
+    landing_distance_m:       float = 0.0
+    turn_time_s:              float = 0.0
+    straight_time_s:          float = 0.0
+    speed_transition_time_s:  float = 0.0
+    flight_profile_feasible:  bool = False
+    flight_profile_reason:    str = ""
+    battery_energy_available_wh: float = 0.0
+    mission_energy_required_wh: float = 0.0
+    potential_energy_gained_wh: float = 0.0
+    landing_potential_energy_dissipated_wh: float = 0.0
+    # Failed-trim search penalty: 10..20; downstream penalties remain 0..10.
+    penalty_trim:            float | None = None
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -161,7 +179,7 @@ def _log_penalty(violation: float, scale: float) -> float:
     return min(10.0, 10.0 * np.log2(1.0 + violation / scale))
 
 
-def _compute_lap_time(
+def _legacy_turn_only_lap_time(
         cruise_speed: float,
         stall_speed: float,
         parameter_vector: ParameterVector,
@@ -225,11 +243,40 @@ def _compute_lap_time(
     return t_straight + t_turns
 
 
+def _compute_lap_time(
+    cruise_speed: float,
+    stall_speed: float,
+    parameter_vector: ParameterVector,
+    design_vector: DesignVector,
+    thrust_velocity: tuple[float, float, float],
+    mass_kg: float,
+    mission: int,
+    flight_time_fit: tuple[float, float, float],
+) -> FlightProfileResult:
+    """Return the complete phase-based flight profile used for lap timing."""
+    profile_mass_kg = mass_kg
+    if mission == 3:
+        # M3 aero uses deployed-airplane mass properties. The sensor is aboard
+        # for takeoff and its weight is supported through the tow line later.
+        profile_mass_kg += design_vector.sensor_weight_kg
+    return compute_flight_profile(
+        cruise_speed,
+        stall_speed,
+        design_vector,
+        parameter_vector,
+        thrust_velocity,
+        profile_mass_kg,
+        mission,
+        flight_time_fit,
+    )
+
+
 def _endurance_values(
     flight_time_fit: tuple[float, float, float],
     cruise_speed: float,
     lap_time: float,
     mission: int,
+    mission_overhead_time_s: float = 0.0,
 ) -> tuple[float, float, float]:
     """Return available time, required time, and endurance penalty."""
     if mission not in (1, 2, 3):
@@ -238,7 +285,12 @@ def _endurance_values(
     if not np.isfinite(available):
         available = 0.0
     available = max(0.0, available)
-    required = 3.0 * lap_time if mission == 1 else 300.0
+    if mission == 1:
+        required = mission_overhead_time_s + 3.0 * lap_time
+    elif mission == 2:
+        required = mission_overhead_time_s + 5.0 * lap_time
+    else:
+        required = 300.0
     violation = max(0.0, required - available) / required
     return available, required, _log_penalty(violation, ENDURANCE_PENALTY_SCALE)
 
@@ -253,6 +305,9 @@ def aero_score(
         parameter_vector: ParameterVector,
         flight_time_fit: tuple[float, float, float],
         mission: int,
+        design_vector: DesignVector,
+        thrust_velocity: tuple[float, float, float],
+        mass_kg: float,
 ) -> AeroScore:
     """
     Score the aerodynamic performance and flyability of a design.
@@ -288,12 +343,25 @@ def aero_score(
     # ── Lap time ──────────────────────────────────────────────────────────
     cruise_speed = cruise_condition.operating_point.velocity
     stall_speed  = cruise_condition.stall_speed
-    lap_time = _compute_lap_time(cruise_speed, stall_speed, parameter_vector)
-    available_time, required_time, p_endurance = _endurance_values(
-        flight_time_fit, cruise_speed, lap_time, mission
+    profile = _compute_lap_time(
+        cruise_speed,
+        stall_speed,
+        parameter_vector,
+        design_vector,
+        thrust_velocity,
+        mass_kg,
+        mission,
+        flight_time_fit,
     )
-    endurance_ok = available_time >= required_time
-    lap_time_ok = np.isfinite(lap_time) and lap_time < 1e6
+    lap_time = profile.lap_time_s
+    endurance_ok = profile.energy_feasible
+    energy_scale = max(profile.battery_energy_available_wh, 1e-9)
+    energy_violation = max(
+        0.0,
+        profile.mission_energy_required_wh - profile.battery_energy_available_wh,
+    )
+    p_endurance = _log_penalty(energy_violation, energy_scale)
+    lap_time_ok = profile.feasible and np.isfinite(lap_time) and lap_time < 1e6
     if not lap_time_ok:
         p_endurance = 10.0
 
@@ -312,6 +380,25 @@ def aero_score(
         longitudinally_stable and directionally_stable and cg_ahead_of_np
         and spiral_ok and endurance_ok and lap_time_ok
     )
+    profile_fields = dict(
+        takeoff_time_s=profile.takeoff_time_s,
+        climb_time_s=profile.climb_time_s,
+        landing_time_s=profile.landing_time_s,
+        mission_overhead_time_s=profile.non_lap_time_s,
+        takeoff_distance_m=profile.takeoff_distance_m,
+        landing_distance_m=profile.landing_distance_m,
+        turn_time_s=profile.turn_time_s,
+        straight_time_s=profile.straight_time_s,
+        speed_transition_time_s=profile.speed_transition_time_s,
+        flight_profile_feasible=profile.feasible,
+        flight_profile_reason=profile.reason,
+        battery_energy_available_wh=profile.battery_energy_available_wh,
+        mission_energy_required_wh=profile.mission_energy_required_wh,
+        potential_energy_gained_wh=profile.potential_energy_gained_wh,
+        landing_potential_energy_dissipated_wh=(
+            profile.landing_potential_energy_dissipated_wh
+        ),
+    )
 
     # ── Penalty ──────────────────────────────────────────────────────────
     if can_fly:
@@ -323,6 +410,7 @@ def aero_score(
             penalty_longitudinal=0.0,
             penalty_directional=0.0,
             penalty_spiral=0.0,
+            **profile_fields,
         )
 
     # Compute how far each violated requirement is outside its boundary.
@@ -351,4 +439,5 @@ def aero_score(
         penalty_longitudinal=p_cma,
         penalty_directional=p_cnb,
         penalty_spiral=p_spiral,
+        **profile_fields,
     )

@@ -21,9 +21,8 @@ def make_realistic_design_vector() -> DesignVector:
         wing_chord=0.28,      # m
         tail_arm=0.75,        # m
         nose_length=0.22,     # m
-        ducks_num=5,
-        pucks_num=2,
-        banner_length=3.0,    # m
+        extra_shipping_containers=0,
+
         batt_capacity=5.0,    # Ah
         fuselage_width=0.13,  # m
         fuselage_height=0.13, # m
@@ -115,7 +114,7 @@ def test_aero_main_smoke() -> None:
     assert isinstance(result.can_fly, bool)
     assert result.lap_time > 0.0
     assert not math.isnan(float(result.lap_time))
-    assert 0.0 <= result.penalty <= 10.0
+    assert 0.0 <= result.penalty <= (20.0 if result.penalty_trim is not None else 10.0)
 
     if result.can_fly:
         assert_finite(result.lap_time, "lap_time")

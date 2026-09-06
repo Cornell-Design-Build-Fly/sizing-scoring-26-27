@@ -8,22 +8,47 @@ from aerosandbox.aerodynamics.aero_3D.aero_buildup_submodels.fuselage_aerodynami
     fuselage_form_factor,
 )
 
-from src.vectors import ASBDesignVector, DesignVector, ParameterVector
+from src.vectors import ASBDesignVector, DesignVector, ParameterVector, SENSOR_DIAMETER_M
 
 
 MU = 1.81e-5
-BANNER_CD = 0.08
-BANNER_ASPECT_RATIO = 5.0
 
 
-def banner_drag_force(
+def circular_cylinder_crossflow_cd(reynolds_number):
+    """Return the drag coefficient of a circular cylinder normal to the flow.
+
+    The sensor's expected DBF Reynolds-number range is subcritical, where the
+    standard engineering estimate is Cd = 1.2. The model deliberately does
+    not claim a smooth-cylinder drag-crisis benefit, since surface finish,
+    vibration, and atmospheric turbulence make that benefit unreliable for a
+    towed device. Keeping Reynolds number as an input makes the modeled regime
+    explicit and allows a validated transition model to be added later.
+    """
+    return 1.2 + 0.0 * reynolds_number
+
+
+def sensor_drag_force(
     design: DesignVector,
     parameters: ParameterVector,
     velocity,
 ):
-    """Return banner drag using area = length^2 / aspect ratio."""
-    banner_area = design.banner_length**2 / BANNER_ASPECT_RATIO
-    return 0.5 * parameters.rho * velocity**2 * BANNER_CD * banner_area
+    """Return cross-flow drag for the fixed-diameter cylindrical sensor.
+
+    The tow is conservatively modeled with the cylinder axis perpendicular to
+    the relative wind, so its projected area is diameter times length.
+    """
+    reynolds_number = (
+        parameters.rho * np.abs(velocity) * SENSOR_DIAMETER_M / MU
+    )
+    drag_coefficient = circular_cylinder_crossflow_cd(reynolds_number)
+    sensor_projected_area = design.sensor_length_m * SENSOR_DIAMETER_M
+    return (
+        0.5
+        * parameters.rho
+        * velocity**2
+        * drag_coefficient
+        * sensor_projected_area
+    )
 
 
 @lru_cache(maxsize=4096)

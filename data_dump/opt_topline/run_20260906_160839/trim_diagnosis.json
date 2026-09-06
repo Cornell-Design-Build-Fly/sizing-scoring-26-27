@@ -1,0 +1,550 @@
+[
+  {
+    "mission": 1,
+    "mass": 4.20460755584336,
+    "converged": false,
+    "roots": [
+      {
+        "v": 3.7840630087363536,
+        "alpha": 173.58489486132157,
+        "elevator": -302.55059907721756,
+        "drag": 40.69491088834368,
+        "thrust": 40.694910888343635
+      }
+    ],
+    "grid_residual_min": -26.074136266593776,
+    "grid_residual_max": 22.743690000202015,
+    "residual_at_50": -20.440667228993128,
+    "thrust_at_50": 29.636145088647282,
+    "weight": 41.230381692599984,
+    "sample": 0
+  },
+  {
+    "mission": 2,
+    "mass": 60.35196166065559,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 27.879073913407154,
+    "grid_residual_max": 13799.365017354778,
+    "residual_at_50": 27.879073913407154,
+    "thrust_at_50": 29.636145088647282,
+    "weight": 591.8113360443887,
+    "sample": 0
+  },
+  {
+    "mission": 3,
+    "mass": 4.20460755584336,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 26.669417267379153,
+    "grid_residual_max": 1837.8706357361314,
+    "residual_at_50": 58.54649663404203,
+    "thrust_at_50": 29.636145088647282,
+    "weight": 222.53340308641953,
+    "sample": 0
+  },
+  {
+    "mission": 1,
+    "mass": 4.324457382277568,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 3.5179466551144962,
+    "grid_residual_max": 77.00899135905141,
+    "residual_at_50": 8.905996094731323,
+    "thrust_at_50": 0.0,
+    "weight": 42.40562909061382,
+    "sample": 1
+  },
+  {
+    "mission": 2,
+    "mass": 44.72716570135998,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 38.32685278457832,
+    "grid_residual_max": 8428.896827821885,
+    "residual_at_50": 38.32685278457832,
+    "thrust_at_50": 0.0,
+    "weight": 438.5945868675359,
+    "sample": 1
+  },
+  {
+    "mission": 3,
+    "mass": 4.324457382277568,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 55.62949090075726,
+    "grid_residual_max": 2428.9483779004217,
+    "residual_at_50": 95.57120602027466,
+    "thrust_at_50": 0.0,
+    "weight": 238.27614458896485,
+    "sample": 1
+  },
+  {
+    "mission": 1,
+    "mass": 4.353995035813519,
+    "converged": false,
+    "roots": [
+      {
+        "v": 3.3157092928955594,
+        "alpha": 251.9722469781292,
+        "elevator": -443.11367078496716,
+        "drag": 73.53724533232293,
+        "thrust": 73.5372453323229
+      }
+    ],
+    "grid_residual_min": -51.5604002275644,
+    "grid_residual_max": 15.569234981695644,
+    "residual_at_50": -5.460452222980939,
+    "thrust_at_50": 14.836157582277522,
+    "weight": 42.69527532118736,
+    "sample": 2
+  },
+  {
+    "mission": 2,
+    "mass": 60.01043852733553,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 53.95239097023598,
+    "grid_residual_max": 16750.87201109362,
+    "residual_at_50": 53.95239097023598,
+    "thrust_at_50": 14.836157582277522,
+    "weight": 588.4623601990521,
+    "sample": 2
+  },
+  {
+    "mission": 3,
+    "mass": 4.353995035813519,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 16.056289054190792,
+    "grid_residual_max": 2358.586836506418,
+    "residual_at_50": 48.003684749554424,
+    "thrust_at_50": 41.781022994709986,
+    "weight": 222.3936735570323,
+    "sample": 2
+  },
+  {
+    "mission": 1,
+    "mass": 4.352426927167008,
+    "converged": false,
+    "roots": [
+      {
+        "v": 4.503700540500077,
+        "alpha": 138.81360160374928,
+        "elevator": -224.12795861918156,
+        "drag": 44.96106634634112,
+        "thrust": 44.961066346340985
+      }
+    ],
+    "grid_residual_min": -27.76594618344916,
+    "grid_residual_max": 53.649270952898576,
+    "residual_at_50": -21.32080370658396,
+    "thrust_at_50": 31.206105594101707,
+    "weight": 42.67989844779968,
+    "sample": 3
+  },
+  {
+    "mission": 2,
+    "mass": 79.70403143365598,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 100.00253548307225,
+    "grid_residual_max": 34029.896039157866,
+    "residual_at_50": 100.00253548307225,
+    "thrust_at_50": 31.206105594101707,
+    "weight": 781.5777322384305,
+    "sample": 3
+  },
+  {
+    "mission": 3,
+    "mass": 4.352426927167008,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 35.033935802725004,
+    "grid_residual_max": 2761.9620285013793,
+    "residual_at_50": 61.35337931011244,
+    "thrust_at_50": 31.206105594101707,
+    "weight": 225.18039350534738,
+    "sample": 3
+  },
+  {
+    "mission": 1,
+    "mass": 4.091441246939304,
+    "converged": false,
+    "roots": [
+      {
+        "v": 4.921216221106306,
+        "alpha": 133.7244240810286,
+        "elevator": -234.1917919812879,
+        "drag": 45.10603592734237,
+        "thrust": 45.10603592734237
+      }
+    ],
+    "grid_residual_min": -26.702653404920405,
+    "grid_residual_max": 72.52413806643955,
+    "residual_at_50": -25.142932411853337,
+    "thrust_at_50": 33.461083881662596,
+    "weight": 40.12067286748681,
+    "sample": 4
+  },
+  {
+    "mission": 2,
+    "mass": 40.83137304296741,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 16.125964655425626,
+    "grid_residual_max": 11581.617997977539,
+    "residual_at_50": 16.125964655425626,
+    "thrust_at_50": 33.461083881662596,
+    "weight": 400.39244405933835,
+    "sample": 4
+  },
+  {
+    "mission": 3,
+    "mass": 4.091441246939304,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 41.30178633411876,
+    "grid_residual_max": 3518.724946561288,
+    "residual_at_50": 58.553387887004156,
+    "thrust_at_50": 33.461083881662596,
+    "weight": 218.03259507330256,
+    "sample": 4
+  },
+  {
+    "mission": 1,
+    "mass": 4.230864638775585,
+    "converged": false,
+    "roots": [
+      {
+        "v": 4.6665176798958745,
+        "alpha": 127.81174018784667,
+        "elevator": -220.44827181257162,
+        "drag": 37.175747938805266,
+        "thrust": 37.17574793880524
+      }
+    ],
+    "grid_residual_min": -21.765330889061993,
+    "grid_residual_max": 50.005720481018,
+    "residual_at_50": -9.52404039841984,
+    "thrust_at_50": 18.551027425085245,
+    "weight": 41.487858647833384,
+    "sample": 5
+  },
+  {
+    "mission": 2,
+    "mass": 60.34804810937342,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 55.46853993144055,
+    "grid_residual_max": 18324.978587366044,
+    "residual_at_50": 55.46853993144055,
+    "thrust_at_50": 18.551027425085245,
+    "weight": 591.7729597605157,
+    "sample": 5
+  },
+  {
+    "mission": 3,
+    "mass": 4.230864638775585,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 39.407351594850226,
+    "grid_residual_max": 2539.3089150469045,
+    "residual_at_50": 71.86715219634729,
+    "thrust_at_50": 18.551027425085245,
+    "weight": 222.69226229528414,
+    "sample": 5
+  },
+  {
+    "mission": 1,
+    "mass": 4.357718875189923,
+    "converged": false,
+    "roots": [
+      {
+        "v": 3.8860972310358424,
+        "alpha": 147.8387110198998,
+        "elevator": -230.83284148383174,
+        "drag": 45.02233034118486,
+        "thrust": 45.02233034118484
+      }
+    ],
+    "grid_residual_min": -29.668667998357943,
+    "grid_residual_max": 29.124244873064704,
+    "residual_at_50": -7.371733399869802,
+    "thrust_at_50": 16.91278705098005,
+    "weight": 42.73179129011238,
+    "sample": 6
+  },
+  {
+    "mission": 2,
+    "mass": 42.10330894808922,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 17.524494325940147,
+    "grid_residual_max": 7087.163122777244,
+    "residual_at_50": 17.524494325940147,
+    "thrust_at_50": 16.91278705098005,
+    "weight": 412.86504754496286,
+    "sample": 6
+  },
+  {
+    "mission": 3,
+    "mass": 4.357718875189923,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 28.328940863454108,
+    "grid_residual_max": 2052.789917502998,
+    "residual_at_50": 72.90475451298335,
+    "thrust_at_50": 16.91278705098005,
+    "weight": 225.57445602742763,
+    "sample": 6
+  },
+  {
+    "mission": 1,
+    "mass": 4.742893054059939,
+    "converged": false,
+    "roots": [
+      {
+        "v": 5.003780804124132,
+        "alpha": 111.38498038338274,
+        "elevator": -194.68666074803414,
+        "drag": 35.56942554845155,
+        "thrust": 35.56942554845157
+      }
+    ],
+    "grid_residual_min": -20.067253645835418,
+    "grid_residual_max": 60.01172755391886,
+    "residual_at_50": -5.900562220333258,
+    "thrust_at_50": 16.402276886609634,
+    "weight": 46.50880928811176,
+    "sample": 7
+  },
+  {
+    "mission": 2,
+    "mass": 85.95631150721596,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 109.40985387613796,
+    "grid_residual_max": 32494.963517351865,
+    "residual_at_50": 109.40985387613796,
+    "thrust_at_50": 16.402276886609634,
+    "weight": 842.8875906397597,
+    "sample": 7
+  },
+  {
+    "mission": 3,
+    "mass": 4.742893054059939,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 44.120225345822725,
+    "grid_residual_max": 2652.489501222574,
+    "residual_at_50": 82.18217208009722,
+    "thrust_at_50": 16.402276886609634,
+    "weight": 243.37954123591373,
+    "sample": 7
+  },
+  {
+    "mission": 1,
+    "mass": 4.057122248581758,
+    "converged": false,
+    "roots": [
+      {
+        "v": 5.195960532251508,
+        "alpha": 124.48971163997533,
+        "elevator": -221.02278932113975,
+        "drag": 38.79728833475932,
+        "thrust": 38.7972883347594
+      }
+    ],
+    "grid_residual_min": -22.719252560539523,
+    "grid_residual_max": 73.92042033325342,
+    "residual_at_50": -18.217082655927847,
+    "thrust_at_50": 26.619913087760573,
+    "weight": 39.78414076959272,
+    "sample": 8
+  },
+  {
+    "mission": 2,
+    "mass": 63.16913491437603,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 79.26248781118719,
+    "grid_residual_max": 27293.397219143353,
+    "residual_at_50": 79.26248781118719,
+    "thrust_at_50": 26.619913087760573,
+    "weight": 619.4365369703713,
+    "sample": 8
+  },
+  {
+    "mission": 3,
+    "mass": 4.057122248581758,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 49.59688943420409,
+    "grid_residual_max": 3851.019332298201,
+    "residual_at_50": 71.88030941344186,
+    "thrust_at_50": 26.619913087760573,
+    "weight": 230.77764277974222,
+    "sample": 8
+  },
+  {
+    "mission": 1,
+    "mass": 4.332469649760532,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 3.4351961185625686,
+    "grid_residual_max": 64.51522906508647,
+    "residual_at_50": 9.769142132487728,
+    "thrust_at_50": 0.0,
+    "weight": 42.484197385551774,
+    "sample": 9
+  },
+  {
+    "mission": 2,
+    "mass": 41.982324506941815,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 31.229548828847214,
+    "grid_residual_max": 6217.13328265104,
+    "residual_at_50": 31.229548828847214,
+    "thrust_at_50": 0.0,
+    "weight": 411.6786741150714,
+    "sample": 9
+  },
+  {
+    "mission": 3,
+    "mass": 4.332469649760532,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 46.85259484041924,
+    "grid_residual_max": 1804.9385010852673,
+    "residual_at_50": 88.82622481433046,
+    "thrust_at_50": 0.0,
+    "weight": 224.85747236020157,
+    "sample": 9
+  },
+  {
+    "mission": 1,
+    "mass": 4.4783705012081025,
+    "converged": false,
+    "roots": [
+      {
+        "v": 5.637091212840246,
+        "alpha": 92.39629248836535,
+        "elevator": -156.67141221226711,
+        "drag": 31.185957835397403,
+        "thrust": 31.1859578353974
+      }
+    ],
+    "grid_residual_min": -17.334707574822218,
+    "grid_residual_max": 75.00763240653865,
+    "residual_at_50": -13.257808521062904,
+    "thrust_at_50": 22.99569516494146,
+    "weight": 43.91490113484665,
+    "sample": 10
+  },
+  {
+    "mission": 2,
+    "mass": 81.35920522802338,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 115.074043256972,
+    "grid_residual_max": 35991.44283356005,
+    "residual_at_50": 115.074043256972,
+    "thrust_at_50": 22.99569516494146,
+    "weight": 797.8083664659972,
+    "sample": 10
+  },
+  {
+    "mission": 3,
+    "mass": 4.4783705012081025,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 44.331446203913686,
+    "grid_residual_max": 2964.8563477225152,
+    "residual_at_50": 71.62093054753649,
+    "thrust_at_50": 22.99569516494146,
+    "weight": 230.16430407752426,
+    "sample": 10
+  },
+  {
+    "mission": 1,
+    "mass": 4.287912493413803,
+    "converged": false,
+    "roots": [
+      {
+        "v": 4.205890928236022,
+        "alpha": 137.6869399618644,
+        "elevator": -236.08541976911607,
+        "drag": 35.422276415654096,
+        "thrust": 35.422276415655524
+      }
+    ],
+    "grid_residual_min": -22.838241453708086,
+    "grid_residual_max": 32.62166829670044,
+    "residual_at_50": -10.171099017646272,
+    "thrust_at_50": 19.42693328895686,
+    "weight": 42.04726991041574,
+    "sample": 11
+  },
+  {
+    "mission": 2,
+    "mass": 63.00651827294355,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 43.729398160497524,
+    "grid_residual_max": 15342.241345869736,
+    "residual_at_50": 43.729398160497524,
+    "thrust_at_50": 19.42693328895686,
+    "weight": 617.8419181844844,
+    "sample": 11
+  },
+  {
+    "mission": 3,
+    "mass": 4.287912493413803,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 32.34516951190926,
+    "grid_residual_max": 2068.3398767879703,
+    "residual_at_50": 72.9815922943594,
+    "thrust_at_50": 19.42693328895686,
+    "weight": 231.75485594499528,
+    "sample": 11
+  },
+  {
+    "mission": 1,
+    "mass": 4.2562657082004645,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 3.4590025200293066,
+    "grid_residual_max": 67.36451018322825,
+    "residual_at_50": 9.442595027305408,
+    "thrust_at_50": 0.0,
+    "weight": 41.73694153461375,
+    "sample": 12
+  },
+  {
+    "mission": 2,
+    "mass": 44.008650000749675,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 35.037144298746156,
+    "grid_residual_max": 7417.433018747591,
+    "residual_at_50": 35.037144298746156,
+    "thrust_at_50": 0.0,
+    "weight": 431.5488219073513,
+    "sample": 12
+  },
+  {
+    "mission": 3,
+    "mass": 4.2562657082004645,
+    "converged": false,
+    "roots": [],
+    "grid_residual_min": 51.946046500476896,
+    "grid_residual_max": 2122.085863808946,
+    "residual_at_50": 93.81747909891382,
+    "thrust_at_50": 0.0,
+    "weight": 234.4189183308725,
+    "sample": 12
+  }
+]

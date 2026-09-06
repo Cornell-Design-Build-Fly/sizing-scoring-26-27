@@ -31,8 +31,7 @@ def main(
     if round_payload:
         scoring_dv = replace(
             dv,
-            ducks_num=round(dv.ducks_num),
-            pucks_num=round(dv.pucks_num),
+            extra_shipping_containers=round(dv.extra_shipping_containers),
         )
 
     mech_result = evaluate_mechanical_module(
@@ -99,7 +98,10 @@ def main(
         prop_database=prop_database,
         disp_res=disp_res,
     )
-    m3_properties = mech_result.for_mission("M3")
+    # Once deployed, the sensor is not a rigid part of the aircraft. Use the
+    # airplane-only mass properties; aero applies its weight and drag through
+    # the tension-only tow-line model.
+    m3_properties = mech_result.for_mission("M1")
     aero_m3 = aero_main(
         design_vector=resolved_dv,
         parameter_vector=pv,
@@ -113,12 +115,24 @@ def main(
         debug=False,
     )
 
+    m2_payload_mass_kg = sum(
+        item.mass_kg
+        for item in mech_result.all_items
+        if item.category == "mission_2_payload"
+    )
     tot_score, breakdown = total_score(
         resolved_dv,
         aero_m1.lap_time,
         aero_m2.lap_time,
         aero_m3.lap_time,
+        m2_payload_mass_kg,
         scoring_references,
+        takeoff_time_m1_s=aero_m1.mission_overhead_time_s,
+        takeoff_time_m2_s=aero_m2.mission_overhead_time_s,
+        takeoff_time_m3_s=aero_m3.mission_overhead_time_s,
+        successful_landing_m1=aero_m1.flight_profile_feasible,
+        successful_landing_m2=aero_m2.flight_profile_feasible,
+        successful_landing_m3=aero_m3.flight_profile_feasible,
     )
     tot_penalty = (
         mech_result.penalty

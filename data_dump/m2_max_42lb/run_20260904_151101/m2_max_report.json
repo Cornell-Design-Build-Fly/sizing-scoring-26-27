@@ -1,0 +1,63 @@
+{
+  "objective": "maximize M2 payload weight / official five-lap time",
+  "fixed_sensor_weight_lb": 42.0,
+  "extra_shipping_containers": 0,
+  "performance_lb_s": 0.261828486939379,
+  "payload_weight_lb": 42.5,
+  "five_lap_time_s": 162.32,
+  "lap_time_s": 32.46332202624284,
+  "takeoff_mass_lb": 52.4814355050392,
+  "official_m2_score_with_current_reference": 1.0062340115937947,
+  "design_vector": {
+    "wing_span": 1.8148686599729333,
+    "wing_chord": 0.398478581178184,
+    "tail_arm": 0.5533853907268096,
+    "nose_length": 0.13634551745345524,
+    "extra_shipping_containers": 0,
+    "sensor_length_m": 0.5640330925007075,
+    "sensor_weight_kg": 19.05087954,
+    "mission3_sensor_weight_kg": 0.05,
+    "batt_capacity": 2.7893779680283197,
+    "battery_cell_count": 8,
+    "prop_diameter_in": 17.39639597694265,
+    "prop_pitch_in": 11.564326430484488,
+    "motor_kv": 412.29025491782807,
+    "motor_max_power": 2041.3245285593734,
+    "cruise_throttle": 0.7808510687101011,
+    "mission3_cruise_throttle": 0.5,
+    "fuselage_width": 0.127,
+    "fuselage_height": 0.13,
+    "fuselage_box_back_x_m": 0.0,
+    "wing_airfoil": "naca2412",
+    "wing_area": 0.7231862886507666,
+    "hstab_area": 0.2603739193860806,
+    "hstab_span": 0.8838109289651502,
+    "hstab_chord": 0.29460364298838343,
+    "vstab_area": 0.08538276126036135,
+    "vstab_span": 0.27566403015577057,
+    "vstab_chord": 0.3097348653435625,
+    "battery_nominal_voltage_v": 29.6,
+    "batt_energy": 82.56558785363826,
+    "mission3_sensor_length_m": 0.5640330925007075
+  },
+  "optimizer": {
+    "maxiter": 50,
+    "popsize": 12,
+    "workers": -1,
+    "seed": 20260904,
+    "nfev": 10099,
+    "nit": 50,
+    "success": false,
+    "message": "Maximum number of iterations has been exceeded.",
+    "fun": -0.261828486939379
+  },
+  "constraints": {
+    "takeoff_mass_limit_lb": 55.0,
+    "battery_energy_limit_wh": 100.0,
+    "propeller_pitch_diameter_ratio": [
+      0.4,
+      0.8
+    ],
+    "minimum_sensor_length_for_steel_density_m": 0.5321640713782029
+  }
+}

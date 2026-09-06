@@ -1,0 +1,1306 @@
+[
+  {
+    "attempt": 1,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9202 m, permitted limit x=0.8348 m."
+  },
+  {
+    "attempt": 2,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 3,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 6,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8271 m, permitted limit x=0.8098 m."
+  },
+  {
+    "attempt": 7,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 9,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 10,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 11,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.4172 m, permitted limit x=0.4106 m."
+  },
+  {
+    "attempt": 12,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 13,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 14,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 16,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8813 m, permitted limit x=0.3162 m."
+  },
+  {
+    "attempt": 17,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 18,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 19,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 20,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 21,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 22,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8356 m, permitted limit x=0.7248 m."
+  },
+  {
+    "attempt": 23,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 24,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 25,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=1.0003 m, permitted limit x=0.3073 m."
+  },
+  {
+    "attempt": 26,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 27,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9365 m, permitted limit x=0.7993 m."
+  },
+  {
+    "attempt": 29,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 30,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9929 m, permitted limit x=0.8381 m."
+  },
+  {
+    "attempt": 31,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 32,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9664 m, permitted limit x=0.5606 m."
+  },
+  {
+    "attempt": 33,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9088 m, permitted limit x=0.4459 m."
+  },
+  {
+    "attempt": 34,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 35,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 36,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 37,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8287 m, permitted limit x=0.7817 m."
+  },
+  {
+    "attempt": 38,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 39,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 40,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 41,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 42,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9269 m, permitted limit x=0.3550 m."
+  },
+  {
+    "attempt": 43,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8487 m, permitted limit x=0.4614 m."
+  },
+  {
+    "attempt": 44,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 45,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 47,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 48,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 49,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.5508 m, permitted limit x=0.4410 m."
+  },
+  {
+    "attempt": 50,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 52,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 53,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9245 m, permitted limit x=0.6605 m."
+  },
+  {
+    "attempt": 54,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8967 m, permitted limit x=0.5554 m."
+  },
+  {
+    "attempt": 55,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 56,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 57,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 58,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 59,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 60,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8441 m, permitted limit x=0.5202 m."
+  },
+  {
+    "attempt": 61,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 62,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6244 m, permitted limit x=0.5966 m."
+  },
+  {
+    "attempt": 63,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 64,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 65,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9734 m, permitted limit x=0.4815 m."
+  },
+  {
+    "attempt": 66,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9077 m, permitted limit x=0.8743 m."
+  },
+  {
+    "attempt": 69,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 70,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6413 m, permitted limit x=0.3309 m."
+  },
+  {
+    "attempt": 71,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.3897 m, permitted limit x=0.3763 m."
+  },
+  {
+    "attempt": 72,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 75,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 76,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 78,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 79,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 80,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 81,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 82,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9994 m, permitted limit x=0.7519 m."
+  },
+  {
+    "attempt": 84,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 85,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 86,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 87,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 88,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 89,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 90,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=1.0157 m, permitted limit x=0.5259 m."
+  },
+  {
+    "attempt": 91,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 92,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6386 m, permitted limit x=0.3876 m."
+  },
+  {
+    "attempt": 93,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 94,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6416 m, permitted limit x=0.3619 m."
+  },
+  {
+    "attempt": 95,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 96,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 98,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 99,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 100,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 101,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 102,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 104,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 105,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.4880 m, permitted limit x=0.3915 m."
+  },
+  {
+    "attempt": 106,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 107,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 108,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6718 m, permitted limit x=0.5628 m."
+  },
+  {
+    "attempt": 109,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8555 m, permitted limit x=0.8147 m."
+  },
+  {
+    "attempt": 110,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 111,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.5561 m, permitted limit x=0.4976 m."
+  },
+  {
+    "attempt": 112,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 113,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8685 m, permitted limit x=0.5890 m."
+  },
+  {
+    "attempt": 114,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 115,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 116,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 117,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9390 m, permitted limit x=0.6442 m."
+  },
+  {
+    "attempt": 118,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6906 m, permitted limit x=0.6804 m."
+  },
+  {
+    "attempt": 120,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 121,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8364 m, permitted limit x=0.6361 m."
+  },
+  {
+    "attempt": 122,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9215 m, permitted limit x=0.8661 m."
+  },
+  {
+    "attempt": 123,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8978 m, permitted limit x=0.7418 m."
+  },
+  {
+    "attempt": 124,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8050 m, permitted limit x=0.4099 m."
+  },
+  {
+    "attempt": 125,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 127,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 128,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9192 m, permitted limit x=0.4382 m."
+  },
+  {
+    "attempt": 129,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.7251 m, permitted limit x=0.5441 m."
+  },
+  {
+    "attempt": 130,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 131,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.3939 m, permitted limit x=0.3929 m."
+  },
+  {
+    "attempt": 132,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.7704 m, permitted limit x=0.4154 m."
+  },
+  {
+    "attempt": 133,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 134,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 136,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.7664 m, permitted limit x=0.4491 m."
+  },
+  {
+    "attempt": 137,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 138,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.4876 m, permitted limit x=0.3779 m."
+  },
+  {
+    "attempt": 139,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 140,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 141,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 143,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 144,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 145,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 147,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 148,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8962 m, permitted limit x=0.4449 m."
+  },
+  {
+    "attempt": 149,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 150,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.7923 m, permitted limit x=0.4613 m."
+  },
+  {
+    "attempt": 151,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 152,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 153,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 154,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 155,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 156,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8784 m, permitted limit x=0.7420 m."
+  },
+  {
+    "attempt": 157,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 158,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 159,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 160,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6059 m, permitted limit x=0.4798 m."
+  },
+  {
+    "attempt": 161,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 162,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 163,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 164,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 165,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 166,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 168,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 169,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 170,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 171,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 173,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 174,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 175,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 176,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 177,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8950 m, permitted limit x=0.4806 m."
+  },
+  {
+    "attempt": 178,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 179,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 180,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.3762 m, permitted limit x=0.3124 m."
+  },
+  {
+    "attempt": 181,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 183,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 184,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 185,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 187,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 188,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.4214 m, permitted limit x=0.4155 m."
+  },
+  {
+    "attempt": 189,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.7234 m, permitted limit x=0.6339 m."
+  },
+  {
+    "attempt": 190,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 191,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 192,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9255 m, permitted limit x=0.6449 m."
+  },
+  {
+    "attempt": 193,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 194,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 195,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 196,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 197,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 198,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 199,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=1.0205 m, permitted limit x=0.7232 m."
+  },
+  {
+    "attempt": 200,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8073 m, permitted limit x=0.6051 m."
+  },
+  {
+    "attempt": 201,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.3910 m, permitted limit x=0.3596 m."
+  },
+  {
+    "attempt": 202,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 203,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 204,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8123 m, permitted limit x=0.5412 m."
+  },
+  {
+    "attempt": 205,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 206,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 207,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 208,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8649 m, permitted limit x=0.7069 m."
+  },
+  {
+    "attempt": 209,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 211,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 212,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6793 m, permitted limit x=0.5502 m."
+  },
+  {
+    "attempt": 213,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 214,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.7393 m, permitted limit x=0.3912 m."
+  },
+  {
+    "attempt": 215,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 216,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 218,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8635 m, permitted limit x=0.3380 m."
+  },
+  {
+    "attempt": 219,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 220,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 224,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8877 m, permitted limit x=0.4498 m."
+  },
+  {
+    "attempt": 225,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 226,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9173 m, permitted limit x=0.8164 m."
+  },
+  {
+    "attempt": 228,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.4154 m, permitted limit x=0.3351 m."
+  },
+  {
+    "attempt": 229,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 230,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 232,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.3778 m, permitted limit x=0.3465 m."
+  },
+  {
+    "attempt": 235,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 236,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 237,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 238,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 239,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 240,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8540 m, permitted limit x=0.4546 m."
+  },
+  {
+    "attempt": 241,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.5600 m, permitted limit x=0.4910 m."
+  },
+  {
+    "attempt": 242,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 243,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 244,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 245,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 246,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 247,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 248,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 250,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 252,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 254,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 256,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 257,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 258,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 259,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8413 m, permitted limit x=0.4407 m."
+  },
+  {
+    "attempt": 260,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8690 m, permitted limit x=0.5234 m."
+  },
+  {
+    "attempt": 261,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9137 m, permitted limit x=0.4373 m."
+  },
+  {
+    "attempt": 262,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 263,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 264,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9171 m, permitted limit x=0.7236 m."
+  },
+  {
+    "attempt": 265,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 267,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.7149 m, permitted limit x=0.3133 m."
+  },
+  {
+    "attempt": 269,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.5595 m, permitted limit x=0.3831 m."
+  },
+  {
+    "attempt": 270,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 271,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 272,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 273,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.5143 m, permitted limit x=0.4253 m."
+  },
+  {
+    "attempt": 274,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 275,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6727 m, permitted limit x=0.4308 m."
+  },
+  {
+    "attempt": 276,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 277,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 278,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9330 m, permitted limit x=0.8421 m."
+  },
+  {
+    "attempt": 279,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9854 m, permitted limit x=0.5527 m."
+  },
+  {
+    "attempt": 280,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9723 m, permitted limit x=0.8776 m."
+  },
+  {
+    "attempt": 281,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 282,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6552 m, permitted limit x=0.4818 m."
+  },
+  {
+    "attempt": 283,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 284,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9351 m, permitted limit x=0.6428 m."
+  },
+  {
+    "attempt": 286,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.7214 m, permitted limit x=0.6802 m."
+  },
+  {
+    "attempt": 289,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 290,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 291,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6988 m, permitted limit x=0.3754 m."
+  },
+  {
+    "attempt": 292,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.5693 m, permitted limit x=0.3661 m."
+  },
+  {
+    "attempt": 295,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 296,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9756 m, permitted limit x=0.4525 m."
+  },
+  {
+    "attempt": 297,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6865 m, permitted limit x=0.6520 m."
+  },
+  {
+    "attempt": 299,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 300,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 301,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 302,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6382 m, permitted limit x=0.4074 m."
+  },
+  {
+    "attempt": 303,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 304,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9355 m, permitted limit x=0.4354 m."
+  },
+  {
+    "attempt": 305,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 306,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 307,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8134 m, permitted limit x=0.7680 m."
+  },
+  {
+    "attempt": 309,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 310,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8105 m, permitted limit x=0.3601 m."
+  },
+  {
+    "attempt": 311,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8761 m, permitted limit x=0.4013 m."
+  },
+  {
+    "attempt": 312,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.7296 m, permitted limit x=0.6611 m."
+  },
+  {
+    "attempt": 313,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8514 m, permitted limit x=0.4736 m."
+  },
+  {
+    "attempt": 314,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 315,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 316,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 317,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 318,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 320,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 321,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 322,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.3880 m, permitted limit x=0.3218 m."
+  },
+  {
+    "attempt": 323,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8174 m, permitted limit x=0.4510 m."
+  },
+  {
+    "attempt": 324,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 325,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8395 m, permitted limit x=0.4348 m."
+  },
+  {
+    "attempt": 326,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.7786 m, permitted limit x=0.6496 m."
+  },
+  {
+    "attempt": 327,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 328,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 329,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.5016 m, permitted limit x=0.4621 m."
+  },
+  {
+    "attempt": 330,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 331,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 332,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 333,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 334,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 335,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 336,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.9740 m, permitted limit x=0.6085 m."
+  },
+  {
+    "attempt": 337,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.6810 m, permitted limit x=0.6321 m."
+  },
+  {
+    "attempt": 338,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 339,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 340,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 341,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 342,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 343,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 344,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 345,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 346,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.5649 m, permitted limit x=0.5226 m."
+  },
+  {
+    "attempt": 347,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.7837 m, permitted limit x=0.6579 m."
+  },
+  {
+    "attempt": 348,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 349,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 350,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 351,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 352,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 353,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 354,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 355,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 356,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.5234 m, permitted limit x=0.5017 m."
+  },
+  {
+    "attempt": 357,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.4215 m, permitted limit x=0.3466 m."
+  },
+  {
+    "attempt": 358,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 359,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.8561 m, permitted limit x=0.7329 m."
+  },
+  {
+    "attempt": 360,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 361,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 362,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 363,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 364,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 365,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 366,
+    "reason": "The installed Mission-2 fuselage reaches the tail: back edge x=0.3730 m, permitted limit x=0.3426 m."
+  },
+  {
+    "attempt": 367,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 368,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 369,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 370,
+    "reason": "Less than 30 mm wing-to-tail LE clearance beyond wing TE"
+  },
+  {
+    "attempt": 372,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 373,
+    "reason": "Above historical 55 lb M2 limit"
+  },
+  {
+    "attempt": 374,
+    "reason": "Above historical 55 lb M2 limit"
+  }
+]

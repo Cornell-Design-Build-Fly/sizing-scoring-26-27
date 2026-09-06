@@ -51,27 +51,24 @@ DESIGN_CASES = (
         slug="small_payload",
         label="Small payload",
         design_vector=DesignVector(
-            ducks_num=3,
-            pucks_num=1,
-            banner_length=0.50,
+            extra_shipping_containers=0,
+
         ),
     ),
     DesignCase(
         slug="medium_payload",
         label="Medium payload",
         design_vector=DesignVector(
-            ducks_num=7,
-            pucks_num=2,
-            banner_length=2.75,
+            extra_shipping_containers=2,
+
         ),
     ),
     DesignCase(
         slug="large_payload",
         label="Large payload", 
         design_vector=DesignVector(
-            ducks_num=50,
-            pucks_num=11,
-            banner_length=5.00, 
+            extra_shipping_containers=10,
+
         ),
     ),
 )
@@ -267,10 +264,8 @@ def _print_report(case: DesignCase, result: MechanicalResult) -> None:
 def _item_appearance(item) -> tuple[str, float]:
     if item.category == "mission_2_fractional_payload":
         return "black", 1.0
-    if item.name.startswith("Duck "):
+    if item.category == "mission_2_payload":
         return "#e6a700", 0.65
-    if item.name.startswith("Puck "):
-        return "#2878b5", 0.65
     if item.category == "propulsion_and_electronics":
         return "#d9534f", 0.55
     if item.category == "controls":
@@ -281,10 +276,8 @@ def _item_appearance(item) -> tuple[str, float]:
 
 
 def _item_hatch(item) -> str | None:
-    if item.name.startswith("Duck "):
+    if item.category == "mission_2_payload":
         return "///"
-    if item.name.startswith("Puck "):
-        return "xx"
     return None
 
 
@@ -419,8 +412,7 @@ def _save_m2_layout(
     axes[0].set_title("Top projection (x-y)")
     axes[1].set_title("Side projection (x-z)")
     legend_handles = [
-        Patch(facecolor="#e6a700", hatch="///", label="Whole ducks"),
-        Patch(facecolor="#2878b5", hatch="xx", label="Whole pucks"),
+        Patch(facecolor="#e6a700", hatch="///", label="Shipping payload"),
         Patch(facecolor="#d9534f", alpha=0.55, label="Electronics/propulsion"),
         Patch(facecolor="#7f8c8d", alpha=0.22, label="Other permanent mass"),
         Line2D([], [], color="#2ca02c", linestyle="--", label="M2 CG"),

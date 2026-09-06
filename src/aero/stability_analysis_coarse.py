@@ -5,6 +5,7 @@ from aerosandbox.dynamics.flight_dynamics.airplane import get_modes
 from aerosandbox.weights.mass_properties import MassProperties
 
 from src.aero.custom_classes import CruiseCondition, StabilityResult
+from src.aero.static_derivatives import calibrated_static_derivatives
 from src.aero.utils import dict_to_mode_result, require_scalar
 from src.vectors import DesignVector
 
@@ -25,19 +26,15 @@ def estimate_stability_derivatives(
     s, c, b = design_vector.wing_area, design_vector.wing_chord, design_vector.wing_span
     st, sv = design_vector.hstab_area, design_vector.vstab_area
     xcg = require_scalar(mass_props.x_cg)
-    xw, xt = 0.25 * c, design_vector.tail_arm + 0.25 * design_vector.hstab_chord
+    xt = design_vector.tail_arm + 0.25 * design_vector.hstab_chord
     lt = xt - xcg
 
     # Linear finite-wing lift; assumes 15% downwash and 90% tail efficiency.
     aw = 2 * np.pi / (1 + 2 / (b**2 / s))
     at = 2 * np.pi / (1 + 2 / (design_vector.hstab_span**2 / st))
     av = 2 * np.pi / (1 + 2 / (design_vector.vstab_span**2 / sv))
-    eta, downwash = 0.90, 0.15
-    cla_est = aw + eta * st / s * at * (1 - downwash)
-    cma_est = aw * (xcg - xw) / c - eta * st / s * at * (1 - downwash) * lt / c
+    eta = 0.90
     cmq_est = -1.6 * eta * at * (st * lt / (s * c)) * lt / c
-    cla = -1.88073 + 1.37744 * cla_est
-    cma = -0.867205 + 0.448798 * cma_est
     cmq = 3.47831 + 1.98806 * cmq_est  # Calibrated linear pitch derivatives.
 
     # Trim lift and parabolic drag estimates.
@@ -47,17 +44,17 @@ def estimate_stability_derivatives(
 
     # Calibrated tail/body derivatives; assumes small sideslip and yaw rate.
     alpha = require_scalar(cruise_condition.operating_point.alpha)
+    cla, cma, cnb = calibrated_static_derivatives(
+        design_vector, alpha, require_scalar(cruise_condition.elevator_deflection), xcg,
+    )
     cyb_est = -eta * av * sv / s
     cyr_est = -2 * cyb_est * lt / b
     clb_est = -cyb_est * (0.5 * design_vector.vstab_span - require_scalar(mass_props.z_cg)) / b
-    cnb_est = -cyb_est * lt / b - 0.05
     cnr_est = 2 * cyb_est * (lt / b) ** 2
     cyb = -0.0434608 + 0.61645 * cyb_est
     cyr = (0.0662136 + 0.708383 * cyr_est + 0.139102 * cyb_est
            - 0.00943366 * b - 0.0723635 * c + 0.00459817 * alpha)
     clb = 0.0147862 + 0.122881 * cyb_est + 0.228923 * clb_est
-    cnb = (0.0390501 - 14.3090 * cnb_est - 0.243974 * cyb_est
-           + 0.0222092 * b + 0.181675 * c - 0.0140441 * alpha)
     cnr = 0.0165917 + 1.17482 * cnr_est
 
     # Rectangular-wing damping with calibrated buildup bias.

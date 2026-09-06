@@ -42,6 +42,9 @@ class CruiseCondition:
     throttle: float | None = None # TODO - Figure out throttle situation 
     elevator_deflection: float = 0.0
     tail_incidence: float = 0.0
+    # Closest attempted trim: dimensionless search violation, not flight credit.
+    trim_violation: float | None = None
+    trim_failure_reason: str = ""
 
 @dataclass(frozen=True)
 class ModeResult:

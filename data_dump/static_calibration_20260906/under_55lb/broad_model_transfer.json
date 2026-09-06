@@ -1,0 +1,44 @@
+{
+  "CLa": {
+    "mae": 0.4043393321097321,
+    "rmse": 0.4821348467034844,
+    "bias": -0.1939128159576576,
+    "p95_absolute_error": 0.9416970379343876,
+    "max_absolute_error": 1.192564957150088,
+    "correlation": 0.7991745094850738,
+    "sign_agreement": 1.0,
+    "false_pass": 0,
+    "false_rejection": 0
+  },
+  "Cma": {
+    "mae": 0.20663902281164595,
+    "rmse": 0.26930133474196394,
+    "bias": 0.06641692539711336,
+    "p95_absolute_error": 0.547170986782509,
+    "max_absolute_error": 0.9503705592919356,
+    "correlation": 0.9613438449130072,
+    "sign_agreement": 0.96,
+    "false_pass": 2,
+    "false_rejection": 4
+  },
+  "Cnb": {
+    "mae": 0.00771739955982623,
+    "rmse": 0.011043863353023908,
+    "bias": -0.003929790523055458,
+    "p95_absolute_error": 0.02170453040851408,
+    "max_absolute_error": 0.043978697046721374,
+    "correlation": 0.9842241856174628,
+    "sign_agreement": 0.8866666666666667,
+    "false_pass": 4,
+    "false_rejection": 13
+  },
+  "static_margin": {
+    "mae": 0.032616472529512684,
+    "max_absolute_error": 0.11471850924761251
+  },
+  "cg_trends": {
+    "pitch_slope_positive": 50,
+    "yaw_slope_negative": 50,
+    "designs": 50
+  }
+}

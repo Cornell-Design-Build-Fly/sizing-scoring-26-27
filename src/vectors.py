@@ -14,15 +14,27 @@ FUSELAGE_BOX_SIZE = 0.13
 FUSELAGE_START_WIDTH = 0.0762
 FUSELAGE_SHAPE = 8.0
 FUSELAGE_TIP_SIZE = 0.01
+INCH_M = 0.0254
+SENSOR_DIAMETER_M = 3.0 * INCH_M
+SENSOR_STEEL_DENSITY_KG_M3 = 7850.0
+MIN_SENSOR_LENGTH_M = 6.0 * INCH_M
+MAX_SENSOR_LENGTH_M = 24.0 * INCH_M
+MAX_EXTRA_SHIPPING_CONTAINERS = 10
+SENSOR_CROSS_SECTION_M2 = np.pi * (0.5 * SENSOR_DIAMETER_M) ** 2
+MIN_SENSOR_WEIGHT_KG = (
+    SENSOR_STEEL_DENSITY_KG_M3 * SENSOR_CROSS_SECTION_M2 * MIN_SENSOR_LENGTH_M
+)
+MAX_SENSOR_WEIGHT_KG = (
+    SENSOR_STEEL_DENSITY_KG_M3 * SENSOR_CROSS_SECTION_M2 * MAX_SENSOR_LENGTH_M
+)
 
 OPT_VARS = [
     ("wing_span", (0.914, 1.524)),
     ("wing_chord", (0.12, 0.40)),
     ("tail_arm", (0.3, 0.9)),
     ("nose_length", (0.08, 0.3)),
-    ("ducks_num", (3, 150)),
-    ("pucks_num", (1, 50)),
-    ("banner_length", (0.5, 5.0)),
+    ("extra_shipping_containers", (0, MAX_EXTRA_SHIPPING_CONTAINERS)),
+    ("sensor_weight_kg", (MIN_SENSOR_WEIGHT_KG, MAX_SENSOR_WEIGHT_KG)),
     ("batt_capacity", (1.0, 4.5)),
     ("prop_diameter_in", (10.0, 25.0)),
     ("prop_pitch_in", (5.0, 18.0)),
@@ -46,10 +58,13 @@ class DesignVector:
     tail_arm: float = 0.845 # [m]
     nose_length: float = 0.254 # [m]
 
-    # Mission payloads
-    ducks_num: float = 3
-    pucks_num: float = 1
-    banner_length: float = 3.8 # [m]
+    # Mission payloads. The sensor is modeled as a solid steel cylinder with a
+    # fixed 3-inch diameter and steel density, so its length is derived from
+    # its optimized weight. This variable counts only the optional
+    # shipping-container simulators; the real loaded container is always flown
+    # in Mission 2.
+    extra_shipping_containers: float = 0
+    sensor_weight_kg: float = MIN_SENSOR_WEIGHT_KG
 
     # Prop components
     batt_capacity: float = 4.5 # [Ah]
@@ -61,7 +76,7 @@ class DesignVector:
     mission3_cruise_throttle: float = 0.85
 
     # Packaging geometry. ``fuselage_width`` is the starting width for the
-    # mechanical module; it may grow by duck-width increments during M2 sizing.
+    # mechanical module; it may grow by container-width increments during M2 sizing.
     # These inputs are not currently included in OPT_VARS.
     fuselage_width: float = FUSELAGE_START_WIDTH
     fuselage_height: float = FUSELAGE_BOX_SIZE
@@ -75,6 +90,8 @@ class DesignVector:
     vstab_area:       float = field(init=False)
     vstab_span:       float = field(init=False)
     vstab_chord:      float = field(init=False)
+    sensor_volume_m3: float = field(init=False)
+    sensor_length_m:  float = field(init=False)
     batt_energy:      float = field(init=False)
 
 
@@ -87,8 +104,15 @@ class DesignVector:
             or self.nose_length <= 0
             or self.fuselage_width <= 0
             or self.fuselage_height <= 0
+            or not np.isfinite(self.sensor_weight_kg)
+            or not MIN_SENSOR_WEIGHT_KG <= self.sensor_weight_kg <= MAX_SENSOR_WEIGHT_KG
+            or not np.isfinite(self.extra_shipping_containers)
+            or not 0 <= self.extra_shipping_containers <= MAX_EXTRA_SHIPPING_CONTAINERS
         ):
-            raise ValueError("All DesignVector primary dimensions must be positive and expressed in meters.")
+            raise ValueError(
+                "Design-vector dimensions and payload values must be finite and "
+                "within their configured bounds."
+            )
 
         self.wing_area   = self.wing_span * self.wing_chord
 
@@ -99,6 +123,13 @@ class DesignVector:
         self.vstab_area  = V_V * self.wing_area * self.wing_span / self.tail_arm
         self.vstab_span  = np.sqrt(AR_V * self.vstab_area)
         self.vstab_chord = self.vstab_area / self.vstab_span
+
+        self.sensor_volume_m3 = (
+            self.sensor_weight_kg / SENSOR_STEEL_DENSITY_KG_M3
+        )
+        self.sensor_length_m = (
+            self.sensor_volume_m3 / SENSOR_CROSS_SECTION_M2
+        )
 
         self.batt_energy = self.batt_capacity * ParameterVector.voltage
 
@@ -158,7 +189,7 @@ class ParameterVector:
     """A vector of parameters that can be used for non-geometry optimization."""
     gravity = 9.806 # [m/s^2]
     rho = 1.225 # [kg/m^3]
-    voltage = 22.2 # [V]
+    voltage = 29.6 # [V]
     temp = 20.0 # [C]
     pressure = 101325 # [Pa]
 
@@ -184,9 +215,8 @@ class ASBDesignVector(DesignVector):
             wing_chord=design_vector.wing_chord * unit_scale,
             tail_arm=design_vector.tail_arm * unit_scale,
             nose_length=design_vector.nose_length * unit_scale,
-            ducks_num=design_vector.ducks_num,
-            pucks_num=design_vector.pucks_num,
-            banner_length=design_vector.banner_length * unit_scale,
+            extra_shipping_containers=design_vector.extra_shipping_containers,
+            sensor_weight_kg=design_vector.sensor_weight_kg,
             batt_capacity=design_vector.batt_capacity,
             fuselage_width=design_vector.fuselage_width * unit_scale,
             fuselage_height=design_vector.fuselage_height * unit_scale,

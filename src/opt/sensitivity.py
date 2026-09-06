@@ -140,7 +140,7 @@ def _latest_run_dir(output_dir: Path) -> Path:
 
 
 def _classify_regime(row: dict) -> str:
-    payload_count = row["ducks_num"] + row["pucks_num"]
+    payload_count = row["extra_shipping_containers"]
     if payload_count >= 40 or row["resolved_fuselage_width_m"] >= 0.18:
         return "cargo"
     if payload_count <= 10 and row["banner_length_m"] >= 3.0:
@@ -170,9 +170,8 @@ def summarize_sensitivity_run(case: SensitivityCase, run_dir: Path) -> dict:
         "m1_score": report["breakdown"]["m1"],
         "m2_score": report["breakdown"]["m2"],
         "m3_score": report["breakdown"]["m3"],
-        "ducks_num": int(vector["ducks_num"]),
-        "pucks_num": int(vector["pucks_num"]),
-        "payload_count": int(vector["ducks_num"]) + int(vector["pucks_num"]),
+        "extra_shipping_containers": int(vector["extra_shipping_containers"]),
+        "payload_count": int(vector["extra_shipping_containers"]),
         "banner_length_m": vector["banner_length"],
         "wing_span_m": vector["wing_span"],
         "wing_chord_m": vector["wing_chord"],
@@ -246,7 +245,7 @@ def plot_sensitivity_summary(rows: list[dict], path: Path) -> Path:
                 textcoords="offset points",
             )
 
-    axes[0, 0].set_xlabel("Payload count (ducks + pucks)")
+    axes[0, 0].set_xlabel("Extra shipping containers")
     axes[0, 0].set_ylabel("Banner length [m]")
     axes[0, 0].set_title("Optimized Regime Map")
     axes[0, 0].grid(True, alpha=0.25)
