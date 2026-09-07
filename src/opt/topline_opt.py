@@ -92,7 +92,7 @@ class ToplineConfig:
     # 300, not 100: decoupling sensor length took the design vector from 15 to
     # 17 variables, and 100 generations no longer converges. Same seed and
     # config, 100 gen -> 7.1232 while 300 gen -> 7.4917 (2026-09-04 study).
-    maxiter: int | None = 150
+    maxiter: int | None = 200
     target_seconds: float = TARGET_RUN_SECONDS
     assumed_evals_per_second: float = TARGET_EVALS_PER_SECOND
     init: str = "sobol"
