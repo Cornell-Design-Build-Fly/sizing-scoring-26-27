@@ -1,0 +1,267 @@
+{
+  "input": {
+    "wing_span": 1.788451306001178,
+    "wing_chord": 0.1814529119683276,
+    "tail_arm": 0.49005641171155484,
+    "nose_length": 0.22314163731385284,
+    "extra_shipping_containers": 0.0,
+    "sensor_length_m": 0.4100933277605101,
+    "sensor_diameter_m": 0.07619999999999999,
+    "sensor_weight_kg": 7.428393693322542,
+    "mission3_sensor_weight_kg": 4.7955853964556665,
+    "batt_capacity": 2.8136906853383756,
+    "battery_cell_count": 8,
+    "prop_diameter_in": 20.0,
+    "prop_pitch_in": 15.0,
+    "mission3_prop_diameter_in": 22.0,
+    "mission3_prop_pitch_in": 13.0,
+    "motor_kv": 231.0295662397389,
+    "motor_max_power": 1984.4993524116353,
+    "takeoff_flap_deflection_deg": 38.410493912345146,
+    "cruise_throttle": 1.0,
+    "mission3_cruise_throttle": 1.0,
+    "fuselage_width": 0.127,
+    "fuselage_height": 0.13,
+    "fuselage_box_back_x_m": 0.0,
+    "wing_airfoil": "naca2412",
+    "wing_area": 0.3245196973874723,
+    "hstab_area": 0.06007986292473693,
+    "hstab_span": 0.42454633289455085,
+    "hstab_chord": 0.1415154442981836,
+    "vstab_area": 0.042635818772767,
+    "vstab_span": 0.19479701924763282,
+    "vstab_chord": 0.2188730553344189,
+    "battery_nominal_voltage_v": 29.6,
+    "batt_energy": 83.28524428601592,
+    "mission3_sensor_length_m": 0.4100933277605101
+  },
+  "integrated_baseline_score": 5.763199516606509,
+  "baseline_seconds": 9.460706199984998,
+  "missions": {
+    "1": {
+      "inertial_mass": 3.561978715369086,
+      "supported_mass": 3.561978715369086,
+      "cg": [
+        -0.03964951289723441,
+        0.0,
+        -0.04450421244372304
+      ],
+      "inertia_eigenvalues": [
+        0.1812365759046139,
+        0.20799867928863258,
+        0.38160986034516486
+      ],
+      "thrust_curve": [
+        -0.01685176798907472,
+        -0.7193306022144434,
+        71.340067064199
+      ],
+      "trim": {
+        "converged": true,
+        "velocity": 44.53997767745115,
+        "alpha": -1.1193104112451242,
+        "elevator": -2.7345470493600343,
+        "stall_speed": 12.317098197072324
+      },
+      "stability": {
+        "phugoid": {
+          "eigenvalue_real": -0.03700209296497354,
+          "eigenvalue_imag": 0.3092131834531803,
+          "damping_ratio": 0.11881761729124098,
+          "eigenvalue_imag_approx": 0.3114827570716014,
+          "damping_ratio_approx": 0.11884184847682597
+        },
+        "short_period": {
+          "eigenvalue_real": -5.229062875397622,
+          "eigenvalue_imag": 35.76066547204248,
+          "damping_ratio": 0.14468526206537027,
+          "eigenvalue_imag_approx": null,
+          "damping_ratio_approx": null
+        },
+        "dutch_roll": {
+          "eigenvalue_real": -1.5265379705532838,
+          "eigenvalue_imag": 5.185235259394674,
+          "damping_ratio": 0.2824164101243912,
+          "eigenvalue_imag_approx": null,
+          "damping_ratio_approx": null
+        },
+        "spiral": {
+          "eigenvalue_real": 0.012515249957959784,
+          "eigenvalue_imag": 0.0,
+          "damping_ratio": -1.0,
+          "eigenvalue_imag_approx": null,
+          "damping_ratio_approx": null
+        },
+        "roll_subsidence": {
+          "eigenvalue_real": -45.30827568624714,
+          "eigenvalue_imag": 0.0,
+          "damping_ratio": 1.0,
+          "eigenvalue_imag_approx": null,
+          "damping_ratio_approx": null
+        },
+        "Cma": -3.79707282206607,
+        "Cnb": 0.014178138842569367,
+        "static_margin": 0.7033112171025079,
+        "neutral_point_x_m": 0.0879683554660043,
+        "static_margin_from_cma": null,
+        "spiral_time_to_double_s": 55.384205899866906
+      },
+      "verified_residuals": {
+        "lift": 3.661672513306498e-14,
+        "drag": 1.9071211006804674e-15,
+        "pitch": -1.4854530539391614e-14
+      },
+      "seconds": 10.402948099886999
+    },
+    "2": {
+      "inertial_mass": 11.217168593691628,
+      "supported_mass": 11.217168593691628,
+      "cg": [
+        0.048121186821285494,
+        0.0,
+        -0.057467943836095686
+      ],
+      "inertia_eigenvalues": [
+        0.20497324113808657,
+        0.3948848542568648,
+        0.565337796337835
+      ],
+      "thrust_curve": [
+        -0.01685176798907472,
+        -0.7193306022144434,
+        71.340067064199
+      ],
+      "trim": {
+        "converged": true,
+        "velocity": 44.165058178458565,
+        "alpha": 0.8655431033041625,
+        "elevator": -2.561925081187366,
+        "stall_speed": 21.870683543486024
+      },
+      "stability": {
+        "phugoid": {
+          "eigenvalue_real": -0.013525312693278769,
+          "eigenvalue_imag": 0.31377152870758307,
+          "damping_ratio": 0.04306561715542162,
+          "eigenvalue_imag_approx": 0.31412695055945405,
+          "damping_ratio_approx": 0.043074399783674076
+        },
+        "short_period": {
+          "eigenvalue_real": -1.5050822196061138,
+          "eigenvalue_imag": 14.478713722916558,
+          "damping_ratio": 0.10339424406202366,
+          "eigenvalue_imag_approx": null,
+          "damping_ratio_approx": null
+        },
+        "dutch_roll": {
+          "eigenvalue_real": -0.6752338868775565,
+          "eigenvalue_imag": 2.259271560544072,
+          "damping_ratio": 0.2863565473521358,
+          "eigenvalue_imag_approx": null,
+          "damping_ratio_approx": null
+        },
+        "spiral": {
+          "eigenvalue_real": 0.006049229562141923,
+          "eigenvalue_imag": 0.0,
+          "damping_ratio": -1.0,
+          "eigenvalue_imag_approx": null,
+          "damping_ratio_approx": null
+        },
+        "roll_subsidence": {
+          "eigenvalue_real": -46.35489526167439,
+          "eigenvalue_imag": 0.0,
+          "damping_ratio": 1.0,
+          "eigenvalue_imag_approx": null,
+          "damping_ratio_approx": null
+        },
+        "Cma": -1.1894050839042978,
+        "Cnb": 0.004092266411380712,
+        "static_margin": 0.19740630873820678,
+        "neutral_point_x_m": 0.08394113638275183,
+        "static_margin_from_cma": null,
+        "spiral_time_to_double_s": 114.58437366931639
+      },
+      "verified_residuals": {
+        "lift": -3.100675408679002e-13,
+        "drag": 3.020736120798996e-14,
+        "pitch": 6.315463347275246e-13
+      },
+      "seconds": 3.244787700008601
+    },
+    "3": {
+      "inertial_mass": 3.561978715369086,
+      "supported_mass": 9.636643443077531,
+      "cg": [
+        -0.03964951289723441,
+        0.0,
+        -0.04450421244372304
+      ],
+      "inertia_eigenvalues": [
+        0.1812365759046139,
+        0.20799867928863258,
+        0.38160986034516486
+      ],
+      "thrust_curve": [
+        -0.0017767492954995326,
+        -1.910256164365816,
+        89.3238038596646
+      ],
+      "trim": {
+        "converged": true,
+        "velocity": 38.01673936085409,
+        "alpha": 1.8909077442330622,
+        "elevator": -9.022504274507977,
+        "stall_speed": 20.47395820798647
+      },
+      "stability": {
+        "phugoid": {
+          "eigenvalue_real": -0.04309289686161635,
+          "eigenvalue_imag": 0.598570417166844,
+          "damping_ratio": 0.0718071804306558,
+          "eigenvalue_imag_approx": 0.36492964099823794,
+          "damping_ratio_approx": 0.043665576483803065
+        },
+        "short_period": {
+          "eigenvalue_real": -4.7115928368432165,
+          "eigenvalue_imag": 33.82410464401439,
+          "damping_ratio": 0.1379648193643685,
+          "eigenvalue_imag_approx": null,
+          "damping_ratio_approx": null
+        },
+        "dutch_roll": {
+          "eigenvalue_real": -1.264770340750374,
+          "eigenvalue_imag": 4.298072928143147,
+          "damping_ratio": 0.2822959971341033,
+          "eigenvalue_imag_approx": null,
+          "damping_ratio_approx": null
+        },
+        "spiral": {
+          "eigenvalue_real": 0.022114656196354332,
+          "eigenvalue_imag": 0.0,
+          "damping_ratio": -1.0,
+          "eigenvalue_imag_approx": null,
+          "damping_ratio_approx": null
+        },
+        "roll_subsidence": {
+          "eigenvalue_real": -47.889235569502944,
+          "eigenvalue_imag": 0.0,
+          "damping_ratio": 1.0,
+          "eigenvalue_imag_approx": null,
+          "damping_ratio_approx": null
+        },
+        "Cma": -4.65370490384263,
+        "Cnb": 0.013384884804798103,
+        "static_margin": 0.7163450712060372,
+        "neutral_point_x_m": 0.09033338624726002,
+        "static_margin_from_cma": null,
+        "spiral_time_to_double_s": 31.34333965699239
+      },
+      "verified_residuals": {
+        "lift": -1.1389806679465875e-11,
+        "drag": 8.71871820618954e-13,
+        "pitch": 5.7350125936600145e-12
+      },
+      "seconds": 3.2272286999505013
+    }
+  }
+}

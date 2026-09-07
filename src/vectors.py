@@ -85,7 +85,16 @@ MAX_BATT_CAPACITY_AH = MAX_PROPULSION_ENERGY_WH / battery_nominal_voltage_v(
     DEFAULT_BATTERY_CELL_COUNT
 )
 
-OPT_VARS = [
+
+# ============================================================
+# OPTIMIZATION VARIABLES
+#
+# ALL_OPT_VARS defines every variable that *can* be optimized.
+# FIXED_OPT_VALUES contains variables deliberately held fixed.
+# OPT_VARS is built automatically from the variables that remain free.
+# ============================================================
+
+ALL_OPT_VARS = [
     ("wing_span", (0.914, 1.8288)),
     ("wing_chord", (0.12, 0.40)),
     ("tail_arm", (0.3, 0.9)),
@@ -101,29 +110,82 @@ OPT_VARS = [
         (MIN_MISSION3_SENSOR_WEIGHT_KG, OPTIMIZER_SENSOR_WEIGHT_UPPER_KG),
     ),
     ("batt_capacity", (1.0, MAX_BATT_CAPACITY_AH)),
-    # Mission 1 and Mission 2 propeller request. Integrated scoring resolves
-    # the continuous optimizer coordinates to the nearest real two-blade
-    # catalog product before evaluating the airplane.
     ("prop_diameter_in", (10.0, 25.0)),
-    # The database reaches 3 in and the P/D >= 0.4 constraint imposes an
-    # effective 4 in floor at the 10 in minimum diameter.  A 5 in box bound was
-    # therefore an artificial active cap in the latest optimum.
     ("prop_pitch_in", (4.0, 18.0)),
-    # Mission 3 propeller request, resolved independently to the catalog.
     ("mission3_prop_diameter_in", (10.0, 25.0)),
     ("mission3_prop_pitch_in", (4.0, 18.0)),
     ("motor_kv", (200.0, 650.0)),
     ("motor_max_power", (1000.0, 3000.0)),
-    # Existing plain-flap hardware; only its commanded takeoff deflection is
-    # optimized. Geometry/type stay fixed until their mass, aileron-space and
-    # control-authority trades are modeled.
     ("takeoff_flap_deflection_deg", (0.0, 40.0)),
-    # ``cruise_throttle`` and ``mission3_cruise_throttle`` are deliberately NOT
-    # optimizer variables. Cruise power is now set by the mission energy budget
-    # (see src/prop/mission_performance.py): the aircraft flies at the highest
-    # power that still empties no more than the legal pack over the mission
-    # window, and flying below that is never worth points. The fields remain as
-    # an optional hard throttle ceiling for studies.
+]
+
+
+# ============================================================
+# FIX VARIABLES HERE
+#
+# Variables listed here are completely removed from SciPy's
+# optimization vector. Variables NOT listed here remain free.
+#
+# With the settings below, the five free variables are:
+#   wing_span
+#   wing_chord
+#   tail_arm
+#   nose_length
+#   takeoff_flap_deflection_deg
+# ============================================================
+
+FIXED_OPT_VALUES: dict[str, float] = {
+    "extra_shipping_containers": 0.0,
+
+    "sensor_length_m": 10.5 * INCH_M,
+    "sensor_diameter_m": 3.0 * INCH_M,
+    "sensor_weight_kg": 9.54,
+    "mission3_sensor_weight_kg": 7.02,
+
+    "batt_capacity": 3.342,
+
+    "prop_diameter_in": 20.0,
+    "prop_pitch_in": 15.0,
+
+    "mission3_prop_diameter_in": 20.0,
+    "mission3_prop_pitch_in": 15.0,
+
+    "motor_kv": 246.75,
+    "motor_max_power": 2029.36,
+
+    # Leave this commented so flap deflection remains free.
+    # "takeoff_flap_deflection_deg": 20.0,
+}
+
+
+# Validate fixed-variable names and values before constructing the free list.
+_ALL_OPT_BOUNDS = dict(ALL_OPT_VARS)
+
+for _name, _value in FIXED_OPT_VALUES.items():
+    if _name not in _ALL_OPT_BOUNDS:
+        raise ValueError(
+            f"Unknown fixed optimizer variable {_name!r}. "
+            f"Valid variables are: {list(_ALL_OPT_BOUNDS)}"
+        )
+
+    _lower, _upper = _ALL_OPT_BOUNDS[_name]
+    if not np.isfinite(_value):
+        raise ValueError(
+            f"Fixed value for {_name!r} must be finite, got {_value}."
+        )
+
+    if not _lower <= _value <= _upper:
+        raise ValueError(
+            f"Fixed value for {_name!r} must lie inside "
+            f"[{_lower}, {_upper}], got {_value}."
+        )
+
+
+# This is the list SciPy actually sees.
+OPT_VARS = [
+    (name, bounds)
+    for name, bounds in ALL_OPT_VARS
+    if name not in FIXED_OPT_VALUES
 ]
 
 @dataclass
@@ -322,25 +384,47 @@ class DesignVector:
         )
 
     def to_array(self) -> np.ndarray:
-        """Returns the optimizer variables in the same order as bounds()."""
-        return np.array([getattr(self, name) for name, _ in OPT_VARS], dtype=float)
+        """Return only variables that are actively optimized by SciPy."""
+        return np.array(
+            [getattr(self, name) for name, _ in OPT_VARS],
+            dtype=float,
+        )
 
     @staticmethod
     def from_array(x):
-        """Builds a design vector from an optimizer array."""
-        if len(x) != len(OPT_VARS):
-            raise ValueError(f"Input array must have length {len(OPT_VARS)}, but got {len(x)}.")
-        kwargs = {name: float(value) for value, (name, _) in zip(x, OPT_VARS)}
-        return DesignVector(**kwargs) # type: ignore
+        """Build a full DesignVector from the free optimizer variables."""
+        values = np.asarray(x, dtype=float)
+
+        if len(values) != len(OPT_VARS):
+            raise ValueError(
+                f"Input array must have length {len(OPT_VARS)}, "
+                f"but got {len(values)}."
+            )
+
+        kwargs = {
+            name: float(value)
+            for value, (name, _) in zip(values, OPT_VARS)
+        }
+
+        # Put all deliberately fixed variables back into the full aircraft
+        # design before constructing the DesignVector.
+        kwargs.update(
+            {
+                name: float(value)
+                for name, value in FIXED_OPT_VALUES.items()
+            }
+        )
+
+        return DesignVector(**kwargs)  # type: ignore
 
     @staticmethod
     def bounds() -> list[tuple[float, float]]:
-        """Returns SciPy-style bounds in the same order as to_array()."""
+        """Return bounds for only the actively optimized variables."""
         return [bounds for _, bounds in OPT_VARS]
 
     @staticmethod
     def opt_names() -> list[str]:
-        """Returns the optimizer variable names in array order."""
+        """Return the actively optimized variable names in array order."""
         return [name for name, _ in OPT_VARS]
 
     def disp_vars(self, optimization_names: list[str] | None = None) -> str:
@@ -360,13 +444,24 @@ class DesignVector:
             if not dataclass_field.init
         ]
         fixed_names = [
-            name for name, dataclass_field in self.__dataclass_fields__.items()
-            if dataclass_field.init and name not in opt_names
+            name
+            for name in FIXED_OPT_VALUES
+            if name in self.__dataclass_fields__
+        ]
+        other_nonoptimized_names = [
+            name
+            for name, dataclass_field in self.__dataclass_fields__.items()
+            if (
+                dataclass_field.init
+                and name not in opt_names
+                and name not in fixed_names
+            )
         ]
 
         sections = [
             ("--- Optimization Variables ---", ordered_opt_names),
-            ("--- Fixed Variables ---", fixed_names),
+            ("--- Fixed Optimizer Variables ---", fixed_names),
+            ("--- Other Non-Optimized Inputs ---", other_nonoptimized_names),
             ("--- Derived Variables ---", derived_names),
         ]
 
