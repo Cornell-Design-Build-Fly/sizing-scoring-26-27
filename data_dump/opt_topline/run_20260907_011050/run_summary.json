@@ -1,0 +1,134 @@
+{
+  "finished_at": "2026-09-07T02:53:16-04:00",
+  "elapsed_seconds": 5092.514171200106,
+  "database_load_seconds_parent": 0.5950311999768019,
+  "nfev": 14336,
+  "nit": 100,
+  "success": false,
+  "message": "Completed configured multimodal island generation budget.",
+  "best_optimization_objective": -6.25132110805023,
+  "best_optimization_score": 6.25132110805023,
+  "best_official_score": 6.177115554156079,
+  "reevaluated_best_score": 6.177115554156079,
+  "workers": -1,
+  "variables": 5,
+  "popsize": 20,
+  "expected_population_size": 128,
+  "maxiter": 100,
+  "target_candidate_slots": 14336,
+  "assumed_evals_per_second": 80.0,
+  "target_seconds": 3600.0,
+  "observed_nfev_per_second": 2.815112441134664,
+  "observed_candidate_slots_per_second": 2.815112441134664,
+  "scipy_version": "1.18.0",
+  "python_version": "3.14.6",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "cpu_count": 8,
+  "config": {
+    "workers": -1,
+    "popsize": 20,
+    "maxiter": 100,
+    "target_seconds": 3600.0,
+    "assumed_evals_per_second": 80.0,
+    "init": "sobol",
+    "island_count": 6,
+    "epoch_generations": 10,
+    "niche_radius": 0.18,
+    "restart_duplicate_islands": true,
+    "mutation": [
+      0.5,
+      1.0
+    ],
+    "recombination": 0.7,
+    "tol": 1e-05,
+    "atol": 0.0,
+    "polish": false,
+    "seed": 20260808,
+    "output_dir": "data_dump\\opt_topline",
+    "round_payload": true,
+    "continuous_lap_scoring": true,
+    "suppress_module_output": true,
+    "callback_score_best": true,
+    "save_best_visualization": true,
+    "scoring_references": {
+      "best_m2_weight_per_time_kg_s": 0.08270440400684,
+      "best_m3_lap_weight_kg": 114.7089744493,
+      "best_ground_weight_height_kg_in": 952.543977,
+      "seconds_per_mission": 300.0,
+      "ground_time_s": 20.0,
+      "m3_deployment_time_s": 0.0,
+      "m3_recovery_time_s": 0.0
+    },
+    "battery_cell_count": 8,
+    "optimize_battery_cell_count": false,
+    "battery_cell_count_bounds": [
+      8,
+      8
+    ],
+    "battery_cell_count_choices": [
+      8
+    ]
+  },
+  "fixed_opt_values": {
+    "extra_shipping_containers": 0.0,
+    "sensor_length_m": 0.2667,
+    "sensor_diameter_m": 0.07619999999999999,
+    "sensor_weight_kg": 9.54,
+    "mission3_sensor_weight_kg": 7.02,
+    "batt_capacity": 3.342,
+    "prop_diameter_in": 20.0,
+    "prop_pitch_in": 15.0,
+    "mission3_prop_diameter_in": 20.0,
+    "mission3_prop_pitch_in": 15.0,
+    "motor_kv": 246.75,
+    "motor_max_power": 2029.36
+  },
+  "scoring_references": {
+    "flight_window_s": 300.0,
+    "ground_time_s": 20.0,
+    "usable_window_s": 280.0,
+    "mission_2": {
+      "best_weight_per_time_kg_s": 0.08270440400684,
+      "required_laps": 5
+    },
+    "mission_3": {
+      "best_lap_weight_kg": 114.7089744493,
+      "deployment_time_s": 0.0,
+      "recovery_time_s": 0.0
+    },
+    "ground": {
+      "drop_height_in": 60.0,
+      "reference_sensor_weight_lb": 35.0,
+      "best_weight_height_kg_in": 952.543977
+    }
+  },
+  "bounds": {
+    "wing_span": [
+      0.914,
+      1.8288
+    ],
+    "wing_chord": [
+      0.12,
+      0.4
+    ],
+    "tail_arm": [
+      0.3,
+      0.9
+    ],
+    "nose_length": [
+      0.08,
+      0.3
+    ],
+    "takeoff_flap_deflection_deg": [
+      0.0,
+      40.0
+    ]
+  },
+  "integrality": {
+    "wing_span": false,
+    "wing_chord": false,
+    "tail_arm": false,
+    "nose_length": false,
+    "takeoff_flap_deflection_deg": false
+  }
+}

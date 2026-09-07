@@ -53,9 +53,9 @@ from src.prop.mission_performance import DEFAULT_PROPULSION_REQUIREMENTS
 from src.vectors import (
     ASBDesignVector,
     DesignVector,
+    FIXED_OPT_VALUES,
     ParameterVector,
     maximum_sensor_weight_kg,
-    sensor_length_from_weight_kg,
 )
 
 
@@ -86,11 +86,11 @@ class ToplineConfig:
     """Settings for the long, SciPy-managed top-line DE run."""
 
     workers: int = -1
-    popsize: int = 10
+    popsize: int = 20
     # 300, not 100: decoupling sensor length took the design vector from 15 to
     # 16 variables, and 100 generations no longer converges. Same seed and
     # config, 100 gen -> 7.1232 while 300 gen -> 7.4917 (2026-09-04 study).
-    maxiter: int | None = 300
+    maxiter: int | None = 100
     target_seconds: float = TARGET_RUN_SECONDS
     assumed_evals_per_second: float = TARGET_EVALS_PER_SECOND
     init: str = "sobol"
@@ -117,18 +117,6 @@ class ToplineConfig:
     battery_cell_count_choices: tuple[int, ...] | None = (8, 8)
 
     def __post_init__(self) -> None:
-        design_bounds = dict(zip(DesignVector.opt_names(), DesignVector.bounds()))
-        lower_sensor_weight, upper_sensor_weight = design_bounds["sensor_weight_kg"]
-        if (
-            not math.isfinite(self.minimum_sensor_weight_kg)
-            or not lower_sensor_weight
-            <= self.minimum_sensor_weight_kg
-            <= upper_sensor_weight
-        ):
-            raise ValueError(
-                "minimum_sensor_weight_kg must lie inside the DesignVector "
-                f"sensor-weight bounds [{lower_sensor_weight}, {upper_sensor_weight}]."
-            )
         object.__setattr__(
             self,
             "battery_cell_count",
@@ -185,9 +173,24 @@ def _ensure_prop_database_loaded(config: ToplineConfig) -> float:
     return time.perf_counter() - start
 
 
-def _pd_ratio(x: np.ndarray) -> float:
+def _candidate_value(x: np.ndarray, name: str) -> float:
+    """Return a design value whether it is optimized or fixed."""
+    if name in FIXED_OPT_VALUES:
+        return float(FIXED_OPT_VALUES[name])
+
     names = DesignVector.opt_names()
-    return float(x[names.index("prop_pitch_in")] / x[names.index("prop_diameter_in")])
+    if name not in names:
+        raise ValueError(
+            f"{name!r} is neither a free optimizer variable nor a fixed optimizer value."
+        )
+
+    return float(x[names.index(name)])
+
+
+def _pd_ratio(x: np.ndarray) -> float:
+    diameter = _candidate_value(x, "prop_diameter_in")
+    pitch = _candidate_value(x, "prop_pitch_in")
+    return float(pitch / diameter)
 
 
 PD_CONSTRAINT = NonlinearConstraint(_pd_ratio, PD_MIN, PD_MAX)
@@ -195,11 +198,9 @@ PD_CONSTRAINT = NonlinearConstraint(_pd_ratio, PD_MIN, PD_MAX)
 
 def _mission3_sensor_weight_margin(x: np.ndarray) -> float:
     """Return declared maximum sensor weight minus the M3 flown weight."""
-
-    names = DesignVector.opt_names()
     return float(
-        x[names.index("sensor_weight_kg")]
-        - x[names.index("mission3_sensor_weight_kg")]
+        _candidate_value(x, "sensor_weight_kg")
+        - _candidate_value(x, "mission3_sensor_weight_kg")
     )
 
 
@@ -211,13 +212,14 @@ MISSION3_SENSOR_WEIGHT_CONSTRAINT = NonlinearConstraint(
 
 
 def _sensor_density_margin(x: np.ndarray) -> float:
-    """Solid-steel weight for the declared length minus the declared weight."""
+    """Solid-steel weight for the declared geometry minus declared weight."""
+    sensor_length_m = _candidate_value(x, "sensor_length_m")
+    sensor_diameter_m = _candidate_value(x, "sensor_diameter_m")
+    sensor_weight_kg = _candidate_value(x, "sensor_weight_kg")
 
-    names = DesignVector.opt_names()
     return float(
-        maximum_sensor_weight_kg(x[names.index("sensor_length_m")])
-        maximum_sensor_weight_kg(x[names.index("sensor_length_m")])
-        - x[names.index("sensor_weight_kg")]
+        maximum_sensor_weight_kg(sensor_length_m, sensor_diameter_m)
+        - sensor_weight_kg
     )
 
 
@@ -226,7 +228,6 @@ SENSOR_DENSITY_CONSTRAINT = NonlinearConstraint(
     0.0,
     np.inf,
 )
-
 
 def _allowed_battery_cell_counts(config: ToplineConfig) -> tuple[int, ...]:
     """Return the discrete cell counts available to individual candidates."""
@@ -252,16 +253,14 @@ def _candidate_battery_energy_wh(
     config: ToplineConfig,
 ) -> float:
     """Return nominal battery energy for an optimizer candidate."""
-
+    capacity_ah = _candidate_value(x, "batt_capacity")
     names = _optimizer_variable_names(config)
-    capacity_ah = float(x[names.index("batt_capacity")])
     cell_count = (
         float(x[names.index("battery_cell_count")])
         if config.optimize_battery_cell_count
         else config.battery_cell_count
     )
     return capacity_ah * battery_nominal_voltage_v(cell_count)
-
 
 def _optimizer_constraints(config: ToplineConfig) -> tuple[NonlinearConstraint, ...]:
     constraints = [
@@ -297,27 +296,6 @@ def _optimizer_variable_names(config: ToplineConfig | None = None) -> list[str]:
 
 def _optimizer_bounds(config: ToplineConfig | None = None) -> list[tuple[float, float]]:
     bounds = list(DesignVector.bounds())
-    if config is not None:
-        names = DesignVector.opt_names()
-        sensor_weight_index = names.index("sensor_weight_kg")
-        sensor_length_index = names.index("sensor_length_m")
-        _, sensor_weight_upper = bounds[sensor_weight_index]
-        sensor_length_lower, sensor_length_upper = bounds[sensor_length_index]
-        bounds[sensor_weight_index] = (
-            config.minimum_sensor_weight_kg,
-            sensor_weight_upper,
-        )
-        # The steel-density constraint makes shorter sensors impossible at the
-        # requested weight floor. Tightening the optimizer-only length bound
-        # avoids filling the initial population with infeasible candidates;
-        # DesignVector itself still supports shorter sensors for other studies.
-        bounds[sensor_length_index] = (
-            max(
-                sensor_length_lower,
-                sensor_length_from_weight_kg(config.minimum_sensor_weight_kg),
-            ),
-            sensor_length_upper,
-        )
     if config is not None and config.optimize_battery_cell_count:
         bounds.append(tuple(map(float, config.battery_cell_count_bounds)))
     return bounds
@@ -397,7 +375,7 @@ def _initial_population(
     *,
     seed: int | None = None,
 ) -> str | np.ndarray:
-    """Build a neutral, reproducible Sobol population over feasible designs."""
+    """Build a neutral, reproducible Sobol population over feasible free variables."""
     if config.init != "sobol":
         return config.init
 
@@ -405,39 +383,80 @@ def _initial_population(
     population_size = _expected_population_size(config)
     exponent = int(math.log2(population_size))
     unit_population = qmc.Sobol(
-        d=len(bounds), scramble=True, seed=config.seed if seed is None else seed
+        d=len(bounds),
+        scramble=True,
+        seed=config.seed if seed is None else seed,
     ).random_base2(exponent)
-    # scipy.stats.qmc.scale requires strictly increasing bounds, while the
-    # optimizer legitimately uses equal bounds for temporarily fixed variables.
-    fixed = bounds[:, 0] == bounds[:, 1]
-    scale_upper = bounds[:, 1].copy()
-    scale_upper[fixed] = bounds[fixed, 0] + 1.0
-    population = qmc.scale(unit_population, bounds[:, 0], scale_upper)
-    population[:, fixed] = bounds[fixed, 0]
+    population = qmc.scale(unit_population, bounds[:, 0], bounds[:, 1])
 
     names = _optimizer_variable_names(config)
-    container_index = names.index("extra_shipping_containers")
-    max_sensor_weight_index = names.index("sensor_weight_kg")
-    m3_sensor_weight_index = names.index("mission3_sensor_weight_kg")
-    diameter_index = names.index("prop_diameter_in")
-    pitch_index = names.index("prop_pitch_in")
 
-    low, high = bounds[container_index].astype(int)
-    population[:, container_index] = np.minimum(
-        low + (unit_population[:, container_index] * (high - low + 1)).astype(int),
-        high,
-    )
-    length_index = names.index("sensor_length_m")
-    population[:, max_sensor_weight_index] = np.minimum(
-        population[:, max_sensor_weight_index],
-        np.array(
-            [maximum_sensor_weight_kg(value) for value in population[:, length_index]]
-        ),
-    )
-    m3_weight_lower = bounds[m3_sensor_weight_index, 0]
-    population[:, m3_sensor_weight_index] = m3_weight_lower + unit_population[
-        :, m3_sensor_weight_index
-    ] * (population[:, max_sensor_weight_index] - m3_weight_lower)
+    if "extra_shipping_containers" in names:
+        container_index = names.index("extra_shipping_containers")
+        low, high = bounds[container_index].astype(int)
+        population[:, container_index] = np.minimum(
+            low
+            + (
+                unit_population[:, container_index] * (high - low + 1)
+            ).astype(int),
+            high,
+        )
+
+    if "sensor_weight_kg" in names:
+        sensor_weight_index = names.index("sensor_weight_kg")
+
+        if "sensor_length_m" in names:
+            sensor_lengths = population[:, names.index("sensor_length_m")]
+        else:
+            sensor_lengths = np.full(
+                population_size,
+                _candidate_value(population[0], "sensor_length_m"),
+            )
+
+        if "sensor_diameter_m" in names:
+            sensor_diameters = population[:, names.index("sensor_diameter_m")]
+        else:
+            sensor_diameters = np.full(
+                population_size,
+                _candidate_value(population[0], "sensor_diameter_m"),
+            )
+
+        physical_max_weights = np.asarray(
+            [
+                maximum_sensor_weight_kg(length, diameter)
+                for length, diameter in zip(sensor_lengths, sensor_diameters)
+            ],
+            dtype=float,
+        )
+        population[:, sensor_weight_index] = np.minimum(
+            population[:, sensor_weight_index],
+            physical_max_weights,
+        )
+
+    if "mission3_sensor_weight_kg" in names:
+        m3_weight_index = names.index("mission3_sensor_weight_kg")
+        m3_weight_lower = bounds[m3_weight_index, 0]
+
+        if "sensor_weight_kg" in names:
+            declared_weights = population[:, names.index("sensor_weight_kg")]
+        else:
+            declared_weights = np.full(
+                population_size,
+                _candidate_value(population[0], "sensor_weight_kg"),
+            )
+
+        if np.any(declared_weights < m3_weight_lower):
+            raise ValueError(
+                "Fixed/free sensor-weight settings make the M3 sensor-weight "
+                "lower bound infeasible."
+            )
+
+        population[:, m3_weight_index] = (
+            m3_weight_lower
+            + unit_population[:, m3_weight_index]
+            * (declared_weights - m3_weight_lower)
+        )
+
     if config.optimize_battery_cell_count:
         cell_index = names.index("battery_cell_count")
         choices = np.asarray(_allowed_battery_cell_counts(config), dtype=int)
@@ -447,31 +466,78 @@ def _initial_population(
         )
         population[:, cell_index] = choices[choice_indices]
 
-    capacity_index = names.index("batt_capacity")
-    if config.optimize_battery_cell_count:
-        cell_counts = population[:, names.index("battery_cell_count")]
-    else:
-        cell_counts = np.full(population_size, config.battery_cell_count)
-    maximum_capacity_ah = 100.0 / (
-        cell_counts * battery_nominal_voltage_v(1)
-    )
-    population[:, capacity_index] = np.minimum(
-        population[:, capacity_index],
-        maximum_capacity_ah,
-    )
+    if "batt_capacity" in names:
+        capacity_index = names.index("batt_capacity")
+        if config.optimize_battery_cell_count:
+            cell_counts = population[:, names.index("battery_cell_count")]
+        else:
+            cell_counts = np.full(population_size, config.battery_cell_count)
 
-    # Project propeller pitch into the P/D-feasible interval so population
-    # slots are spent comparing aircraft rather than known constraint failures.
-    diameter = population[:, diameter_index]
-    pitch_lower, pitch_upper = bounds[pitch_index]
-    feasible_lower = np.maximum(pitch_lower, PD_MIN * diameter)
-    feasible_upper = np.minimum(pitch_upper, PD_MAX * diameter)
-    pitch_unit = unit_population[:, pitch_index]
-    population[:, pitch_index] = (
-        feasible_lower + pitch_unit * (feasible_upper - feasible_lower)
-    )
+        maximum_capacity_ah = 100.0 / (
+            cell_counts * battery_nominal_voltage_v(1)
+        )
+        population[:, capacity_index] = np.minimum(
+            population[:, capacity_index],
+            maximum_capacity_ah,
+        )
+
+    diameter_free = "prop_diameter_in" in names
+    pitch_free = "prop_pitch_in" in names
+
+    if diameter_free and pitch_free:
+        diameter_index = names.index("prop_diameter_in")
+        pitch_index = names.index("prop_pitch_in")
+        diameter = population[:, diameter_index]
+        pitch_lower, pitch_upper = bounds[pitch_index]
+        feasible_lower = np.maximum(pitch_lower, PD_MIN * diameter)
+        feasible_upper = np.minimum(pitch_upper, PD_MAX * diameter)
+
+        if np.any(feasible_lower > feasible_upper):
+            raise ValueError("Propeller bounds contain no feasible P/D interval.")
+
+        population[:, pitch_index] = (
+            feasible_lower
+            + unit_population[:, pitch_index]
+            * (feasible_upper - feasible_lower)
+        )
+
+    elif pitch_free:
+        pitch_index = names.index("prop_pitch_in")
+        diameter = _candidate_value(population[0], "prop_diameter_in")
+        pitch_lower, pitch_upper = bounds[pitch_index]
+        feasible_lower = max(pitch_lower, PD_MIN * diameter)
+        feasible_upper = min(pitch_upper, PD_MAX * diameter)
+
+        if feasible_lower > feasible_upper:
+            raise ValueError(
+                "Fixed propeller diameter is incompatible with the free pitch bounds."
+            )
+
+        population[:, pitch_index] = (
+            feasible_lower
+            + unit_population[:, pitch_index]
+            * (feasible_upper - feasible_lower)
+        )
+
+    elif diameter_free:
+        diameter_index = names.index("prop_diameter_in")
+        pitch = _candidate_value(population[0], "prop_pitch_in")
+        diameter_lower, diameter_upper = bounds[diameter_index]
+        feasible_lower = max(diameter_lower, pitch / PD_MAX)
+        feasible_upper = min(diameter_upper, pitch / PD_MIN)
+
+        if feasible_lower > feasible_upper:
+            raise ValueError(
+                "Fixed propeller pitch is incompatible with the free diameter bounds."
+            )
+
+        population[:, diameter_index] = (
+            feasible_lower
+            + unit_population[:, diameter_index]
+            * (feasible_upper - feasible_lower)
+        )
+
     return population
-
 
 def _objective(x: np.ndarray, *, config: ToplineConfig | None = None) -> float:
     """Top-level objective so SciPy can pickle it for worker processes."""
@@ -518,19 +584,21 @@ def _update_payload_archive(
     population = np.asarray(population, dtype=float)
     energies = np.asarray(population_energies, dtype=float)
     variable_names = _optimizer_variable_names(config)
+
     if population.ndim != 2 or population.shape[1] != len(variable_names):
         raise ValueError("Population has an unexpected shape.")
     if energies.shape != (population.shape[0],):
         raise ValueError("Population energies have an unexpected shape.")
 
-    container_index = variable_names.index("extra_shipping_containers")
     updates = 0
     for population_index, (vector, objective) in enumerate(zip(population, energies)):
         objective = float(objective)
         if not math.isfinite(objective) or objective >= BAD_OBJECTIVE:
             continue
 
-        containers = int(round(vector[container_index]))
+        containers = int(
+            round(_candidate_value(vector, "extra_shipping_containers"))
+        )
         score = -objective
         key = containers
         previous = archive.get(key)
@@ -546,16 +614,20 @@ def _update_payload_archive(
         }
         for name, value in zip(variable_names, vector):
             row[name] = float(value)
+        for name, value in FIXED_OPT_VALUES.items():
+            row[name] = float(value)
+
         row["extra_shipping_containers"] = containers
+
         if config is not None and config.optimize_battery_cell_count:
             row["battery_cell_count"] = normalize_battery_cell_count(
                 row["battery_cell_count"]
             )
+
         archive[key] = row
         updates += 1
 
     return updates
-
 
 def _update_top_candidate_archive(
     population: np.ndarray,
@@ -593,6 +665,9 @@ def _update_top_candidate_archive(
         }
         row.update(
             {name: float(value) for name, value in zip(variable_names, vector)}
+        )
+        row.update(
+            {name: float(value) for name, value in FIXED_OPT_VALUES.items()}
         )
         archive[key] = row
         updates += 1
@@ -1049,6 +1124,8 @@ def _write_final_population(
         }
         for name, value in zip(_optimizer_variable_names(config), population[index]):
             row[name] = float(value)
+        for name, value in FIXED_OPT_VALUES.items():
+            row[name] = float(value)
         if config.optimize_battery_cell_count:
             row["battery_cell_count"] = normalize_battery_cell_count(
                 row["battery_cell_count"]
@@ -1100,6 +1177,9 @@ def _write_niche_champions(
                     _optimizer_variable_names(config), population[index]
                 )
             }
+        )
+        row.update(
+            {name: float(value) for name, value in FIXED_OPT_VALUES.items()}
         )
         rows.append(row)
     path = output_dir / "niche_champions.csv"
@@ -1265,6 +1345,7 @@ def _write_run_summary(
         "platform": platform.platform(),
         "cpu_count": os.cpu_count(),
         "config": asdict(config),
+        "fixed_opt_values": dict(FIXED_OPT_VALUES),
         "scoring_references": scoring_reference_values(config.scoring_references),
         "bounds": {
             name: bounds
@@ -1406,7 +1487,9 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     print("Top-line differential evolution run")
     print(f"  output: {output_dir}")
     print(f"  workers: {config.workers}")
-    print(f"  variables: {len(_optimizer_bounds(config))}")
+    print(f"  free variables: {len(_optimizer_bounds(config))}")
+    print(f"  fixed variables: {len(FIXED_OPT_VALUES)}")
+    print(f"  free variable names: {_optimizer_variable_names(config)}")
     if config.optimize_battery_cell_count:
         print(
             "  battery: optimized per candidate from "

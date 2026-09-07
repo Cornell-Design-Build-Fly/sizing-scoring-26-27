@@ -1,0 +1,2 @@
+extra_shipping_containers,score,objective,generation,population_index,wing_span,wing_chord,tail_arm,nose_length,takeoff_flap_deflection_deg,sensor_length_m,sensor_diameter_m,sensor_weight_kg,mission3_sensor_weight_kg,batt_capacity,prop_diameter_in,prop_pitch_in,mission3_prop_diameter_in,mission3_prop_pitch_in,motor_kv,motor_max_power
+0,6.25132110805023,-6.25132110805023,84,0,1.8237696189880372,0.3996818367521823,0.5700182444676418,0.2051077317073941,15.561570764311906,0.2667,0.07619999999999999,9.54,7.02,3.342,20.0,15.0,20.0,15.0,246.75,2029.36
