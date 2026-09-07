@@ -28,9 +28,11 @@ sensor length = sensor mass / (steel density * circular cross-sectional area)
 ```
 
 Mission 2 always carries one sensor shipping container and may carry zero to
-ten additional container simulators. Each container is 5 inches wide, 5 inches
-high, and 2 inches longer than the sensor. Its modeled loaded mass is the
-sensor mass plus the 0.5 lb empty-container mass.
+ten additional container simulators. Each container is at least 5 inches wide,
+5 inches high, and 8 inches long; above that length floor it is 2 inches longer
+than the sensor. Its modeled loaded mass is the sensor mass plus the 0.5 lb
+empty-container mass. The sensor diameter is fixed at 3 inches while its length
+is optimized down to 1 inch.
 
 Containers are loaded in this order:
 

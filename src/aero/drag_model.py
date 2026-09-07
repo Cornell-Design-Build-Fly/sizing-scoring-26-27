@@ -21,7 +21,7 @@ MU = 1.81e-5
 # Towed-sensor drag coefficient on frontal-ish reference area. Raised from
 # 0.137 to 0.3 at the team's direction (2026-09-05).
 SENSOR_CD = 0.3
-SENSOR_RADIUS_M = 0.5 * SENSOR_DIAMETER_M  # nominal; the flown value is used below
+SENSOR_RADIUS_M = 0.5 * SENSOR_DIAMETER_M
 
 
 def sensor_drag_force(

@@ -47,8 +47,11 @@ def test_full_range_population_is_reproducible_and_feasible() -> None:
     assert np.all(m3_pitch / m3_diameter <= PD_MAX)
     assert not np.allclose(m3_diameter, diameter)
     assert np.all(m3_sensor_weight <= max_sensor_weight)
+    assert np.all(max_sensor_weight >= 8.0)
+    assert bounds[names.index("sensor_weight_kg"), 0] == 8.0
+    assert bounds[names.index("mission3_sensor_weight_kg"), 0] == 0.05
     assert np.ptp(takeoff_flap) > 35.0
-    assert set(containers.astype(int)) == set(range(11))
+    assert np.all(containers == 0)
 
     for constraint in _optimizer_constraints(config):
         values = np.asarray([constraint.fun(candidate) for candidate in first])

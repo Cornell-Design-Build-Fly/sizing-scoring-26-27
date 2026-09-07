@@ -73,7 +73,7 @@ def main() -> None:
     assert "banner_length" not in design.opt_names()
     assert DesignVector.bounds()[design.opt_names().index("extra_shipping_containers")] == (
         0,
-        10,
+        0,
     )
     assert np.array_equal(DesignVector.from_array(design.to_array()).to_array(), design.to_array())
 

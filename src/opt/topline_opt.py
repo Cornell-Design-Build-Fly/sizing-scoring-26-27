@@ -55,6 +55,7 @@ from src.vectors import (
     DesignVector,
     ParameterVector,
     maximum_sensor_weight_kg,
+    sensor_length_from_weight_kg,
 )
 
 
@@ -92,7 +93,7 @@ class ToplineConfig:
     # 300, not 100: decoupling sensor length took the design vector from 15 to
     # 17 variables, and 100 generations no longer converges. Same seed and
     # config, 100 gen -> 7.1232 while 300 gen -> 7.4917 (2026-09-04 study).
-    maxiter: int | None = 200
+    maxiter: int | None = 100
     target_seconds: float = TARGET_RUN_SECONDS
     assumed_evals_per_second: float = TARGET_EVALS_PER_SECOND
     init: str = "sobol"
@@ -113,6 +114,10 @@ class ToplineConfig:
     callback_score_best: bool = True
     save_best_visualization: bool = True
     scoring_references: ScoringReferences = DEFAULT_SCORING_REFERENCES
+    # Bias the top-line aircraft optimization toward the heavy-sensor regime.
+    # This applies only to the declared M2/Ground sensor; Mission 3 retains its
+    # independent 0.05 kg lower bound.
+    minimum_sensor_weight_kg: float = 8.0
     # Battery is fixed at 8S by team decision (2026-09-05) and is no longer a
     # design variable. Setting optimize_battery_cell_count=True restores the
     # old behaviour if a future study needs it.
@@ -122,6 +127,18 @@ class ToplineConfig:
     battery_cell_count_choices: tuple[int, ...] | None = None
 
     def __post_init__(self) -> None:
+        design_bounds = dict(zip(DesignVector.opt_names(), DesignVector.bounds()))
+        lower_sensor_weight, upper_sensor_weight = design_bounds["sensor_weight_kg"]
+        if (
+            not math.isfinite(self.minimum_sensor_weight_kg)
+            or not lower_sensor_weight
+            <= self.minimum_sensor_weight_kg
+            <= upper_sensor_weight
+        ):
+            raise ValueError(
+                "minimum_sensor_weight_kg must lie inside the DesignVector "
+                f"sensor-weight bounds [{lower_sensor_weight}, {upper_sensor_weight}]."
+            )
         object.__setattr__(
             self,
             "battery_cell_count",
@@ -217,10 +234,7 @@ def _sensor_density_margin(x: np.ndarray) -> float:
 
     names = DesignVector.opt_names()
     return float(
-        maximum_sensor_weight_kg(
-            x[names.index("sensor_length_m")],
-            x[names.index("sensor_diameter_m")],
-        )
+        maximum_sensor_weight_kg(x[names.index("sensor_length_m")])
         - x[names.index("sensor_weight_kg")]
     )
 
@@ -302,6 +316,27 @@ def _optimizer_variable_names(config: ToplineConfig | None = None) -> list[str]:
 
 def _optimizer_bounds(config: ToplineConfig | None = None) -> list[tuple[float, float]]:
     bounds = list(DesignVector.bounds())
+    if config is not None:
+        names = DesignVector.opt_names()
+        sensor_weight_index = names.index("sensor_weight_kg")
+        sensor_length_index = names.index("sensor_length_m")
+        _, sensor_weight_upper = bounds[sensor_weight_index]
+        sensor_length_lower, sensor_length_upper = bounds[sensor_length_index]
+        bounds[sensor_weight_index] = (
+            config.minimum_sensor_weight_kg,
+            sensor_weight_upper,
+        )
+        # The steel-density constraint makes shorter sensors impossible at the
+        # requested weight floor. Tightening the optimizer-only length bound
+        # avoids filling the initial population with infeasible candidates;
+        # DesignVector itself still supports shorter sensors for other studies.
+        bounds[sensor_length_index] = (
+            max(
+                sensor_length_lower,
+                sensor_length_from_weight_kg(config.minimum_sensor_weight_kg),
+            ),
+            sensor_length_upper,
+        )
     if config is not None and config.optimize_battery_cell_count:
         bounds.append(tuple(map(float, config.battery_cell_count_bounds)))
     return bounds
@@ -427,7 +462,13 @@ def _initial_population(
     unit_population = qmc.Sobol(
         d=len(bounds), scramble=True, seed=config.seed if seed is None else seed
     ).random_base2(exponent)
-    population = qmc.scale(unit_population, bounds[:, 0], bounds[:, 1])
+    # scipy.stats.qmc.scale requires strictly increasing bounds, while the
+    # optimizer legitimately uses equal bounds for temporarily fixed variables.
+    fixed = bounds[:, 0] == bounds[:, 1]
+    scale_upper = bounds[:, 1].copy()
+    scale_upper[fixed] = bounds[fixed, 0] + 1.0
+    population = qmc.scale(unit_population, bounds[:, 0], scale_upper)
+    population[:, fixed] = bounds[fixed, 0]
 
     names = _optimizer_variable_names(config)
     container_index = names.index("extra_shipping_containers")
@@ -447,15 +488,12 @@ def _initial_population(
         high,
     )
     length_index = names.index("sensor_length_m")
-    sensor_diameter_index = names.index("sensor_diameter_m")
     population[:, max_sensor_weight_index] = np.minimum(
         population[:, max_sensor_weight_index],
         np.array(
             [
-                maximum_sensor_weight_kg(length, diameter)
-                for length, diameter in zip(
-                    population[:, length_index], population[:, sensor_diameter_index]
-                )
+                maximum_sensor_weight_kg(length)
+                for length in population[:, length_index]
             ]
         ),
     )
