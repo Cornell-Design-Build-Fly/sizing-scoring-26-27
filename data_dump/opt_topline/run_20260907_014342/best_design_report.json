@@ -1,0 +1,2688 @@
+{
+  "score": 6.297513744104741,
+  "official_score": 6.297513744104741,
+  "optimization_score": 6.297513744104741,
+  "optimization_objective": -6.297513744104741,
+  "breakdown": {
+    "ground": 1.2014285714285715,
+    "m1": 1.0,
+    "m2": 1.7473169335208052,
+    "m3": 2.348768239155364,
+    "sum_before_penalties": 6.297513744104741
+  },
+  "penalties": {
+    "total": 0.0,
+    "mechanical": 0.0,
+    "mechanical_static_margin": 0.0,
+    "mechanical_static_margin_by_mission": {
+      "M2": 0.0,
+      "M3": 0.0
+    },
+    "mechanical_placement": 0.0,
+    "aero_m2": 0.0,
+    "aero_m3": 0.0,
+    "propulsion": 0.0,
+    "overweight": 0.0,
+    "max_takeoff_mass_kg": 15.476886339241933
+  },
+  "static_margin": {
+    "neutral_point_x_m": 0.14148532508970715,
+    "m1": 0.3308665952330894,
+    "m2": 0.19999999999999998,
+    "m3": 0.22062606878671429
+  },
+  "optimizer_vector": {
+    "wing_span": 1.7367164619627762,
+    "wing_chord": 0.3451429252447184,
+    "tail_arm": 0.7682779995710951,
+    "nose_length": 0.19299185491297316,
+    "extra_shipping_containers": 0.0,
+    "sensor_length_m": 0.37654594717783973,
+    "sensor_diameter_m": 0.07619999999999999,
+    "sensor_weight_kg": 11.13535554190927,
+    "mission3_sensor_weight_kg": 6.668917105053055,
+    "batt_capacity": 3.1286835679647362,
+    "battery_cell_count": 8,
+    "prop_diameter_in": 20.0,
+    "prop_pitch_in": 15.0,
+    "mission3_prop_diameter_in": 19.0,
+    "mission3_prop_pitch_in": 12.0,
+    "motor_kv": 246.08978516808793,
+    "motor_max_power": 2259.9800444201533,
+    "takeoff_flap_deflection_deg": 21.488738827096068,
+    "cruise_throttle": 1.0,
+    "mission3_cruise_throttle": 1.0,
+    "fuselage_width": 0.127,
+    "fuselage_height": 0.13,
+    "fuselage_box_back_x_m": 0.0,
+    "wing_airfoil": "naca2412",
+    "wing_area": 0.5994154000024903,
+    "hstab_area": 0.13464135684549677,
+    "hstab_span": 0.6355502108696766,
+    "hstab_chord": 0.21185007028989217,
+    "vstab_area": 0.04877990175366432,
+    "vstab_span": 0.20836053503665528,
+    "vstab_chord": 0.23411296071534296,
+    "battery_nominal_voltage_v": 29.6,
+    "batt_energy": 92.6090336117562,
+    "mission3_sensor_length_m": 0.37654594717783973
+  },
+  "scoring_vector": {
+    "wing_span": 1.7367164619627762,
+    "wing_chord": 0.3451429252447184,
+    "tail_arm": 0.7682779995710951,
+    "nose_length": 0.19299185491297316,
+    "extra_shipping_containers": 0,
+    "sensor_length_m": 0.37654594717783973,
+    "sensor_diameter_m": 0.07619999999999999,
+    "sensor_weight_kg": 11.13535554190927,
+    "mission3_sensor_weight_kg": 6.668917105053055,
+    "batt_capacity": 3.1286835679647362,
+    "battery_cell_count": 8,
+    "prop_diameter_in": 20.0,
+    "prop_pitch_in": 15.0,
+    "mission3_prop_diameter_in": 19.0,
+    "mission3_prop_pitch_in": 12.0,
+    "motor_kv": 246.08978516808793,
+    "motor_max_power": 2259.9800444201533,
+    "takeoff_flap_deflection_deg": 21.488738827096068,
+    "cruise_throttle": 1.0,
+    "mission3_cruise_throttle": 1.0,
+    "fuselage_width": 0.127,
+    "fuselage_height": 0.13,
+    "fuselage_box_back_x_m": 0.0,
+    "wing_airfoil": "naca2412",
+    "wing_area": 0.5994154000024903,
+    "hstab_area": 0.13464135684549677,
+    "hstab_span": 0.6355502108696766,
+    "hstab_chord": 0.21185007028989217,
+    "vstab_area": 0.04877990175366432,
+    "vstab_span": 0.20836053503665528,
+    "vstab_chord": 0.23411296071534296,
+    "battery_nominal_voltage_v": 29.6,
+    "batt_energy": 92.6090336117562,
+    "mission3_sensor_length_m": 0.37654594717783973
+  },
+  "resolved_vector": {
+    "wing_span": 1.7367164619627762,
+    "wing_chord": 0.3451429252447184,
+    "tail_arm": 0.7682779995710951,
+    "nose_length": 0.35285903126410406,
+    "extra_shipping_containers": 0,
+    "sensor_length_m": 0.37654594717783973,
+    "sensor_diameter_m": 0.07619999999999999,
+    "sensor_weight_kg": 11.13535554190927,
+    "mission3_sensor_weight_kg": 6.668917105053055,
+    "batt_capacity": 3.1286835679647362,
+    "battery_cell_count": 8,
+    "prop_diameter_in": 20.0,
+    "prop_pitch_in": 15.0,
+    "mission3_prop_diameter_in": 19.0,
+    "mission3_prop_pitch_in": 12.0,
+    "motor_kv": 246.08978516808793,
+    "motor_max_power": 2259.9800444201533,
+    "takeoff_flap_deflection_deg": 21.488738827096068,
+    "cruise_throttle": 1.0,
+    "mission3_cruise_throttle": 1.0,
+    "fuselage_width": 0.127,
+    "fuselage_height": 0.13,
+    "fuselage_box_back_x_m": 0.3451429252447184,
+    "wing_airfoil": "naca2412",
+    "wing_area": 0.5994154000024903,
+    "hstab_area": 0.13464135684549677,
+    "hstab_span": 0.6355502108696766,
+    "hstab_chord": 0.21185007028989217,
+    "vstab_area": 0.04877990175366432,
+    "vstab_span": 0.20836053503665528,
+    "vstab_chord": 0.23411296071534296,
+    "battery_nominal_voltage_v": 29.6,
+    "batt_energy": 92.6090336117562,
+    "mission3_sensor_length_m": 0.37654594717783973
+  },
+  "battery": {
+    "cell_count": 8,
+    "nominal_voltage_v": 29.6,
+    "capacity_ah": 3.1286835679647362,
+    "nominal_energy_wh": 92.6090336117562,
+    "usable_energy_wh": 78.71767856999277,
+    "usable_fraction": 0.85,
+    "internal_resistance_ohm": 0.03324081766046217,
+    "c_rating": 25.0,
+    "maximum_current_a": 78.2170891991184
+  },
+  "propulsion_feasible": true,
+  "propulsion_requirements": {
+    "maximum_takeoff_distance_m": 75.0,
+    "cruise_altitude_m": 60.96,
+    "flight_window_s": 300.0,
+    "ground_time_s": 20.0,
+    "energy_budget_iterations": 24,
+    "maximum_turn_radius_m": 76.2,
+    "flaps": {
+      "chord_fraction": 0.25,
+      "span_fraction": 0.6,
+      "reference_delta_cl_max_2d": 0.9,
+      "reference_deflection_deg": 60.0,
+      "takeoff_deflection_deg": 20.0,
+      "landing_deflection_deg": 40.0,
+      "three_dimensional_factor": 0.9,
+      "drag_increment_coefficient": 1.7,
+      "drag_chord_exponent": 1.38
+    },
+    "climb_distance_m": null,
+    "climb_distance_includes_takeoff_roll": false,
+    "minimum_climb_rate_mps": 2.0,
+    "liftoff_stall_speed_factor": 1.2,
+    "climb_stall_speed_factor": 1.3,
+    "rolling_friction_coefficient": 0.04,
+    "takeoff_lift_coefficient_fraction": 0.8,
+    "ground_effect_induced_drag_factor": 0.9,
+    "reacceleration_efficiency": 0.65,
+    "usable_energy_margin_fraction": 0.05,
+    "maximum_propeller_rpm_diameter_product": 150000.0,
+    "propeller_rpm_limit_safety_factor": 0.9,
+    "maximum_propeller_tip_mach": 0.75,
+    "speed_of_sound_mps": 343.0
+  },
+  "catalog_propellers": {
+    "M1": "20x15E",
+    "M2": "20x15E",
+    "M3": "19x12E"
+  },
+  "propulsion": {
+    "M2": {
+      "mission": 2,
+      "feasible": true,
+      "penalty": 0.0,
+      "inertial_mass_kg": 15.476886339241933,
+      "supported_mass_kg": 15.476886339241933,
+      "operating_points_feasible": true,
+      "static_thrust_n": 78.79650152033899,
+      "static_thrust_to_weight": 0.5191961383279488,
+      "liftoff_speed_mps": 21.882034640428447,
+      "takeoff_distance_m": 74.79919472045998,
+      "optimistic_takeoff_distance_lower_bound_m": 47.02427020575258,
+      "takeoff_screened_early": false,
+      "takeoff_time_s": 6.093128770058418,
+      "acceleration_distance_m": 17.47461492065151,
+      "acceleration_time_s": 0.766514542220014,
+      "acceleration_energy_wh": 0.4512911162743723,
+      "climb_speed_mps": 23.705537527130822,
+      "climb_rate_mps": 5.570983848312203,
+      "climb_gradient": 0.24177908366187545,
+      "climb_distance_required_m": 252.13099113756127,
+      "climb_distance_allowed_m": Infinity,
+      "cruise_altitude_m": 60.96,
+      "climb_time_s": 10.942411907812042,
+      "flap_retraction_energy_wh": 1.5042816963394712,
+      "maximum_propeller_tip_mach": 0.5040592294535227,
+      "maximum_propeller_rpm": 6500.0,
+      "manufacturer_propeller_rpm_limit": 7500.0,
+      "operating_propeller_rpm_limit": 6750.0,
+      "propeller_rpm_margin": 250.0,
+      "maximum_propeller_shaft_power_w": 1652.3571818986957,
+      "maximum_propeller_disk_power_loading_w_m2": 8152.421515672746,
+      "cruise_power_w": 632.2778373669531,
+      "takeoff_energy_wh": 3.504060791122901,
+      "climb_energy_wh": 6.391647856555116,
+      "reacceleration_energy_wh": 1.0336438370246828,
+      "cruise_energy_wh": 58.78610331146659,
+      "required_energy_wh": 71.67102860878313,
+      "allowed_energy_wh": 74.78179464149312,
+      "energy_margin_wh": 3.1107660327099893,
+      "takeoff_distance_margin_m": 0.20080527954002036,
+      "climb_rate_margin_mps": 3.5709838483122027,
+      "climb_distance_margin_m": Infinity,
+      "limiting_constraint": "none",
+      "aerodynamic_lap_time_s": 31.04497153455673,
+      "modeled_lap_time_s": 36.767928972119556,
+      "straight_time_per_lap_s": 19.117075587947458,
+      "turn_time_per_lap_s": 17.6508533841721,
+      "turn_speed_mps": 31.559301621925904,
+      "turn_load_factor": 2.5,
+      "turn_power_w": 1713.1574613748503,
+      "straight_energy_wh": 16.787921124344432,
+      "turn_energy_wh": 41.99818218712216,
+      "propeller_key": "20x15E",
+      "propeller_blade_count": 2,
+      "propeller_diameter_in": 20.0,
+      "propeller_pitch_in": 15.0,
+      "aerodynamic_cruise_speed_mps": 45.51251475876329,
+      "cruise_speed_mps": 31.88772242885979,
+      "cruise_power_cap_w": 642.4340480155689,
+      "energy_limited": true,
+      "completed_laps": 5,
+      "mission_flight_time_s": 183.8396448605978,
+      "usable_window_s": 280.0,
+      "clean_stall_speed_mps": 19.959854897906396,
+      "takeoff_stall_speed_mps": 18.235028867023708,
+      "takeoff_flap_deflection_deg": 21.488738827096068,
+      "landing_stall_speed_mps": 17.193658019296784,
+      "landing_flap_deflection_deg": 40.0
+    },
+    "M3": {
+      "mission": 3,
+      "feasible": true,
+      "penalty": 0.0,
+      "inertial_mass_kg": 10.783651717385716,
+      "supported_mass_kg": 12.951508418442959,
+      "operating_points_feasible": true,
+      "static_thrust_n": 69.69903839246575,
+      "static_thrust_to_weight": 0.5488005592735857,
+      "liftoff_speed_mps": 20.0173268572389,
+      "takeoff_distance_m": 52.59692514265536,
+      "optimistic_takeoff_distance_lower_bound_m": 30.997111981977753,
+      "takeoff_screened_early": false,
+      "takeoff_time_s": 4.631145684959142,
+      "acceleration_distance_m": 14.087894785548011,
+      "acceleration_time_s": 0.6750630039116567,
+      "acceleration_energy_wh": 0.2791593795947769,
+      "climb_speed_mps": 21.685437428675474,
+      "climb_rate_mps": 4.260926457927486,
+      "climb_gradient": 0.2003943566476402,
+      "climb_distance_required_m": 304.2001831777525,
+      "climb_distance_allowed_m": Infinity,
+      "cruise_altitude_m": 60.96,
+      "climb_time_s": 14.30674774651026,
+      "flap_retraction_energy_wh": 0.5582391226207492,
+      "maximum_propeller_tip_mach": 0.48622328748824417,
+      "maximum_propeller_rpm": 6600.0,
+      "manufacturer_propeller_rpm_limit": 7894.736842105263,
+      "operating_propeller_rpm_limit": 7105.263157894738,
+      "propeller_rpm_margin": 505.26315789473756,
+      "maximum_propeller_shaft_power_w": 1312.6798626698833,
+      "maximum_propeller_disk_power_loading_w_m2": 7176.196240563307,
+      "cruise_power_w": 660.2767731842933,
+      "takeoff_energy_wh": 1.9973428591607154,
+      "climb_energy_wh": 5.803249114226825,
+      "reacceleration_energy_wh": 0.6494453110659303,
+      "cruise_energy_wh": 63.29295200912937,
+      "required_energy_wh": 72.58038779579837,
+      "allowed_energy_wh": 74.78179464149312,
+      "energy_margin_wh": 2.2014068456947484,
+      "takeoff_distance_margin_m": 22.40307485734464,
+      "climb_rate_margin_mps": 2.2609264579274857,
+      "climb_distance_margin_m": Infinity,
+      "limiting_constraint": "none",
+      "aerodynamic_lap_time_s": 32.97280511678915,
+      "modeled_lap_time_s": 41.44385356362964,
+      "straight_time_per_lap_s": 22.837250917615183,
+      "turn_time_per_lap_s": 18.606602646014455,
+      "turn_speed_mps": 26.398296363268646,
+      "turn_load_factor": 2.075,
+      "turn_power_w": 1230.5774082889413,
+      "straight_energy_wh": 25.131510573804995,
+      "turn_energy_wh": 38.16144143532438,
+      "propeller_key": "19x12E",
+      "propeller_blade_count": 2,
+      "propeller_diameter_in": 19.0,
+      "propeller_pitch_in": 12.0,
+      "aerodynamic_cruise_speed_mps": 36.229443134657,
+      "cruise_speed_mps": 26.69323038044802,
+      "cruise_power_cap_w": 666.151392031653,
+      "energy_limited": true,
+      "completed_laps": 6,
+      "mission_flight_time_s": 248.66312138177784,
+      "usable_window_s": 280.0,
+      "clean_stall_speed_mps": 18.258948314443856,
+      "takeoff_stall_speed_mps": 16.68110571436575,
+      "takeoff_flap_deflection_deg": 21.488738827096068,
+      "landing_stall_speed_mps": 15.728476720714655,
+      "landing_flap_deflection_deg": 40.0
+    },
+    "M1": {
+      "mission": 1,
+      "feasible": true,
+      "penalty": 0.0,
+      "inertial_mass_kg": 4.114734612332662,
+      "supported_mass_kg": 4.114734612332662,
+      "operating_points_feasible": true,
+      "static_thrust_n": 78.79650152033899,
+      "static_thrust_to_weight": 1.9528694746414301,
+      "liftoff_speed_mps": 11.282798172350907,
+      "takeoff_distance_m": 3.770209156996099,
+      "optimistic_takeoff_distance_lower_bound_m": 3.323827965117641,
+      "takeoff_screened_early": false,
+      "takeoff_time_s": 0.6473237632731541,
+      "acceleration_distance_m": 0.7042053612075567,
+      "acceleration_time_s": 0.059905607030167285,
+      "acceleration_energy_wh": 0.03555174659935947,
+      "climb_speed_mps": 12.223031353380149,
+      "climb_rate_mps": 12.210808322026768,
+      "climb_gradient": 22.34390577008715,
+      "climb_distance_required_m": 2.7282607001328323,
+      "climb_distance_allowed_m": Infinity,
+      "cruise_altitude_m": 60.96,
+      "climb_time_s": 4.992298494280334,
+      "flap_retraction_energy_wh": 1.7550500714651376,
+      "maximum_propeller_tip_mach": 0.5040592294535227,
+      "maximum_propeller_rpm": 6500.0,
+      "manufacturer_propeller_rpm_limit": 7500.0,
+      "operating_propeller_rpm_limit": 6750.0,
+      "propeller_rpm_margin": 250.0,
+      "maximum_propeller_shaft_power_w": 1653.4658754376794,
+      "maximum_propeller_disk_power_loading_w_m2": 8157.8916023831225,
+      "cruise_power_w": 720.9096319072783,
+      "takeoff_energy_wh": 0.3597876867299064,
+      "climb_energy_wh": 2.8928318246932663,
+      "reacceleration_energy_wh": 14.882339831160655,
+      "cruise_energy_wh": 12.029841712989127,
+      "required_energy_wh": 31.955402873637453,
+      "allowed_energy_wh": 74.78179464149312,
+      "energy_margin_wh": 42.82639176785567,
+      "takeoff_distance_margin_m": 71.2297908430039,
+      "climb_rate_margin_mps": 10.210808322026768,
+      "climb_distance_margin_m": Infinity,
+      "limiting_constraint": "none",
+      "aerodynamic_lap_time_s": 22.261705391597456,
+      "modeled_lap_time_s": 22.26170539159746,
+      "straight_time_per_lap_s": 13.160585702506635,
+      "turn_time_per_lap_s": 9.101119689090822,
+      "turn_speed_mps": 16.272583263471365,
+      "turn_load_factor": 2.5,
+      "turn_power_w": 543.693219092586,
+      "straight_energy_wh": 7.906327495398539,
+      "turn_energy_wh": 4.1235142175905874,
+      "propeller_key": "20x15E",
+      "propeller_blade_count": 2,
+      "propeller_diameter_in": 20.0,
+      "propeller_pitch_in": 15.0,
+      "aerodynamic_cruise_speed_mps": 46.32012691379627,
+      "cruise_speed_mps": 46.32012691379627,
+      "cruise_power_cap_w": Infinity,
+      "energy_limited": false,
+      "completed_laps": 3,
+      "mission_flight_time_s": 66.78511617479238,
+      "usable_window_s": 280.0,
+      "clean_stall_speed_mps": 10.29168530546107,
+      "takeoff_stall_speed_mps": 9.402331810292422,
+      "takeoff_flap_deflection_deg": 21.488738827096068,
+      "landing_stall_speed_mps": 8.865380960403686,
+      "landing_flap_deflection_deg": 40.0
+    }
+  },
+  "scoring_references": {
+    "flight_window_s": 300.0,
+    "ground_time_s": 20.0,
+    "usable_window_s": 280.0,
+    "mission_2": {
+      "best_weight_per_time_kg_s": 0.08270440400684,
+      "required_laps": 5
+    },
+    "mission_3": {
+      "best_lap_weight_kg": 114.7089744493,
+      "deployment_time_s": 0.0,
+      "recovery_time_s": 0.0
+    },
+    "ground": {
+      "drop_height_in": 60.0,
+      "reference_sensor_weight_lb": 35.0,
+      "best_weight_height_kg_in": 952.543977
+    }
+  },
+  "mechanical": {
+    "neutral_point_x_m": 0.14148532508970715,
+    "wing_aerodynamic_center_x_m": 0.0862857313111796,
+    "horizontal_tail_aerodynamic_center_x_m": 0.8212405171435682,
+    "target_cg_x_m": 0.07245674004076347,
+    "acceptable_cg_x_range_m": [
+      0.020685301254055724,
+      0.12422817882747123
+    ],
+    "electronics_position_m": [
+      -0.23385903126410407,
+      0.0,
+      -0.07619999999999999
+    ],
+    "electronics_layout": {
+      "profile": "fat",
+      "length_m": 0.228,
+      "cg_from_front_m": 0.119,
+      "front_edge_x_m": -0.35285903126410406,
+      "cg_x_m": -0.23385903126410407,
+      "back_edge_x_m": -0.12485903126410405,
+      "cg_y_m": 0.0,
+      "cg_z_m": -0.07619999999999999
+    },
+    "input_fuselage_width_m": 0.127,
+    "input_fuselage_height_m": 0.13,
+    "resolved_fuselage_width_m": 0.127,
+    "resolved_fuselage_height_m": 0.13,
+    "fuselage_width_increases": 0,
+    "all_items": [
+      {
+        "name": "Main wing structure",
+        "mass_kg": 0.5885373776846118,
+        "position_m": [
+          0.1725714626223592,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.3451429252447184,
+          1.7367164619627762,
+          0.02
+        ],
+        "category": "airframe",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Wing servo (left)",
+        "mass_kg": 0.021,
+        "position_m": [
+          0.1725714626223592,
+          -0.43417911549069405,
+          0.0
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.04,
+          0.02,
+          0.04
+        ],
+        "category": "controls",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Wing servo (right)",
+        "mass_kg": 0.021,
+        "position_m": [
+          0.1725714626223592,
+          0.43417911549069405,
+          0.0
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.04,
+          0.02,
+          0.04
+        ],
+        "category": "controls",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Wing integration",
+        "mass_kg": 0.1,
+        "position_m": [
+          0.1725714626223592,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.08,
+          0.08,
+          0.06
+        ],
+        "category": "integration",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Wing spar",
+        "mass_kg": 0.297302309590238,
+        "position_m": [
+          0.10354287757341551,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.02,
+          1.7367164619627762,
+          0.02
+        ],
+        "category": "airframe",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Horizontal tail structure",
+        "mass_kg": 0.12023922908345233,
+        "position_m": [
+          0.8742030347160412,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.21185007028989217,
+          0.6355502108696766,
+          0.012
+        ],
+        "category": "airframe",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Vertical tail structure",
+        "mass_kg": 0.03941956068261046,
+        "position_m": [
+          0.8853344799287666,
+          0.0,
+          0.10418026751832764
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.23411296071534296,
+          0.012,
+          0.20836053503665528
+        ],
+        "category": "airframe",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Horizontal tail servo",
+        "mass_kg": 0.021,
+        "position_m": [
+          0.8742030347160412,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.04,
+          0.02,
+          0.04
+        ],
+        "category": "controls",
+        "notes": "Placed at the horizontal stabilizer geometric center until a measured installation location is supplied.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Vertical tail servo",
+        "mass_kg": 0.021,
+        "position_m": [
+          0.8853344799287666,
+          0.0,
+          0.10418026751832764
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.04,
+          0.02,
+          0.04
+        ],
+        "category": "controls",
+        "notes": "Placed at the vertical stabilizer geometric center until a measured installation location is supplied.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Boom spar",
+        "mass_kg": 0.11251195176137913,
+        "position_m": [
+          0.6737669427655782,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.6572480350417196,
+          0.02,
+          0.02
+        ],
+        "category": "airframe",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Tail integration",
+        "mass_kg": 0.025,
+        "position_m": [
+          0.8742030347160412,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.06,
+          0.06,
+          0.05
+        ],
+        "category": "integration",
+        "notes": "",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Landing gear",
+        "mass_kg": 0.22,
+        "position_m": [
+          0.0,
+          0.0,
+          -0.1016
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.08,
+          0.18,
+          0.08
+        ],
+        "category": "airframe",
+        "notes": "Installed directly below the main-wing leading edge, with its center 4 inches below the wing plane.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Fuselage structure",
+        "mass_kg": 0.4422509630408004,
+        "position_m": [
+          -0.02518605767518417,
+          0.0,
+          -0.065
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.6553459471778398,
+          0.127,
+          0.13
+        ],
+        "category": "airframe",
+        "notes": "Fuselage-local uniform shell-area-density approximation from the forward-most electronics/payload edge to the aft-most edge; mass scales with length and cross-sectional perimeter.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Battery",
+        "mass_kg": 0.715876906641588,
+        "position_m": [
+          -0.23385903126410407,
+          0.0,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.228,
+          0.0,
+          0.0
+        ],
+        "category": "propulsion_and_electronics",
+        "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Motor",
+        "mass_kg": 0.4564005482525193,
+        "position_m": [
+          -0.23385903126410407,
+          0.0,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.228,
+          0.0,
+          0.0
+        ],
+        "category": "propulsion_and_electronics",
+        "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "ESC",
+        "mass_kg": 0.118,
+        "position_m": [
+          -0.23385903126410407,
+          0.0,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.228,
+          0.0,
+          0.0
+        ],
+        "category": "propulsion_and_electronics",
+        "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Other electronics",
+        "mass_kg": 0.05,
+        "position_m": [
+          -0.23385903126410407,
+          0.0,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.228,
+          0.0,
+          0.0
+        ],
+        "category": "propulsion_and_electronics",
+        "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Propeller (M1/M2)",
+        "mass_kg": 0.10139544,
+        "position_m": [
+          -0.23385903126410407,
+          0.0,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.228,
+          0.0,
+          0.0
+        ],
+        "category": "propulsion_and_electronics",
+        "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Propeller (M3)",
+        "mass_kg": 0.08703254849999999,
+        "position_m": [
+          -0.23385903126410407,
+          0.0,
+          -0.07619999999999999
+        ],
+        "missions": [
+          "M3"
+        ],
+        "dimensions_m": [
+          0.228,
+          0.0,
+          0.0
+        ],
+        "category": "propulsion_and_electronics",
+        "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "Sensor release mechanism",
+        "mass_kg": 0.5567677770954635,
+        "position_m": [
+          0.08881394232481582,
+          0.0,
+          0.0
+        ],
+        "missions": [
+          "M3",
+          "M1",
+          "M2"
+        ],
+        "dimensions_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "category": "release_mechanism",
+        "notes": "Permanent mechanism modeled as a point mass at the top of the center container stack; mass is 1/20 of sensor mass.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "M2 sensor shipping container",
+        "mass_kg": 11.36215172690927,
+        "position_m": [
+          0.08881394232481582,
+          0.0,
+          -0.0635
+        ],
+        "missions": [
+          "M2"
+        ],
+        "dimensions_m": [
+          0.42734594717783975,
+          0.127,
+          0.127
+        ],
+        "category": "mission_2_payload",
+        "notes": "Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.",
+        "intrinsic_inertia_kg_m2": null
+      },
+      {
+        "name": "M3 sensor",
+        "mass_kg": 6.668917105053055,
+        "position_m": [
+          0.08881394232481582,
+          0.0,
+          -0.0635
+        ],
+        "missions": [
+          "M3"
+        ],
+        "dimensions_m": [
+          0.37654594717783973,
+          0.07619999999999999,
+          0.07619999999999999
+        ],
+        "category": "mission_3_payload",
+        "notes": "Three-inch-diameter sensor centered inside the volume formerly occupied by the primary M2 sensor container, with cylindrical intrinsic inertia. Its length is derived from the M3 flown weight and cannot exceed the M2 container envelope.",
+        "intrinsic_inertia_kg_m2": [
+          [
+            0.0048403333794330315,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.08121722931286023,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.08121722931286023
+          ]
+        ]
+      }
+    ],
+    "missions": {
+      "M1": {
+        "mission": "M1",
+        "items": [
+          {
+            "name": "Main wing structure",
+            "mass_kg": 0.5885373776846118,
+            "position_m": [
+              0.1725714626223592,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.3451429252447184,
+              1.7367164619627762,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing servo (left)",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.1725714626223592,
+              -0.43417911549069405,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing servo (right)",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.1725714626223592,
+              0.43417911549069405,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing integration",
+            "mass_kg": 0.1,
+            "position_m": [
+              0.1725714626223592,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.08,
+              0.08,
+              0.06
+            ],
+            "category": "integration",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing spar",
+            "mass_kg": 0.297302309590238,
+            "position_m": [
+              0.10354287757341551,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.02,
+              1.7367164619627762,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Horizontal tail structure",
+            "mass_kg": 0.12023922908345233,
+            "position_m": [
+              0.8742030347160412,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.21185007028989217,
+              0.6355502108696766,
+              0.012
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Vertical tail structure",
+            "mass_kg": 0.03941956068261046,
+            "position_m": [
+              0.8853344799287666,
+              0.0,
+              0.10418026751832764
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.23411296071534296,
+              0.012,
+              0.20836053503665528
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Horizontal tail servo",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.8742030347160412,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "Placed at the horizontal stabilizer geometric center until a measured installation location is supplied.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Vertical tail servo",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.8853344799287666,
+              0.0,
+              0.10418026751832764
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "Placed at the vertical stabilizer geometric center until a measured installation location is supplied.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Boom spar",
+            "mass_kg": 0.11251195176137913,
+            "position_m": [
+              0.6737669427655782,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.6572480350417196,
+              0.02,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Tail integration",
+            "mass_kg": 0.025,
+            "position_m": [
+              0.8742030347160412,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.06,
+              0.06,
+              0.05
+            ],
+            "category": "integration",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Landing gear",
+            "mass_kg": 0.22,
+            "position_m": [
+              0.0,
+              0.0,
+              -0.1016
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.08,
+              0.18,
+              0.08
+            ],
+            "category": "airframe",
+            "notes": "Installed directly below the main-wing leading edge, with its center 4 inches below the wing plane.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Fuselage structure",
+            "mass_kg": 0.4422509630408004,
+            "position_m": [
+              -0.02518605767518417,
+              0.0,
+              -0.065
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.6553459471778398,
+              0.127,
+              0.13
+            ],
+            "category": "airframe",
+            "notes": "Fuselage-local uniform shell-area-density approximation from the forward-most electronics/payload edge to the aft-most edge; mass scales with length and cross-sectional perimeter.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Battery",
+            "mass_kg": 0.715876906641588,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Motor",
+            "mass_kg": 0.4564005482525193,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "ESC",
+            "mass_kg": 0.118,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Other electronics",
+            "mass_kg": 0.05,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Propeller (M1/M2)",
+            "mass_kg": 0.10139544,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Propeller (M3)",
+            "mass_kg": 0.08703254849999999,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Sensor release mechanism",
+            "mass_kg": 0.5567677770954635,
+            "position_m": [
+              0.08881394232481582,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "category": "release_mechanism",
+            "notes": "Permanent mechanism modeled as a point mass at the top of the center container stack; mass is 1/20 of sensor mass.",
+            "intrinsic_inertia_kg_m2": null
+          }
+        ],
+        "total_mass_kg": 4.114734612332662,
+        "weight_n": 40.349087608534084,
+        "cg_m": [
+          0.027289060545198477,
+          0.0,
+          -0.03919843114683697
+        ],
+        "inertia_tensor_kg_m2": [
+          [
+            0.24418881384750293,
+            0.0,
+            -0.0379398708531287
+          ],
+          [
+            0.0,
+            0.3771208958360138,
+            0.0
+          ],
+          [
+            -0.0379398708531287,
+            0.0,
+            0.6046834514354041
+          ]
+        ],
+        "static_margin": 0.3308665952330894,
+        "static_margin_feasible": true,
+        "placement_feasible": true,
+        "warnings": []
+      },
+      "M2": {
+        "mission": "M2",
+        "items": [
+          {
+            "name": "Main wing structure",
+            "mass_kg": 0.5885373776846118,
+            "position_m": [
+              0.1725714626223592,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.3451429252447184,
+              1.7367164619627762,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing servo (left)",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.1725714626223592,
+              -0.43417911549069405,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing servo (right)",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.1725714626223592,
+              0.43417911549069405,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing integration",
+            "mass_kg": 0.1,
+            "position_m": [
+              0.1725714626223592,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.08,
+              0.08,
+              0.06
+            ],
+            "category": "integration",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing spar",
+            "mass_kg": 0.297302309590238,
+            "position_m": [
+              0.10354287757341551,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.02,
+              1.7367164619627762,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Horizontal tail structure",
+            "mass_kg": 0.12023922908345233,
+            "position_m": [
+              0.8742030347160412,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.21185007028989217,
+              0.6355502108696766,
+              0.012
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Vertical tail structure",
+            "mass_kg": 0.03941956068261046,
+            "position_m": [
+              0.8853344799287666,
+              0.0,
+              0.10418026751832764
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.23411296071534296,
+              0.012,
+              0.20836053503665528
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Horizontal tail servo",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.8742030347160412,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "Placed at the horizontal stabilizer geometric center until a measured installation location is supplied.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Vertical tail servo",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.8853344799287666,
+              0.0,
+              0.10418026751832764
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "Placed at the vertical stabilizer geometric center until a measured installation location is supplied.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Boom spar",
+            "mass_kg": 0.11251195176137913,
+            "position_m": [
+              0.6737669427655782,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.6572480350417196,
+              0.02,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Tail integration",
+            "mass_kg": 0.025,
+            "position_m": [
+              0.8742030347160412,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.06,
+              0.06,
+              0.05
+            ],
+            "category": "integration",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Landing gear",
+            "mass_kg": 0.22,
+            "position_m": [
+              0.0,
+              0.0,
+              -0.1016
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.08,
+              0.18,
+              0.08
+            ],
+            "category": "airframe",
+            "notes": "Installed directly below the main-wing leading edge, with its center 4 inches below the wing plane.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Fuselage structure",
+            "mass_kg": 0.4422509630408004,
+            "position_m": [
+              -0.02518605767518417,
+              0.0,
+              -0.065
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.6553459471778398,
+              0.127,
+              0.13
+            ],
+            "category": "airframe",
+            "notes": "Fuselage-local uniform shell-area-density approximation from the forward-most electronics/payload edge to the aft-most edge; mass scales with length and cross-sectional perimeter.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Battery",
+            "mass_kg": 0.715876906641588,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Motor",
+            "mass_kg": 0.4564005482525193,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "ESC",
+            "mass_kg": 0.118,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Other electronics",
+            "mass_kg": 0.05,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Propeller (M1/M2)",
+            "mass_kg": 0.10139544,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Propeller (M3)",
+            "mass_kg": 0.08703254849999999,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Sensor release mechanism",
+            "mass_kg": 0.5567677770954635,
+            "position_m": [
+              0.08881394232481582,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "category": "release_mechanism",
+            "notes": "Permanent mechanism modeled as a point mass at the top of the center container stack; mass is 1/20 of sensor mass.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "M2 sensor shipping container",
+            "mass_kg": 11.36215172690927,
+            "position_m": [
+              0.08881394232481582,
+              0.0,
+              -0.0635
+            ],
+            "missions": [
+              "M2"
+            ],
+            "dimensions_m": [
+              0.42734594717783975,
+              0.127,
+              0.127
+            ],
+            "category": "mission_2_payload",
+            "notes": "Mass includes a sensor-equivalent payload plus the 0.5 lb empty container. The center bay fills 3-wide and 2-high before paired aft/forward bays are filled alternately.",
+            "intrinsic_inertia_kg_m2": null
+          }
+        ],
+        "total_mass_kg": 15.476886339241933,
+        "weight_n": 151.7663474426064,
+        "cg_m": [
+          0.07245674004076348,
+          0.0,
+          -0.05703910700755375
+        ],
+        "inertia_tensor_kg_m2": [
+          [
+            0.27651614095960314,
+            0.0,
+            -0.033423351032486205
+          ],
+          [
+            0.0,
+            0.57852845753397,
+            0.0
+          ],
+          [
+            -0.033423351032486205,
+            0.0,
+            0.8043070435551467
+          ]
+        ],
+        "static_margin": 0.19999999999999998,
+        "static_margin_feasible": true,
+        "placement_feasible": true,
+        "warnings": []
+      },
+      "M3": {
+        "mission": "M3",
+        "items": [
+          {
+            "name": "Main wing structure",
+            "mass_kg": 0.5885373776846118,
+            "position_m": [
+              0.1725714626223592,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.3451429252447184,
+              1.7367164619627762,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing servo (left)",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.1725714626223592,
+              -0.43417911549069405,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing servo (right)",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.1725714626223592,
+              0.43417911549069405,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing integration",
+            "mass_kg": 0.1,
+            "position_m": [
+              0.1725714626223592,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.08,
+              0.08,
+              0.06
+            ],
+            "category": "integration",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Wing spar",
+            "mass_kg": 0.297302309590238,
+            "position_m": [
+              0.10354287757341551,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.02,
+              1.7367164619627762,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Horizontal tail structure",
+            "mass_kg": 0.12023922908345233,
+            "position_m": [
+              0.8742030347160412,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.21185007028989217,
+              0.6355502108696766,
+              0.012
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Vertical tail structure",
+            "mass_kg": 0.03941956068261046,
+            "position_m": [
+              0.8853344799287666,
+              0.0,
+              0.10418026751832764
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.23411296071534296,
+              0.012,
+              0.20836053503665528
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Horizontal tail servo",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.8742030347160412,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "Placed at the horizontal stabilizer geometric center until a measured installation location is supplied.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Vertical tail servo",
+            "mass_kg": 0.021,
+            "position_m": [
+              0.8853344799287666,
+              0.0,
+              0.10418026751832764
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.04,
+              0.02,
+              0.04
+            ],
+            "category": "controls",
+            "notes": "Placed at the vertical stabilizer geometric center until a measured installation location is supplied.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Boom spar",
+            "mass_kg": 0.11251195176137913,
+            "position_m": [
+              0.6737669427655782,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.6572480350417196,
+              0.02,
+              0.02
+            ],
+            "category": "airframe",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Tail integration",
+            "mass_kg": 0.025,
+            "position_m": [
+              0.8742030347160412,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.06,
+              0.06,
+              0.05
+            ],
+            "category": "integration",
+            "notes": "",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Landing gear",
+            "mass_kg": 0.22,
+            "position_m": [
+              0.0,
+              0.0,
+              -0.1016
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.08,
+              0.18,
+              0.08
+            ],
+            "category": "airframe",
+            "notes": "Installed directly below the main-wing leading edge, with its center 4 inches below the wing plane.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Fuselage structure",
+            "mass_kg": 0.4422509630408004,
+            "position_m": [
+              -0.02518605767518417,
+              0.0,
+              -0.065
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.6553459471778398,
+              0.127,
+              0.13
+            ],
+            "category": "airframe",
+            "notes": "Fuselage-local uniform shell-area-density approximation from the forward-most electronics/payload edge to the aft-most edge; mass scales with length and cross-sectional perimeter.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Battery",
+            "mass_kg": 0.715876906641588,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Motor",
+            "mass_kg": 0.4564005482525193,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "ESC",
+            "mass_kg": 0.118,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Other electronics",
+            "mass_kg": 0.05,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Propeller (M1/M2)",
+            "mass_kg": 0.10139544,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Propeller (M3)",
+            "mass_kg": 0.08703254849999999,
+            "position_m": [
+              -0.23385903126410407,
+              0.0,
+              -0.07619999999999999
+            ],
+            "missions": [
+              "M3"
+            ],
+            "dimensions_m": [
+              0.228,
+              0.0,
+              0.0
+            ],
+            "category": "propulsion_and_electronics",
+            "notes": "Equivalent fat electronics-area CM, packed inside the fuselage before airplane installation.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "Sensor release mechanism",
+            "mass_kg": 0.5567677770954635,
+            "position_m": [
+              0.08881394232481582,
+              0.0,
+              0.0
+            ],
+            "missions": [
+              "M3",
+              "M1",
+              "M2"
+            ],
+            "dimensions_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "category": "release_mechanism",
+            "notes": "Permanent mechanism modeled as a point mass at the top of the center container stack; mass is 1/20 of sensor mass.",
+            "intrinsic_inertia_kg_m2": null
+          },
+          {
+            "name": "M3 sensor",
+            "mass_kg": 6.668917105053055,
+            "position_m": [
+              0.08881394232481582,
+              0.0,
+              -0.0635
+            ],
+            "missions": [
+              "M3"
+            ],
+            "dimensions_m": [
+              0.37654594717783973,
+              0.07619999999999999,
+              0.07619999999999999
+            ],
+            "category": "mission_3_payload",
+            "notes": "Three-inch-diameter sensor centered inside the volume formerly occupied by the primary M2 sensor container, with cylindrical intrinsic inertia. Its length is derived from the M3 flown weight and cannot exceed the M2 container envelope.",
+            "intrinsic_inertia_kg_m2": [
+              [
+                0.0048403333794330315,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.08121722931286023,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.08121722931286023
+              ]
+            ]
+          }
+        ],
+        "total_mass_kg": 10.783651717385716,
+        "weight_n": 105.74448874068432,
+        "cg_m": [
+          0.06533779832341813,
+          0.0,
+          -0.05422721290387364
+        ],
+        "inertia_tensor_kg_m2": [
+          [
+            0.25053194284193825,
+            0.0,
+            -0.03413520609627238
+          ],
+          [
+            0.0,
+            0.4694732844516304,
+            0.0
+          ],
+          [
+            -0.03413520609627238,
+            0.0,
+            0.6955330444360184
+          ]
+        ],
+        "static_margin": 0.22062606878671429,
+        "static_margin_feasible": true,
+        "placement_feasible": true,
+        "warnings": []
+      }
+    },
+    "warnings": [],
+    "penalty": 0.0,
+    "penalty_static_margin": 0.0,
+    "penalty_placement": 0.0,
+    "penalty_static_margin_by_mission": {
+      "M2": 0.0,
+      "M3": 0.0
+    }
+  },
+  "aero": {
+    "M1": {
+      "can_fly": true,
+      "lap_time": 22.26170539159746,
+      "penalty": 0.0,
+      "penalty_static_margin": 0.0,
+      "penalty_longitudinal": 0.0,
+      "penalty_directional": 0.0,
+      "penalty_spiral": 0.0,
+      "cruise_speed_mps": 46.32012691379627,
+      "stall_speed_mps": 10.29168530546107
+    },
+    "M2": {
+      "can_fly": true,
+      "lap_time": 36.767928972119556,
+      "penalty": 0.0,
+      "penalty_static_margin": 0.0,
+      "penalty_longitudinal": 0.0,
+      "penalty_directional": 0.0,
+      "penalty_spiral": 0.0,
+      "cruise_speed_mps": 45.51251475876329,
+      "stall_speed_mps": 19.959854897906396
+    },
+    "M3": {
+      "can_fly": true,
+      "lap_time": 41.44385356362964,
+      "penalty": 0.0,
+      "penalty_static_margin": 0.0,
+      "penalty_longitudinal": 0.0,
+      "penalty_directional": 0.0,
+      "penalty_spiral": 0.0,
+      "cruise_speed_mps": 36.229443134657,
+      "stall_speed_mps": 18.258948314443856
+    },
+    "penalty_total": 0.0,
+    "penalty_mechanical": 0.0,
+    "penalty_aero_m2": 0.0,
+    "penalty_aero_m3": 0.0,
+    "penalty_overweight": 0.0,
+    "penalty_propulsion": 0.0,
+    "propulsion_feasible": true,
+    "propulsion": {
+      "M2": {
+        "mission": 2,
+        "feasible": true,
+        "penalty": 0.0,
+        "inertial_mass_kg": 15.476886339241933,
+        "supported_mass_kg": 15.476886339241933,
+        "operating_points_feasible": true,
+        "static_thrust_n": 78.79650152033899,
+        "static_thrust_to_weight": 0.5191961383279488,
+        "liftoff_speed_mps": 21.882034640428447,
+        "takeoff_distance_m": 74.79919472045998,
+        "optimistic_takeoff_distance_lower_bound_m": 47.02427020575258,
+        "takeoff_screened_early": false,
+        "takeoff_time_s": 6.093128770058418,
+        "acceleration_distance_m": 17.47461492065151,
+        "acceleration_time_s": 0.766514542220014,
+        "acceleration_energy_wh": 0.4512911162743723,
+        "climb_speed_mps": 23.705537527130822,
+        "climb_rate_mps": 5.570983848312203,
+        "climb_gradient": 0.24177908366187545,
+        "climb_distance_required_m": 252.13099113756127,
+        "climb_distance_allowed_m": Infinity,
+        "cruise_altitude_m": 60.96,
+        "climb_time_s": 10.942411907812042,
+        "flap_retraction_energy_wh": 1.5042816963394712,
+        "maximum_propeller_tip_mach": 0.5040592294535227,
+        "maximum_propeller_rpm": 6500.0,
+        "manufacturer_propeller_rpm_limit": 7500.0,
+        "operating_propeller_rpm_limit": 6750.0,
+        "propeller_rpm_margin": 250.0,
+        "maximum_propeller_shaft_power_w": 1652.3571818986957,
+        "maximum_propeller_disk_power_loading_w_m2": 8152.421515672746,
+        "cruise_power_w": 632.2778373669531,
+        "takeoff_energy_wh": 3.504060791122901,
+        "climb_energy_wh": 6.391647856555116,
+        "reacceleration_energy_wh": 1.0336438370246828,
+        "cruise_energy_wh": 58.78610331146659,
+        "required_energy_wh": 71.67102860878313,
+        "allowed_energy_wh": 74.78179464149312,
+        "energy_margin_wh": 3.1107660327099893,
+        "takeoff_distance_margin_m": 0.20080527954002036,
+        "climb_rate_margin_mps": 3.5709838483122027,
+        "climb_distance_margin_m": Infinity,
+        "limiting_constraint": "none",
+        "aerodynamic_lap_time_s": 31.04497153455673,
+        "modeled_lap_time_s": 36.767928972119556,
+        "straight_time_per_lap_s": 19.117075587947458,
+        "turn_time_per_lap_s": 17.6508533841721,
+        "turn_speed_mps": 31.559301621925904,
+        "turn_load_factor": 2.5,
+        "turn_power_w": 1713.1574613748503,
+        "straight_energy_wh": 16.787921124344432,
+        "turn_energy_wh": 41.99818218712216,
+        "propeller_key": "20x15E",
+        "propeller_blade_count": 2,
+        "propeller_diameter_in": 20.0,
+        "propeller_pitch_in": 15.0,
+        "aerodynamic_cruise_speed_mps": 45.51251475876329,
+        "cruise_speed_mps": 31.88772242885979,
+        "cruise_power_cap_w": 642.4340480155689,
+        "energy_limited": true,
+        "completed_laps": 5,
+        "mission_flight_time_s": 183.8396448605978,
+        "usable_window_s": 280.0,
+        "clean_stall_speed_mps": 19.959854897906396,
+        "takeoff_stall_speed_mps": 18.235028867023708,
+        "takeoff_flap_deflection_deg": 21.488738827096068,
+        "landing_stall_speed_mps": 17.193658019296784,
+        "landing_flap_deflection_deg": 40.0
+      },
+      "M3": {
+        "mission": 3,
+        "feasible": true,
+        "penalty": 0.0,
+        "inertial_mass_kg": 10.783651717385716,
+        "supported_mass_kg": 12.951508418442959,
+        "operating_points_feasible": true,
+        "static_thrust_n": 69.69903839246575,
+        "static_thrust_to_weight": 0.5488005592735857,
+        "liftoff_speed_mps": 20.0173268572389,
+        "takeoff_distance_m": 52.59692514265536,
+        "optimistic_takeoff_distance_lower_bound_m": 30.997111981977753,
+        "takeoff_screened_early": false,
+        "takeoff_time_s": 4.631145684959142,
+        "acceleration_distance_m": 14.087894785548011,
+        "acceleration_time_s": 0.6750630039116567,
+        "acceleration_energy_wh": 0.2791593795947769,
+        "climb_speed_mps": 21.685437428675474,
+        "climb_rate_mps": 4.260926457927486,
+        "climb_gradient": 0.2003943566476402,
+        "climb_distance_required_m": 304.2001831777525,
+        "climb_distance_allowed_m": Infinity,
+        "cruise_altitude_m": 60.96,
+        "climb_time_s": 14.30674774651026,
+        "flap_retraction_energy_wh": 0.5582391226207492,
+        "maximum_propeller_tip_mach": 0.48622328748824417,
+        "maximum_propeller_rpm": 6600.0,
+        "manufacturer_propeller_rpm_limit": 7894.736842105263,
+        "operating_propeller_rpm_limit": 7105.263157894738,
+        "propeller_rpm_margin": 505.26315789473756,
+        "maximum_propeller_shaft_power_w": 1312.6798626698833,
+        "maximum_propeller_disk_power_loading_w_m2": 7176.196240563307,
+        "cruise_power_w": 660.2767731842933,
+        "takeoff_energy_wh": 1.9973428591607154,
+        "climb_energy_wh": 5.803249114226825,
+        "reacceleration_energy_wh": 0.6494453110659303,
+        "cruise_energy_wh": 63.29295200912937,
+        "required_energy_wh": 72.58038779579837,
+        "allowed_energy_wh": 74.78179464149312,
+        "energy_margin_wh": 2.2014068456947484,
+        "takeoff_distance_margin_m": 22.40307485734464,
+        "climb_rate_margin_mps": 2.2609264579274857,
+        "climb_distance_margin_m": Infinity,
+        "limiting_constraint": "none",
+        "aerodynamic_lap_time_s": 32.97280511678915,
+        "modeled_lap_time_s": 41.44385356362964,
+        "straight_time_per_lap_s": 22.837250917615183,
+        "turn_time_per_lap_s": 18.606602646014455,
+        "turn_speed_mps": 26.398296363268646,
+        "turn_load_factor": 2.075,
+        "turn_power_w": 1230.5774082889413,
+        "straight_energy_wh": 25.131510573804995,
+        "turn_energy_wh": 38.16144143532438,
+        "propeller_key": "19x12E",
+        "propeller_blade_count": 2,
+        "propeller_diameter_in": 19.0,
+        "propeller_pitch_in": 12.0,
+        "aerodynamic_cruise_speed_mps": 36.229443134657,
+        "cruise_speed_mps": 26.69323038044802,
+        "cruise_power_cap_w": 666.151392031653,
+        "energy_limited": true,
+        "completed_laps": 6,
+        "mission_flight_time_s": 248.66312138177784,
+        "usable_window_s": 280.0,
+        "clean_stall_speed_mps": 18.258948314443856,
+        "takeoff_stall_speed_mps": 16.68110571436575,
+        "takeoff_flap_deflection_deg": 21.488738827096068,
+        "landing_stall_speed_mps": 15.728476720714655,
+        "landing_flap_deflection_deg": 40.0
+      },
+      "M1": {
+        "mission": 1,
+        "feasible": true,
+        "penalty": 0.0,
+        "inertial_mass_kg": 4.114734612332662,
+        "supported_mass_kg": 4.114734612332662,
+        "operating_points_feasible": true,
+        "static_thrust_n": 78.79650152033899,
+        "static_thrust_to_weight": 1.9528694746414301,
+        "liftoff_speed_mps": 11.282798172350907,
+        "takeoff_distance_m": 3.770209156996099,
+        "optimistic_takeoff_distance_lower_bound_m": 3.323827965117641,
+        "takeoff_screened_early": false,
+        "takeoff_time_s": 0.6473237632731541,
+        "acceleration_distance_m": 0.7042053612075567,
+        "acceleration_time_s": 0.059905607030167285,
+        "acceleration_energy_wh": 0.03555174659935947,
+        "climb_speed_mps": 12.223031353380149,
+        "climb_rate_mps": 12.210808322026768,
+        "climb_gradient": 22.34390577008715,
+        "climb_distance_required_m": 2.7282607001328323,
+        "climb_distance_allowed_m": Infinity,
+        "cruise_altitude_m": 60.96,
+        "climb_time_s": 4.992298494280334,
+        "flap_retraction_energy_wh": 1.7550500714651376,
+        "maximum_propeller_tip_mach": 0.5040592294535227,
+        "maximum_propeller_rpm": 6500.0,
+        "manufacturer_propeller_rpm_limit": 7500.0,
+        "operating_propeller_rpm_limit": 6750.0,
+        "propeller_rpm_margin": 250.0,
+        "maximum_propeller_shaft_power_w": 1653.4658754376794,
+        "maximum_propeller_disk_power_loading_w_m2": 8157.8916023831225,
+        "cruise_power_w": 720.9096319072783,
+        "takeoff_energy_wh": 0.3597876867299064,
+        "climb_energy_wh": 2.8928318246932663,
+        "reacceleration_energy_wh": 14.882339831160655,
+        "cruise_energy_wh": 12.029841712989127,
+        "required_energy_wh": 31.955402873637453,
+        "allowed_energy_wh": 74.78179464149312,
+        "energy_margin_wh": 42.82639176785567,
+        "takeoff_distance_margin_m": 71.2297908430039,
+        "climb_rate_margin_mps": 10.210808322026768,
+        "climb_distance_margin_m": Infinity,
+        "limiting_constraint": "none",
+        "aerodynamic_lap_time_s": 22.261705391597456,
+        "modeled_lap_time_s": 22.26170539159746,
+        "straight_time_per_lap_s": 13.160585702506635,
+        "turn_time_per_lap_s": 9.101119689090822,
+        "turn_speed_mps": 16.272583263471365,
+        "turn_load_factor": 2.5,
+        "turn_power_w": 543.693219092586,
+        "straight_energy_wh": 7.906327495398539,
+        "turn_energy_wh": 4.1235142175905874,
+        "propeller_key": "20x15E",
+        "propeller_blade_count": 2,
+        "propeller_diameter_in": 20.0,
+        "propeller_pitch_in": 15.0,
+        "aerodynamic_cruise_speed_mps": 46.32012691379627,
+        "cruise_speed_mps": 46.32012691379627,
+        "cruise_power_cap_w": Infinity,
+        "energy_limited": false,
+        "completed_laps": 3,
+        "mission_flight_time_s": 66.78511617479238,
+        "usable_window_s": 280.0,
+        "clean_stall_speed_mps": 10.29168530546107,
+        "takeoff_stall_speed_mps": 9.402331810292422,
+        "takeoff_flap_deflection_deg": 21.488738827096068,
+        "landing_stall_speed_mps": 8.865380960403686,
+        "landing_flap_deflection_deg": 40.0
+      }
+    },
+    "catalog_propellers": {
+      "M1": "20x15E",
+      "M2": "20x15E",
+      "M3": "19x12E"
+    },
+    "max_takeoff_mass_kg": 15.476886339241933,
+    "m3_tow_predicted_peak_down_lbf": 24.352189296387298,
+    "m3_tow_representative_down_lbf": 19.48175143710984,
+    "m3_aircraft_only_mass_kg": 4.114734612332662,
+    "m3_supported_mass_kg": 12.951508418442959
+  }
+}
