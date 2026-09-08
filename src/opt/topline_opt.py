@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import inspect
 import json
@@ -108,6 +109,10 @@ class ToplineConfig:
     polish: bool = False
     seed: int = 20260808
     output_dir: Path = Path("data_dump") / "opt_topline"
+    # Warm-start each optimization island from a prior run's saved population.
+    # The loader maps columns by name, so runs made with a different set of
+    # fixed optimizer variables remain usable.
+    resume_from: Path | None = None
     round_payload: bool = True
     continuous_lap_scoring: bool = False
     suppress_module_output: bool = True
@@ -117,7 +122,7 @@ class ToplineConfig:
     # Bias the top-line aircraft optimization toward the heavy-sensor regime.
     # This applies only to the declared M2/Ground sensor; Mission 3 retains its
     # independent 0.05 kg lower bound.
-    minimum_sensor_weight_kg: float = 11
+    minimum_sensor_weight_kg: float = 12
     # Battery is fixed at 8S by team decision (2026-09-05) and is no longer a
     # design variable. Setting optimize_battery_cell_count=True restores the
     # old behaviour if a future study needs it.
@@ -139,6 +144,8 @@ class ToplineConfig:
                 "minimum_sensor_weight_kg must lie inside the DesignVector "
                 f"sensor-weight bounds [{lower_sensor_weight}, {upper_sensor_weight}]."
             )
+        if self.resume_from is not None:
+            object.__setattr__(self, "resume_from", Path(self.resume_from))
         object.__setattr__(
             self,
             "battery_cell_count",
@@ -967,6 +974,118 @@ def _combined_island_result(
     )
 
 
+def _resume_population_path(resume_from: Path) -> tuple[Path, Path]:
+    """Return the population archive and its containing run directory."""
+
+    source = Path(resume_from).expanduser()
+    if source.is_dir():
+        return source / "result_arrays.npz", source
+    return source, source.parent
+
+
+def _load_resume_island_populations(
+    config: ToplineConfig,
+) -> list[np.ndarray] | None:
+    """Load and project a previous final population onto today's free variables."""
+
+    if config.resume_from is None:
+        return None
+
+    archive_path, run_dir = _resume_population_path(config.resume_from)
+    if not archive_path.is_file():
+        raise FileNotFoundError(
+            f"Resume population archive not found: {archive_path}"
+        )
+
+    with np.load(archive_path, allow_pickle=False) as archive:
+        required_arrays = {"population", "variable_names"}
+        missing_arrays = required_arrays - set(archive.files)
+        if missing_arrays:
+            raise ValueError(
+                f"Resume archive {archive_path} is missing: "
+                + ", ".join(sorted(missing_arrays))
+            )
+        saved_population = np.asarray(archive["population"], dtype=float)
+        saved_names = [str(name) for name in archive["variable_names"]]
+        saved_best = (
+            np.asarray(archive["official_best_x"], dtype=float)
+            if "official_best_x" in archive.files
+            else None
+        )
+
+    if saved_population.ndim != 2 or saved_population.shape[1] != len(saved_names):
+        raise ValueError(f"Resume archive {archive_path} has an invalid population shape.")
+    if len(saved_names) != len(set(saved_names)):
+        raise ValueError(f"Resume archive {archive_path} has duplicate variable names.")
+
+    current_names = _optimizer_variable_names(config)
+    missing_names = [name for name in current_names if name not in saved_names]
+    if missing_names:
+        raise ValueError(
+            "Resume population does not contain today's free variables: "
+            + ", ".join(missing_names)
+        )
+    saved_indices = [saved_names.index(name) for name in current_names]
+    projected = saved_population[:, saved_indices]
+    projected_best = (
+        saved_best[saved_indices]
+        if saved_best is not None and saved_best.shape == (len(saved_names),)
+        else None
+    )
+
+    summary_path = run_dir / "run_summary.json"
+    saved_island_count = config.island_count
+    saved_island_size: int | None = None
+    if summary_path.is_file():
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        saved_island_count = int(
+            summary.get("config", {}).get("island_count", config.island_count)
+        )
+        saved_island_size = int(summary.get("expected_population_size", 0)) or None
+    if saved_island_count != config.island_count:
+        raise ValueError(
+            f"Resume run used {saved_island_count} islands, but this run is configured "
+            f"for {config.island_count}."
+        )
+    if saved_island_size is None:
+        saved_island_size = len(projected) // saved_island_count
+    required_saved_rows = saved_island_count * saved_island_size
+    if saved_island_size <= 0 or len(projected) < required_saved_rows:
+        raise ValueError(
+            f"Resume archive has {len(projected)} rows; expected at least "
+            f"{required_saved_rows} for {saved_island_count} islands."
+        )
+
+    target_size = _expected_population_size(config)
+    bounds = np.asarray(_optimizer_bounds(config), dtype=float)
+    integrality = _integrality_mask(config)
+    populations: list[np.ndarray] = []
+    for island in range(config.island_count):
+        start = island * saved_island_size
+        source = projected[start : start + saved_island_size]
+        if target_size <= saved_island_size:
+            indices = np.linspace(0, saved_island_size - 1, target_size, dtype=int)
+            population = source[indices].copy()
+        else:
+            repeats = math.ceil(target_size / saved_island_size)
+            population = np.tile(source, (repeats, 1))[:target_size].copy()
+        population = np.clip(population, bounds[:, 0], bounds[:, 1])
+        population[:, integrality] = np.rint(population[:, integrality])
+        if not np.all(np.isfinite(population)):
+            raise ValueError(f"Resume archive {archive_path} contains non-finite values.")
+        populations.append(population)
+
+    if projected_best is not None:
+        populations[0][0] = np.clip(projected_best, bounds[:, 0], bounds[:, 1])
+        populations[0][0, integrality] = np.rint(populations[0][0, integrality])
+
+    print(
+        f"  warm start: {archive_path} "
+        f"({len(saved_names)} saved variables -> {len(current_names)} free variables)"
+    )
+    return populations
+
+
 def _run_niching_islands(config: ToplineConfig) -> OptimizeResult:
     """Run full-range DE islands and restart weaker duplicate niches."""
     global ACTIVE_ISLAND
@@ -983,11 +1102,16 @@ def _run_niching_islands(config: ToplineConfig) -> OptimizeResult:
         + (index < total_generations % config.island_count)
         for index in range(config.island_count)
     ]
+    resumed_populations = _load_resume_island_populations(config)
     states: list[dict[str, Any]] = []
     for island in range(config.island_count):
-        population = np.asarray(
-            _initial_population(config, seed=config.seed + 1009 * island),
-            dtype=float,
+        population = (
+            resumed_populations[island]
+            if resumed_populations is not None
+            else np.asarray(
+                _initial_population(config, seed=config.seed + 1009 * island),
+                dtype=float,
+            )
         )
         states.append(
             {
@@ -1736,8 +1860,26 @@ def run_topline_optimization(config: ToplineConfig | None = None):
     return result
 
 
-def main() -> None:
-    run_topline_optimization()
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run the multimodal top-line aircraft optimization."
+    )
+    parser.add_argument(
+        "--resume-from",
+        type=Path,
+        metavar="RUN_DIR",
+        help=(
+            "Warm-start from a previous run directory (or its result_arrays.npz). "
+            "Saved columns are mapped onto the variables that are currently free."
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = _parse_args(argv)
+    config = ToplineConfig(resume_from=args.resume_from)
+    run_topline_optimization(config)
 
 
 if __name__ == "__main__":
