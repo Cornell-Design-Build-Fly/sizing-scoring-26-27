@@ -181,16 +181,20 @@ def test_sensor_has_fixed_diameter_and_independent_container_length_floor() -> N
     from src.vectors import (
         INCH_M,
         MIN_SENSOR_LENGTH_M,
+        MIN_SENSOR_WEIGHT_KG,
         SENSOR_DIAMETER_M,
         DesignVector,
         maximum_sensor_weight_kg,
+        sensor_length_from_weight_kg,
     )
 
     assert "sensor_diameter_m" not in DesignVector.opt_names()
+    assert "sensor_length_m" not in DesignVector.opt_names()
     assert DesignVector().sensor_diameter_m == SENSOR_DIAMETER_M == 3.0 * INCH_M
-    assert MIN_SENSOR_LENGTH_M < 6.0 * INCH_M
+    twelve_kg_sensor = DesignVector(sensor_weight_kg=12.0)
+    assert twelve_kg_sensor.sensor_length_m == sensor_length_from_weight_kg(12.0)
 
-    # A denser-than-steel sensor is still rejected.
+    # A sensor too heavy to fit within the maximum solid-steel length is rejected.
     try:
         DesignVector(sensor_length_m=0.10, sensor_weight_kg=50.0, batt_capacity=3.0)
     except ValueError:
@@ -198,12 +202,13 @@ def test_sensor_has_fixed_diameter_and_independent_container_length_floor() -> N
     else:
         raise AssertionError("density bound did not reject an impossible sensor")
 
-    # Short sensors are legal, but the shipping container remains 8 inches long.
+    # The minimum solid-steel sensor is legal, while its container remains 8 in.
     short_sensor = DesignVector(
         sensor_length_m=MIN_SENSOR_LENGTH_M,
-        sensor_weight_kg=0.1,
-        mission3_sensor_weight_kg=0.1,
+        sensor_weight_kg=MIN_SENSOR_WEIGHT_KG,
+        mission3_sensor_weight_kg=0.05,
     )
+    assert math.isclose(short_sensor.sensor_length_m, MIN_SENSOR_LENGTH_M)
     container_length = Mission2Config().container_dimensions_m(
         short_sensor.sensor_length_m, short_sensor.sensor_diameter_m
     )[0]

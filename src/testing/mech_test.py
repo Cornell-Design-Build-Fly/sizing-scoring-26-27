@@ -65,7 +65,7 @@ def main() -> None:
     result = evaluate_mechanical_module(design, config)
 
     assert "extra_shipping_containers" in design.opt_names()
-    assert "sensor_length_m" in design.opt_names()
+    assert "sensor_length_m" not in design.opt_names()
     assert "sensor_weight_kg" in design.opt_names()
     assert "mission3_sensor_weight_kg" in design.opt_names()
     assert "ducks_num" not in design.opt_names()

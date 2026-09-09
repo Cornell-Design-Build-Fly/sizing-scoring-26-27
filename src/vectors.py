@@ -36,20 +36,22 @@ SENSOR_STEEL_DENSITY_KG_M3 = 7850.0
 # than 6 inches. Packaging has its own independent 8-inch minimum length.
 MIN_SENSOR_LENGTH_M = 1.0 * INCH_M
 MAX_SENSOR_LENGTH_M = 24.0 * INCH_M
-MIN_SENSOR_WEIGHT_KG = 0.05
-MIN_MISSION3_SENSOR_WEIGHT_KG = MIN_SENSOR_WEIGHT_KG
+# With solid-steel geometry, the minimum declared weight is the mass of the
+# minimum-length rod. Mission 3 may still fly the same physical sensor with
+# less internal ballast.
+MIN_SENSOR_WEIGHT_KG = float(
+    SENSOR_STEEL_DENSITY_KG_M3
+    * np.pi
+    * (0.5 * SENSOR_DIAMETER_M) ** 2
+    * MIN_SENSOR_LENGTH_M
+)
+MIN_MISSION3_SENSOR_WEIGHT_KG = 0.05
 
 
 def maximum_sensor_weight_kg(
     sensor_length_m: float,
 ) -> float:
-    """Heaviest physically realizable 3-inch-diameter sensor of a given length.
-
-    Weight and length are free; the sensor simply cannot be denser than
-    SENSOR_STEEL_DENSITY_KG_M3. Without this bound the optimizer would take
-    maximum weight in minimum volume -- Mission 3 and the Ground Mission both
-    reward weight -- and get an arbitrarily small, arbitrarily heavy payload.
-    """
+    """Mass of a solid-steel, 3-inch-diameter sensor of a given length."""
 
     sensor_length_m = float(sensor_length_m)
     if not np.isfinite(sensor_length_m) or sensor_length_m <= 0.0:
@@ -58,17 +60,15 @@ def maximum_sensor_weight_kg(
     return float(SENSOR_STEEL_DENSITY_KG_M3 * cross_section_m2 * sensor_length_m)
 
 
-# Differential evolution requires finite box bounds. This is not an
-# independent sensor-weight cap: it is the density limit evaluated at the
-# largest sensor length the optimizer can select. The nonlinear density
-# constraint below tightens the bound for every shorter sensor.
+# Differential evolution requires a finite weight bound. This is the mass of
+# the longest permitted solid-steel rod; length is derived from weight.
 OPTIMIZER_SENSOR_WEIGHT_UPPER_KG = maximum_sensor_weight_kg(
     MAX_SENSOR_LENGTH_M
 )
 
 
 def sensor_length_from_weight_kg(sensor_weight_kg: float) -> float:
-    """Length of a solid-steel sensor of the given weight (legacy helper)."""
+    """Length of a solid-steel, 3-inch-diameter sensor of the given weight."""
 
     sensor_weight_kg = float(sensor_weight_kg)
     if not np.isfinite(sensor_weight_kg) or sensor_weight_kg <= 0.0:
@@ -91,7 +91,6 @@ OPT_VARS = [
     ("tail_arm", (0.3, 0.9)),
     ("nose_length", (0.08, 0.3)),
     ("extra_shipping_containers", (0, 0)),
-    ("sensor_length_m", (MIN_SENSOR_LENGTH_M, MAX_SENSOR_LENGTH_M)),
     (
         "sensor_weight_kg",
         (MIN_SENSOR_WEIGHT_KG, OPTIMIZER_SENSOR_WEIGHT_UPPER_KG),
@@ -144,9 +143,12 @@ class DesignVector:
     # this variable controls only the additional container simulators.
     # ``sensor_weight_kg`` is the maximum declared sensor weight used by M2 and
     # the Ground Mission. Mission 3 may fly at any positive weight up to that
-    # declared maximum. Both lengths follow from their respective weights.
+    # declared maximum. The fixed-diameter solid-steel length is derived from
+    # the declared maximum weight. ``sensor_length_m`` remains accepted as an
+    # initialization argument only for compatibility with archived scripts;
+    # its supplied value is replaced in ``__post_init__``.
     extra_shipping_containers: float = 0
-    sensor_length_m: float = 6.0 * INCH_M
+    sensor_length_m: float | None = None
     sensor_diameter_m: float = field(init=False, default=SENSOR_DIAMETER_M)
     sensor_weight_kg: float = 1.0
     mission3_sensor_weight_kg: float | None = None
@@ -207,18 +209,16 @@ class DesignVector:
             or self.fuselage_box_back_x_m < 0
             or not np.isfinite(self.sensor_weight_kg)
             or self.sensor_weight_kg < MIN_SENSOR_WEIGHT_KG
-            or not np.isfinite(self.sensor_length_m)
-            or self.sensor_length_m < MIN_SENSOR_LENGTH_M
         ):
             raise ValueError(
                 "All DesignVector primary dimensions must be positive, "
-                f"sensor_weight_kg must be at least {MIN_SENSOR_WEIGHT_KG} kg, "
-                f"and sensor_length_m at least {MIN_SENSOR_LENGTH_M} m."
+                f"and sensor_weight_kg must be at least {MIN_SENSOR_WEIGHT_KG} kg."
             )
-        if self.sensor_weight_kg > maximum_sensor_weight_kg(self.sensor_length_m):
+        self.sensor_length_m = sensor_length_from_weight_kg(self.sensor_weight_kg)
+        if self.sensor_length_m > MAX_SENSOR_LENGTH_M:
             raise ValueError(
-                "sensor_weight_kg exceeds a solid steel rod of the declared "
-                "length and diameter; the sensor would be denser than steel."
+                "sensor_weight_kg requires a solid-steel sensor longer than "
+                f"the {MAX_SENSOR_LENGTH_M} m maximum."
             )
         if self.mission3_sensor_weight_kg is None:
             self.mission3_sensor_weight_kg = float(self.sensor_weight_kg)
@@ -412,7 +412,6 @@ class ASBDesignVector(DesignVector):
             tail_arm=design_vector.tail_arm * unit_scale,
             nose_length=design_vector.nose_length * unit_scale,
             extra_shipping_containers=design_vector.extra_shipping_containers,
-            sensor_length_m=design_vector.sensor_length_m * unit_scale,
             sensor_weight_kg=design_vector.sensor_weight_kg,
             mission3_sensor_weight_kg=design_vector.mission3_sensor_weight_kg,
             batt_capacity=design_vector.batt_capacity,
@@ -435,6 +434,7 @@ class ASBDesignVector(DesignVector):
             ),
             wing_airfoil=design_vector.wing_airfoil,
         )
+        promoted.sensor_length_m = design_vector.sensor_length_m * unit_scale
         promoted.mission3_sensor_length_m = (
             design_vector.mission3_sensor_length_m * unit_scale
         )

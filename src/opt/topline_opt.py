@@ -55,8 +55,6 @@ from src.vectors import (
     ASBDesignVector,
     DesignVector,
     ParameterVector,
-    maximum_sensor_weight_kg,
-    sensor_length_from_weight_kg,
 )
 
 
@@ -91,10 +89,8 @@ class ToplineConfig:
 
     workers: int = -1
     popsize: int = 25
-    # 300, not 100: decoupling sensor length took the design vector from 15 to
-    # 17 variables, and 100 generations no longer converges. Same seed and
-    # config, 100 gen -> 7.1232 while 300 gen -> 7.4917 (2026-09-04 study).
-    maxiter: int | None = 300
+    # Retain the longer search budget used by the recent top-line studies.
+    maxiter: int | None = 350
     target_seconds: float = TARGET_RUN_SECONDS
     assumed_evals_per_second: float = TARGET_EVALS_PER_SECOND
     init: str = "sobol"
@@ -119,10 +115,9 @@ class ToplineConfig:
     callback_score_best: bool = True
     save_best_visualization: bool = True
     scoring_references: ScoringReferences = DEFAULT_SCORING_REFERENCES
-    # Bias the top-line aircraft optimization toward the heavy-sensor regime.
-    # This applies only to the declared M2/Ground sensor; Mission 3 retains its
-    # independent 0.05 kg lower bound.
-    minimum_sensor_weight_kg: float = 12
+    # The declared M2/Ground sensor mass is fixed by the team. Mission 3 retains
+    # its independently optimized carried mass, bounded above by this value.
+    sensor_weight_kg: float = 11.56
     # Battery is fixed at 8S by team decision (2026-09-05) and is no longer a
     # design variable. Setting optimize_battery_cell_count=True restores the
     # old behaviour if a future study needs it.
@@ -135,13 +130,13 @@ class ToplineConfig:
         design_bounds = dict(zip(DesignVector.opt_names(), DesignVector.bounds()))
         lower_sensor_weight, upper_sensor_weight = design_bounds["sensor_weight_kg"]
         if (
-            not math.isfinite(self.minimum_sensor_weight_kg)
+            not math.isfinite(self.sensor_weight_kg)
             or not lower_sensor_weight
-            <= self.minimum_sensor_weight_kg
+            <= self.sensor_weight_kg
             <= upper_sensor_weight
         ):
             raise ValueError(
-                "minimum_sensor_weight_kg must lie inside the DesignVector "
+                "sensor_weight_kg must lie inside the DesignVector "
                 f"sensor-weight bounds [{lower_sensor_weight}, {upper_sensor_weight}]."
             )
         if self.resume_from is not None:
@@ -236,23 +231,6 @@ MISSION3_SENSOR_WEIGHT_CONSTRAINT = NonlinearConstraint(
 )
 
 
-def _sensor_density_margin(x: np.ndarray) -> float:
-    """Solid-steel weight for the declared length minus the declared weight."""
-
-    names = DesignVector.opt_names()
-    return float(
-        maximum_sensor_weight_kg(x[names.index("sensor_length_m")])
-        - x[names.index("sensor_weight_kg")]
-    )
-
-
-SENSOR_DENSITY_CONSTRAINT = NonlinearConstraint(
-    _sensor_density_margin,
-    0.0,
-    np.inf,
-)
-
-
 def _allowed_battery_cell_counts(config: ToplineConfig) -> tuple[int, ...]:
     """Return the discrete cell counts available to individual candidates."""
 
@@ -293,7 +271,6 @@ def _optimizer_constraints(config: ToplineConfig) -> tuple[NonlinearConstraint, 
         PD_CONSTRAINT,
         MISSION3_PD_CONSTRAINT,
         MISSION3_SENSOR_WEIGHT_CONSTRAINT,
-        SENSOR_DENSITY_CONSTRAINT,
     ]
     if config.optimize_battery_cell_count:
         choices = _allowed_battery_cell_counts(config)
@@ -326,23 +303,9 @@ def _optimizer_bounds(config: ToplineConfig | None = None) -> list[tuple[float, 
     if config is not None:
         names = DesignVector.opt_names()
         sensor_weight_index = names.index("sensor_weight_kg")
-        sensor_length_index = names.index("sensor_length_m")
-        _, sensor_weight_upper = bounds[sensor_weight_index]
-        sensor_length_lower, sensor_length_upper = bounds[sensor_length_index]
         bounds[sensor_weight_index] = (
-            config.minimum_sensor_weight_kg,
-            sensor_weight_upper,
-        )
-        # The steel-density constraint makes shorter sensors impossible at the
-        # requested weight floor. Tightening the optimizer-only length bound
-        # avoids filling the initial population with infeasible candidates;
-        # DesignVector itself still supports shorter sensors for other studies.
-        bounds[sensor_length_index] = (
-            max(
-                sensor_length_lower,
-                sensor_length_from_weight_kg(config.minimum_sensor_weight_kg),
-            ),
-            sensor_length_upper,
+            config.sensor_weight_kg,
+            config.sensor_weight_kg,
         )
     if config is not None and config.optimize_battery_cell_count:
         bounds.append(tuple(map(float, config.battery_cell_count_bounds)))
@@ -493,16 +456,6 @@ def _initial_population(
     population[:, container_index] = np.minimum(
         low + (unit_population[:, container_index] * (high - low + 1)).astype(int),
         high,
-    )
-    length_index = names.index("sensor_length_m")
-    population[:, max_sensor_weight_index] = np.minimum(
-        population[:, max_sensor_weight_index],
-        np.array(
-            [
-                maximum_sensor_weight_kg(length)
-                for length in population[:, length_index]
-            ]
-        ),
     )
     m3_weight_lower = bounds[m3_sensor_weight_index, 0]
     population[:, m3_sensor_weight_index] = m3_weight_lower + unit_population[
