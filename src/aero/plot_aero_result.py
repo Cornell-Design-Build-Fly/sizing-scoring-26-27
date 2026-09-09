@@ -14,7 +14,7 @@ from src.vectors import ASBDesignVector, DesignVector, ParameterVector
 def plot_aero_result(
     design_vector: DesignVector,
     cruise_condition: CruiseCondition,
-    thrust_velocity: tuple[float, float, float],
+    thrust_velocity: tuple[float, float, float] | None,
     cg: tuple[float, float, float],
     parameter_vector: ParameterVector,
     mass: float,
@@ -129,12 +129,13 @@ def plot_aero_result(
             eval_thrust(
                 float(velocity),
                 thrust_velocity,
-            )
+            ) if thrust_velocity is not None else float("nan")
         )
 
-    cruise_thrust = eval_thrust(
-        cruise_velocity,
-        thrust_velocity,
+    cruise_thrust = (
+        eval_thrust(cruise_velocity, thrust_velocity)
+        if thrust_velocity is not None
+        else float(cruise_condition.thrust_n) if cruise_condition.thrust_n is not None else float("nan")
     )
 
     # ------------------------------------------------------------

@@ -42,6 +42,8 @@ class CruiseCondition:
     throttle: float | None = None # TODO - Figure out throttle situation 
     elevator_deflection: float = 0.0
     tail_incidence: float = 0.0
+    thrust_n: float | None = None
+    propeller_rpm: float | None = None
 
 @dataclass(frozen=True)
 class ModeResult:

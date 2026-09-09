@@ -85,7 +85,7 @@ SM_LIMIT:     float = 0.0   # static_margin must be strictly above this
 # 4-state lateral solve in src/aero/stability_criteria.py, NOT from the
 # get_modes spiral approximation, which divides by Clb and is singular on this
 # zero-dihedral geometry.
-SPIRAL_DOUBLING_TIME_MIN_S:   float = 1.5    # hard bound ##### WAS 2.5 and 10.0, but Ira changed it just to see...
+SPIRAL_DOUBLING_TIME_MIN_S:   float = 2.5    # hard bound ##### WAS 2.5 and 10.0, but Ira changed it just to see...Charlotte changed it back bc the time was tiny
 SPIRAL_DOUBLING_TIME_IDEAL_S: float = 8.0   # no penalty at or above this
 # Penalty charged exactly at the 2.5 s bound; the remainder of the 0-10 range
 # is reserved for designs faster (worse) than the bound.
@@ -176,6 +176,10 @@ class AeroScore:
     penalty_spiral:          float | None = None
     cruise_speed_mps:        float | None = None
     stall_speed_mps:         float | None = None
+    cruise_throttle:         float | None = None
+    cruise_alpha_deg:        float | None = None
+    cruise_elevator_deg:     float | None = None
+    cruise_propeller_rpm:    float | None = None
 
 
 # ──────────────────────────────────────────────────────────────────────────

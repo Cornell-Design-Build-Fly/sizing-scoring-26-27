@@ -1,9 +1,9 @@
 from dataclasses import replace
 
 from src.aero.main_aero import aero_main
+from src.aero.cruise_analysis_continuous import cruise_analysis_continuous
 from src.mech.main_mech import evaluate_mechanical_module
 from src.mech.mass_properties import inertia_tensor_about_cg
-from src.prop.main_prop import prop_main
 from src.prop.mission_performance import (
     DEFAULT_PROPULSION_REQUIREMENTS,
     PROPULSION_INFEASIBLE_BASE_PENALTY,
@@ -42,17 +42,6 @@ OVERWEIGHT_BASE_PENALTY = 10.0
 # kept because the limit is a hard legality cliff, not a soft preference.
 OVERWEIGHT_PENALTY_PER_KG = 0.5
 
-# Cruise power is set by the mission energy budget, not by a throttle design
-# variable, so the thrust curve handed to the aerodynamic trim is the full
-# curve. Some airframes have no trimmable equilibrium there -- at full throttle
-# they balance at a speed whose trim alpha falls below the model's -4 deg limit
-# -- yet fly perfectly well throttled back. Retrying at these settings recovers
-# those designs instead of scoring them as untrimmable. The resolved speed is
-# only an upper bound for the propulsion energy search, which owns the flown
-# speed, so the reduced setting does not otherwise restrict the airplane.
-CRUISE_TRIM_THROTTLES = (1.0, 0.85, 0.70, 0.55)
-
-
 def _trimmed_cruise(
     design_vector: DesignVector,
     parameter_vector: ParameterVector,
@@ -62,37 +51,32 @@ def _trimmed_cruise(
     disp_res: bool,
     aero_kwargs: dict,
 ):
-    """Return ``(aero_result, thrust_curve, flight_time_fit)`` for a mission."""
+    """Solve continuous throttle using fast aero equations, then score stability.
 
-    result = thrust_curve = flight_time_fit = None
-    for throttle in CRUISE_TRIM_THROTTLES:
-        trim_dv = (
-            design_vector
-            if throttle >= 1.0
-            else replace(
-                design_vector,
-                cruise_throttle=throttle,
-                mission3_cruise_throttle=throttle,
-            )
-        )
-        thrust_curve, flight_time_fit = prop_main(
-            trim_dv,
-            parameter_vector,
-            mission=mission,
-            prop_database=prop_database,
-            disp_res=disp_res,
-        )
-        result = aero_main(
-            design_vector=design_vector,
-            parameter_vector=parameter_vector,
-            thrust_velocity=thrust_curve,
-            flight_time_fit=flight_time_fit,
-            mission=mission,
-            **aero_kwargs,
-        )
-        if result.cruise_speed_mps is not None:
-            break
-    return result, thrust_curve, flight_time_fit
+    Throttle limits live in aero/cruise_analysis_continuous.py; speed and
+    control limits are shared with aero/cruise_analysis_fast.py. The mission
+    energy budget still owns the eventual flown speed and endurance.
+    """
+    supported_mass = aero_kwargs.get("supported_mass")
+    condition = cruise_analysis_continuous(
+        design_vector, parameter_vector, aero_kwargs["cg"],
+        aero_kwargs["mass"] if supported_mass is None else supported_mass,
+        mission, prop_database,
+    )
+    kwargs = dict(aero_kwargs)
+    kwargs.setdefault("disp_res", disp_res)
+    return aero_main(
+        design_vector=design_vector,
+        parameter_vector=parameter_vector,
+        # There is no global quadratic curve for this solved operating point.
+        thrust_velocity=None,
+        # Legacy endurance fits no longer gate flight; the mission energy
+        # model evaluates propulsion at the actual course operating points.
+        flight_time_fit=(0.0, 0.0, 0.0),
+        mission=mission,
+        cruise_condition=condition,
+        **kwargs,
+    )
 
 
 def overweight_penalty(max_takeoff_mass_kg: float) -> float:
@@ -176,7 +160,7 @@ def main(
 
     # M1 run
     m1_properties = mech_result.for_mission("M1")
-    aero_m1, m1_thrust_curve, m1_flight_time_fit = _trimmed_cruise(
+    aero_m1 = _trimmed_cruise(
         resolved_dv,
         pv,
         mission=1,
@@ -192,7 +176,7 @@ def main(
 
     # M2 run
     m2_properties = mech_result.for_mission("M2")
-    aero_m2, m2_thrust_curve, m2_flight_time_fit = _trimmed_cruise(
+    aero_m2 = _trimmed_cruise(
         resolved_dv,
         pv,
         mission=2,
@@ -242,7 +226,7 @@ def main(
         )
         m3_aero_cg = tuple(float(value) for value in aircraft_only_cg)
         m3_aero_inertia = aircraft_only_inertia
-    aero_m3, m3_thrust_curve, m3_flight_time_fit = _trimmed_cruise(
+    aero_m3 = _trimmed_cruise(
         resolved_dv,
         pv,
         mission=3,

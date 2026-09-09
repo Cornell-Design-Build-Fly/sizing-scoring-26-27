@@ -67,6 +67,24 @@ python -m src.tow.surrogate --minimum-weight 2 --maximum-weight 50 --points 25 -
 
 ## Propulsion flyability checks
 
+The optimizer solves cruise throttle continuously using
+`src/aero/cruise_analysis_continuous.py`. Edit `CRUISE_THROTTLE_BOUNDS` there
+to change the allowed throttle interval (default `0.0` to `1.0`). The former
+four throttle retries in `src/main.py` have been removed. The solver uses
+the fast algebraic aero equations and solves propeller RPM against required
+drag in the continuous propeller database, then calculates throttle from
+motor voltage and battery sag. It searches for the fastest feasible trim
+inside the allowed speed and control limits.
+
+Edit `CRUISE_SPEED_BOUNDS_MPS`, `ALPHA_BOUNDS_DEG`, and
+`ELEVATOR_BOUNDS_DEG` at the top of `src/aero/cruise_analysis_fast.py` to set
+those shared limits. Current values are 3–30 m/s, 0–15 degrees alpha, and
+±10 degrees elevator. The saved aero results include `cruise_throttle`,
+`cruise_alpha_deg`, `cruise_elevator_deg`, and `cruise_propeller_rpm` at the
+aero trim speed. These are not retrimmed when the separate mission energy
+model lowers the flown speed. Velocity/RPM grids bracket the continuous
+solutions; very narrow disconnected feasible speed intervals can be missed.
+
 Missions 1 and 2 share one propeller and Mission 3 flies its own
 (`prop_diameter_in`/`prop_pitch_in` and `mission3_prop_diameter_in`/
 `mission3_prop_pitch_in`). Nothing in the rules forces a single propeller across

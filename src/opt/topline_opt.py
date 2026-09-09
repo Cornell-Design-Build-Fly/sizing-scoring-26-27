@@ -122,7 +122,7 @@ class ToplineConfig:
     # Bias the top-line aircraft optimization toward the heavy-sensor regime.
     # This applies only to the declared M2/Ground sensor; Mission 3 retains its
     # independent 0.05 kg lower bound.
-    minimum_sensor_weight_kg: float = 12
+    minimum_sensor_weight_kg: float = 11
     # Battery is fixed at 8S by team decision (2026-09-05) and is no longer a
     # design variable. Setting optimize_battery_cell_count=True restores the
     # old behaviour if a future study needs it.

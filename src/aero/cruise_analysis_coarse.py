@@ -32,9 +32,9 @@ def cruise_analysis_coarse(
         raise ValueError("Mass and air density must be positive.")
 
     opti = asb.Opti()
-    velocity = opti.variable(init_guess=18.0, scale=20.0, lower_bound=3.0, upper_bound=50.0)
-    alpha = opti.variable(init_guess=4.0, scale=5.0, lower_bound=-4.0, upper_bound=15.0)
-    elevator = opti.variable(init_guess=0.0, scale=10.0, lower_bound=-20.0, upper_bound=20.0)
+    velocity = opti.variable(init_guess=18.0, scale=20.0, lower_bound=3.0, upper_bound=30.0)
+    alpha = opti.variable(init_guess=4.0, scale=5.0, lower_bound=0.0, upper_bound=10.0)
+    elevator = opti.variable(init_guess=0.0, scale=10.0, lower_bound=-10.0, upper_bound=10.0)
 
     # Lifting-line slopes; assumes attached, linear flow.
     wing_ar = design_vector.wing_span**2 / design_vector.wing_area

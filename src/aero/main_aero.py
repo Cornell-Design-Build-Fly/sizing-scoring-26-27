@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from time import perf_counter
 
 import aerosandbox as asb
@@ -20,7 +20,7 @@ from src.aero.aero_score import MAX_PENALTY, AeroScore, aero_score
 def aero_main(
         design_vector: DesignVector,
         parameter_vector: ParameterVector,
-        thrust_velocity: tuple[float, float, float],
+        thrust_velocity: tuple[float, float, float] | None,
         flight_time_fit: tuple[float, float, float],
         mission: int,
         cg: tuple[float, float, float],
@@ -29,6 +29,7 @@ def aero_main(
         disp_res: bool = False,
         debug: bool = False,
         supported_mass: float | None = None,
+        cruise_condition: CruiseCondition | None = None,
 ) -> AeroScore:
 
     """
@@ -71,15 +72,18 @@ def aero_main(
     # cruise_condition = cruise_analysis_coarse(
     #     design_vector, parameter_vector, thrust_velocity, cg, mass, mission, debug
     # )
-    cruise_condition = cruise_analysis_fast(
-        design_vector,
-        parameter_vector,
-        thrust_velocity,
-        cg,
-        mass if supported_mass is None else supported_mass,
-        mission,
-        debug,
-    )
+    if cruise_condition is None:
+        if thrust_velocity is None:
+            raise ValueError("A thrust curve or a solved cruise condition is required.")
+        cruise_condition = cruise_analysis_fast(
+            design_vector,
+            parameter_vector,
+            thrust_velocity,
+            cg,
+            mass if supported_mass is None else supported_mass,
+            mission,
+            debug,
+        )
     if debug:
         print(f"[aero] Cruise analysis complete (converged={cruise_condition.converged}).", flush=True)
 
@@ -108,6 +112,13 @@ def aero_main(
     # Return final score for design vector based on cruise speed, stall speed, and stability numbers.
     score = aero_score(
         cruise_condition, stability_result, parameter_vector, flight_time_fit, mission
+    )
+    score = replace(
+        score,
+        cruise_throttle=cruise_condition.throttle,
+        cruise_alpha_deg=float(cruise_condition.operating_point.alpha),
+        cruise_elevator_deg=float(cruise_condition.elevator_deflection),
+        cruise_propeller_rpm=cruise_condition.propeller_rpm,
     )
     if debug:
         print(

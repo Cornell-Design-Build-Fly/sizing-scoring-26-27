@@ -9,21 +9,24 @@ from src.aero.flaps import clean_cl_max
 from src.aero.drag_model import sensor_drag_force, drag_coefficients, fuselage_drag_geometry
 from src.vectors import DesignVector, ParameterVector
 
+# Shared by fixed-thrust trim and continuous-throttle trim.
+CRUISE_SPEED_BOUNDS_MPS = (3.0, 30.0)
+ALPHA_BOUNDS_DEG = (0.0, 15.0)
+ELEVATOR_BOUNDS_DEG = (-10.0, 10.0)
 
-def cruise_analysis_fast(
+
+def fast_trim_model(
     design_vector: DesignVector,
     parameter_vector: ParameterVector,
     thrust_velocity: tuple[float, float, float],
     cg: tuple[float, float, float],
     mass: float,
     mission: int,
-    debug: bool = False,
-) -> CruiseCondition:
-    """Trim cruise by eliminating alpha and elevator before solving velocity."""
+):
+    """Build the shared algebraic trim state (angles in radians, forces in N)."""
     if mass <= 0 or parameter_vector.rho <= 0:
         raise ValueError("Mass and air density must be positive.")
 
-    start = perf_counter()
     wing_ar = design_vector.wing_span**2 / design_vector.wing_area
     tail_ar = design_vector.hstab_span**2 / design_vector.hstab_area
     wing_slope = 2 * np.pi / (1 + 2 / wing_ar)
@@ -67,7 +70,7 @@ def cruise_analysis_fast(
     cme = -tail_ratio * tail_cle * tail_lever
     trim_determinant = cla * cme - cle * cma
     if abs(trim_determinant) < 1e-10:
-        return CruiseCondition(OperatingPoint(velocity=-1.0, alpha=-999.0), None, False)
+        return None
 
     weight = mass * parameter_vector.gravity
     thrust_a, thrust_b, thrust_c = thrust_velocity
@@ -88,15 +91,36 @@ def cruise_analysis_fast(
         thrust = thrust_a * velocity**2 + thrust_b * velocity + thrust_c
         return alpha_rad, elevator_rad, drag, thrust
 
+    return state, wing_ar, weight
+
+
+def cruise_analysis_fast(
+    design_vector: DesignVector,
+    parameter_vector: ParameterVector,
+    thrust_velocity: tuple[float, float, float],
+    cg: tuple[float, float, float],
+    mass: float,
+    mission: int,
+    debug: bool = False,
+) -> CruiseCondition:
+    """Trim cruise by eliminating alpha and elevator before solving velocity."""
+    start = perf_counter()
+    model = fast_trim_model(design_vector, parameter_vector, thrust_velocity, cg, mass, mission)
+    if model is None:
+        return CruiseCondition(OperatingPoint(velocity=-1.0, alpha=-999.0), None, False)
+    state, wing_ar, weight = model
+
     def drag_residual(velocity: float) -> float:
         _, _, drag, thrust = state(velocity)
         return drag - thrust
 
     # Bracket every crossing and prefer the valid solution nearest the former 18 m/s guess.
-    velocity_grid = np.linspace(3.0, 50.0, 48)
+    velocity_grid = np.linspace(*CRUISE_SPEED_BOUNDS_MPS, 48)
     _, _, grid_drag, grid_thrust = state(velocity_grid)
     residuals = grid_drag - grid_thrust
     roots = []
+    if abs(residuals[-1]) <= 1e-10 * weight:
+        roots.append(float(velocity_grid[-1]))
     for left, right, f_left, f_right in zip(velocity_grid[:-1], velocity_grid[1:], residuals[:-1], residuals[1:]):
         if f_left == 0:
             roots.append(float(left))
@@ -107,7 +131,7 @@ def cruise_analysis_fast(
     for velocity in roots:
         alpha_rad, elevator_rad, drag, thrust = state(velocity)
         alpha, elevator = np.degrees(alpha_rad), np.degrees(elevator_rad)
-        if -4.0 <= alpha <= 15.0 and -20.0 <= elevator <= 20.0:
+        if ALPHA_BOUNDS_DEG[0] <= alpha <= ALPHA_BOUNDS_DEG[1] and ELEVATOR_BOUNDS_DEG[0] <= elevator <= ELEVATOR_BOUNDS_DEG[1]:
             candidates.append((abs(velocity - 18.0), velocity, alpha, elevator, abs(drag - thrust) / weight))
     if not candidates:
         return CruiseCondition(OperatingPoint(velocity=-1.0, alpha=-999.0), None, False)
