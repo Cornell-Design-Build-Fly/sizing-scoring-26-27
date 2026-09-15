@@ -22,6 +22,35 @@ If you only want to refresh the file after several installs, run just the last c
 
 The current `requirements.txt` was generated from the packages already installed in this project's virtual environment.
 
+## Size propulsion from an aircraft XML file
+
+The propulsion sizing command accepts an XFLR5 aircraft XML file, preserves
+the imported wing and tail span/area (using equal-area rectangular surfaces
+when the XML is tapered), and selects the battery, motor, and real catalog
+propellers for the three competition missions. Missions 1 and 2 share a
+propeller; Mission 3 may use a different one. All wing analysis uses the
+included `src/aero/data/sg6042.dat` coordinates.
+
+```powershell
+python -m src.prop.size_from_xml path\to\aircraft.xml
+```
+
+The default report is `data_dump/propulsion_sizing.json`. The XML point masses
+define the complete M1/M2 aircraft. M3 defaults to 5.9 kg lighter while keeping
+the same CG and normalized mass distribution; change that with
+`--mission3-mass-reduction-kg`. Every mission mass remains fixed across
+propulsion candidates. The search adds no modeled propulsion mass. Only battery
+capacity, motor kV/power, ESC requirement, and the catalog propellers change.
+
+The default search is intentionally short (roughly one minute on the current
+development machine). Use `--generations` and `--popsize` to trade runtime for
+search depth. The XML workflow also disables the legacy synthetic packaging
+fuselage and external Mission-3 sensor: only geometry actually represented by
+the XML participates. Run
+`python -m src.prop.size_from_xml --help` for all options. Sweep, twist, and
+other geometry that the rectangular sizing model cannot reproduce are listed
+as warnings in the JSON report.
+
 ## Towed-sensor sizing envelope
 
 Run a nominal case, deterministic corner cases, and a seeded Monte Carlo

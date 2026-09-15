@@ -272,7 +272,7 @@ def _drag_n(
         speed,
         lift_coefficient,
         0.0,
-        fuselage_drag_geometry(design),
+        fuselage_drag_geometry(design) if design.fuselage_drag_enabled else None,
         flap_deflection_deg=flap_deflection_deg,
         flaps=flaps,
     )

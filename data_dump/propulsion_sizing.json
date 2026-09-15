@@ -1,0 +1,483 @@
+{
+  "created_at": "2026-09-12T11:21:52-04:00",
+  "input_aircraft": {
+    "name": "Real Chord Plane",
+    "geometry": {
+      "name": "Real Chord Plane",
+      "main_wing": {
+        "name": "Main Wing",
+        "surface_type": "MAINWING",
+        "span_m": 1.824,
+        "mean_chord_m": 0.395,
+        "area_m2": 0.72048,
+        "leading_edge_x_m": 0.0,
+        "symmetric": true,
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "tilt_deg": 3.0,
+        "sections": [
+          {
+            "span_station_m": 0.0,
+            "chord_m": 0.395,
+            "x_offset_m": 0.0,
+            "dihedral_deg": 0.0,
+            "twist_deg": 0.0,
+            "left_airfoil": "SG6042",
+            "right_airfoil": "SG6042"
+          },
+          {
+            "span_station_m": 0.912,
+            "chord_m": 0.395,
+            "x_offset_m": 0.0,
+            "dihedral_deg": 0.0,
+            "twist_deg": 0.0,
+            "left_airfoil": "SG6042",
+            "right_airfoil": "SG6042"
+          }
+        ]
+      },
+      "horizontal_tail": {
+        "name": "Elevator",
+        "surface_type": "ELEVATOR",
+        "span_m": 0.54,
+        "mean_chord_m": 0.18,
+        "area_m2": 0.09720000000000001,
+        "leading_edge_x_m": 1.49,
+        "symmetric": true,
+        "position_m": [
+          1.49,
+          0.0,
+          0.0
+        ],
+        "tilt_deg": -0.5,
+        "sections": [
+          {
+            "span_station_m": 0.0,
+            "chord_m": 0.18,
+            "x_offset_m": 0.0,
+            "dihedral_deg": 0.0,
+            "twist_deg": 0.0,
+            "left_airfoil": "NACA 0012",
+            "right_airfoil": "NACA 0012"
+          },
+          {
+            "span_station_m": 0.27,
+            "chord_m": 0.18,
+            "x_offset_m": 0.0,
+            "dihedral_deg": 0.0,
+            "twist_deg": 0.0,
+            "left_airfoil": "NACA 0012",
+            "right_airfoil": "NACA 0012"
+          }
+        ]
+      },
+      "vertical_tail": {
+        "name": "Fin",
+        "surface_type": "FIN",
+        "span_m": 0.14,
+        "mean_chord_m": 0.156,
+        "area_m2": 0.021840000000000002,
+        "leading_edge_x_m": 1.49,
+        "symmetric": true,
+        "position_m": [
+          1.49,
+          0.0,
+          0.0
+        ],
+        "tilt_deg": 0.0,
+        "sections": [
+          {
+            "span_station_m": 0.0,
+            "chord_m": 0.156,
+            "x_offset_m": 0.0,
+            "dihedral_deg": 0.0,
+            "twist_deg": 0.0,
+            "left_airfoil": "NACA 0012",
+            "right_airfoil": "NACA 0012"
+          },
+          {
+            "span_station_m": 0.14,
+            "chord_m": 0.156,
+            "x_offset_m": 0.0,
+            "dihedral_deg": 0.0,
+            "twist_deg": 0.0,
+            "left_airfoil": "NACA 0012",
+            "right_airfoil": "NACA 0012"
+          }
+        ]
+      },
+      "mass_properties": {
+        "total_mass_kg": 16.448,
+        "cg_m": [
+          0.07827,
+          0.0,
+          -0.05656825
+        ],
+        "inertia_tensor_kg_m2": [
+          [
+            0.343794410543628,
+            0.0,
+            -0.037245028262720005
+          ],
+          [
+            0.0,
+            0.5813638782556279,
+            0.0
+          ],
+          [
+            -0.037245028262720005,
+            0.0,
+            0.8698227518848001
+          ]
+        ],
+        "point_masses": [
+          {
+            "tag": "pm0",
+            "mass_kg": 4.112,
+            "coordinates_m": [
+              -0.22479,
+              0.0,
+              -0.056568
+            ]
+          },
+          {
+            "tag": "pm1",
+            "mass_kg": 4.112,
+            "coordinates_m": [
+              0.26945,
+              0.0,
+              0.010407
+            ]
+          },
+          {
+            "tag": "pm2",
+            "mass_kg": 4.112,
+            "coordinates_m": [
+              0.13421,
+              -0.19606,
+              -0.090056
+            ]
+          },
+          {
+            "tag": "pm3",
+            "mass_kg": 4.112,
+            "coordinates_m": [
+              0.13421,
+              0.19606,
+              -0.090056
+            ]
+          }
+        ]
+      },
+      "length_unit_to_m": 1.0,
+      "mass_unit_to_kg": 1.0,
+      "warnings": []
+    },
+    "modeling_warnings": []
+  },
+  "assumptions": {
+    "wing_airfoil": "SG6042 (repository coordinate file)",
+    "tail_airfoil": "NACA 0012",
+    "xml_format": "XFLR5 aircraft XML",
+    "fixed_mass": "The XML point masses define M1/M2. M3 removes the configured mass while preserving the XML CG and normalized mass distribution. No propulsion hardware mass is added.",
+    "fixed_geometry": "All XML surface dimensions remain fixed during the search.",
+    "propellers": "Real two-blade catalog entries; M1/M2 share one and M3 may use another."
+  },
+  "selected_propulsion_system": {
+    "motor": {
+      "kv_rpm_per_v": 245.73573561530944,
+      "rated_power_w": 2699.0432279394463,
+      "modeled_max_current_a": 100.0
+    },
+    "esc": {
+      "minimum_continuous_current_a": 76.55791239396407,
+      "note": "Choose the next available ESC rating above this modeled current limit."
+    },
+    "battery": {
+      "series_cells": 8,
+      "nominal_voltage_v": 29.6,
+      "capacity_ah": 3.0623164957585627,
+      "nominal_energy_wh": 90.64456827445346,
+      "usable_energy_wh": 77.04788303328544,
+      "c_rating": 25.0,
+      "maximum_current_a": 76.55791239396407
+    },
+    "mission_1_and_2_propeller": "21x13.5EPN",
+    "mission_3_propeller": "18x10E"
+  },
+  "result": {
+    "propulsion_feasible": true,
+    "propulsion_sizing_merit": 8.27813766765746,
+    "fixed_aircraft_mass_kg": 16.448,
+    "mission_masses_kg": {
+      "M1": 16.448,
+      "M2": 16.448,
+      "M3": 10.548
+    },
+    "mission3_mass_reduction_kg": 5.9,
+    "mission3_derived_mass_properties": {
+      "total_mass_kg": 10.548,
+      "point_mass_scale_from_xml": 0.6412937743190661,
+      "cg_m": [
+        0.07827,
+        0.0,
+        -0.05656825
+      ],
+      "inertia_tensor_kg_m2": [
+        [
+          0.22047321512732176,
+          0.0,
+          -0.023885004749220003
+        ],
+        [
+          0.0,
+          0.3728250357393217,
+          0.0
+        ],
+        [
+          -0.023885004749220003,
+          0.0,
+          0.5578119155448
+        ]
+      ]
+    },
+    "mass_added_by_search_kg": 0.0,
+    "limiting_constraint_by_mission": {
+      "M1": "none",
+      "M2": "none",
+      "M3": "none"
+    }
+  },
+  "mission_performance": {
+    "M1": {
+      "mission": 1,
+      "feasible": true,
+      "penalty": 0.0,
+      "inertial_mass_kg": 16.448,
+      "supported_mass_kg": 16.448,
+      "operating_points_feasible": true,
+      "static_thrust_n": 85.37711227745454,
+      "static_thrust_to_weight": 0.5293421479167552,
+      "liftoff_speed_mps": 20.910150191097134,
+      "takeoff_distance_m": 70.89334494662037,
+      "optimistic_takeoff_distance_lower_bound_m": 42.116856069992075,
+      "takeoff_screened_early": false,
+      "takeoff_time_s": 5.984784804451722,
+      "acceleration_distance_m": 18.001508682865673,
+      "acceleration_time_s": 0.8263672360772821,
+      "acceleration_energy_wh": 0.45673259716255415,
+      "climb_speed_mps": 22.6526627070219,
+      "climb_rate_mps": 4.921826510057765,
+      "climb_gradient": 0.22259118119691573,
+      "climb_distance_required_m": 273.865297233279,
+      "climb_distance_allowed_m": null,
+      "cruise_altitude_m": 60.96,
+      "climb_time_s": 12.385645831974793,
+      "flap_retraction_energy_wh": 1.3596200502762135,
+      "maximum_propeller_tip_mach": 0.47226472421106974,
+      "maximum_propeller_rpm": 5800.0,
+      "manufacturer_propeller_rpm_limit": 7142.857142857143,
+      "operating_propeller_rpm_limit": 6428.571428571429,
+      "propeller_rpm_margin": 628.5714285714294,
+      "maximum_propeller_shaft_power_w": 1606.0850664616435,
+      "maximum_propeller_disk_power_loading_w_m2": 7187.413647350488,
+      "cruise_power_w": 602.7440554931007,
+      "takeoff_energy_wh": 3.4626468813067044,
+      "climb_energy_wh": 6.94445588504085,
+      "reacceleration_energy_wh": 0.6900504295612228,
+      "cruise_energy_wh": 34.503605456852206,
+      "required_energy_wh": 47.41711130019975,
+      "allowed_energy_wh": 73.19548888162117,
+      "energy_margin_wh": 25.778377581421424,
+      "takeoff_distance_margin_m": 4.106655053379626,
+      "climb_rate_margin_mps": 2.921826510057765,
+      "climb_distance_margin_m": null,
+      "limiting_constraint": "none",
+      "aerodynamic_lap_time_s": 37.16733549823521,
+      "modeled_lap_time_s": 37.509888726788546,
+      "straight_time_per_lap_s": 20.32,
+      "turn_time_per_lap_s": 17.189888726788542,
+      "turn_speed_mps": 29.634172897949824,
+      "turn_load_factor": 2.425,
+      "turn_power_w": 1696.146368601302,
+      "straight_energy_wh": 10.20646600634984,
+      "turn_energy_wh": 24.297139450502367,
+      "propeller_key": "21x13.5EPN",
+      "propeller_blade_count": 2,
+      "propeller_diameter_in": 21.0,
+      "propeller_pitch_in": 13.5,
+      "aerodynamic_cruise_speed_mps": 30.0,
+      "cruise_speed_mps": 30.0,
+      "cruise_power_cap_w": null,
+      "energy_limited": false,
+      "completed_laps": 3,
+      "mission_flight_time_s": 112.52966618036564,
+      "usable_window_s": 280.0,
+      "clean_stall_speed_mps": 19.006180757736974,
+      "takeoff_stall_speed_mps": 17.425125159247614,
+      "takeoff_flap_deflection_deg": 20.0,
+      "landing_stall_speed_mps": 16.31854727759032,
+      "landing_flap_deflection_deg": 40.0
+    },
+    "M2": {
+      "mission": 2,
+      "feasible": true,
+      "penalty": 0.0,
+      "inertial_mass_kg": 16.448,
+      "supported_mass_kg": 16.448,
+      "operating_points_feasible": true,
+      "static_thrust_n": 85.37711227745454,
+      "static_thrust_to_weight": 0.5293421479167552,
+      "liftoff_speed_mps": 20.910150191097134,
+      "takeoff_distance_m": 70.89334494662037,
+      "optimistic_takeoff_distance_lower_bound_m": 42.116856069992075,
+      "takeoff_screened_early": false,
+      "takeoff_time_s": 5.984784804451722,
+      "acceleration_distance_m": 18.001508682865673,
+      "acceleration_time_s": 0.8263672360772821,
+      "acceleration_energy_wh": 0.45673259716255415,
+      "climb_speed_mps": 22.6526627070219,
+      "climb_rate_mps": 4.921826510057765,
+      "climb_gradient": 0.22259118119691573,
+      "climb_distance_required_m": 273.865297233279,
+      "climb_distance_allowed_m": null,
+      "cruise_altitude_m": 60.96,
+      "climb_time_s": 12.385645831974793,
+      "flap_retraction_energy_wh": 1.3596200502762135,
+      "maximum_propeller_tip_mach": 0.47226472421106974,
+      "maximum_propeller_rpm": 5800.0,
+      "manufacturer_propeller_rpm_limit": 7142.857142857143,
+      "operating_propeller_rpm_limit": 6428.571428571429,
+      "propeller_rpm_margin": 628.5714285714294,
+      "maximum_propeller_shaft_power_w": 1606.0850664616435,
+      "maximum_propeller_disk_power_loading_w_m2": 7187.413647350488,
+      "cruise_power_w": 602.7440554931007,
+      "takeoff_energy_wh": 3.4626468813067044,
+      "climb_energy_wh": 6.94445588504085,
+      "reacceleration_energy_wh": 1.1500840492687046,
+      "cruise_energy_wh": 57.50600909475368,
+      "required_energy_wh": 70.8795485578087,
+      "allowed_energy_wh": 73.19548888162117,
+      "energy_margin_wh": 2.3159403238124696,
+      "takeoff_distance_margin_m": 4.106655053379626,
+      "climb_rate_margin_mps": 2.921826510057765,
+      "climb_distance_margin_m": null,
+      "limiting_constraint": "none",
+      "aerodynamic_lap_time_s": 37.16733549823521,
+      "modeled_lap_time_s": 37.509888726788546,
+      "straight_time_per_lap_s": 20.32,
+      "turn_time_per_lap_s": 17.189888726788542,
+      "turn_speed_mps": 29.634172897949824,
+      "turn_load_factor": 2.425,
+      "turn_power_w": 1696.146368601302,
+      "straight_energy_wh": 17.010776677249734,
+      "turn_energy_wh": 40.49523241750395,
+      "propeller_key": "21x13.5EPN",
+      "propeller_blade_count": 2,
+      "propeller_diameter_in": 21.0,
+      "propeller_pitch_in": 13.5,
+      "aerodynamic_cruise_speed_mps": 30.0,
+      "cruise_speed_mps": 30.0,
+      "cruise_power_cap_w": null,
+      "energy_limited": false,
+      "completed_laps": 5,
+      "mission_flight_time_s": 187.54944363394273,
+      "usable_window_s": 280.0,
+      "clean_stall_speed_mps": 19.006180757736974,
+      "takeoff_stall_speed_mps": 17.425125159247614,
+      "takeoff_flap_deflection_deg": 20.0,
+      "landing_stall_speed_mps": 16.31854727759032,
+      "landing_flap_deflection_deg": 40.0
+    },
+    "M3": {
+      "mission": 3,
+      "feasible": true,
+      "penalty": 0.0,
+      "inertial_mass_kg": 10.548,
+      "supported_mass_kg": 10.548,
+      "operating_points_feasible": true,
+      "static_thrust_n": 56.252385386693554,
+      "static_thrust_to_weight": 0.5438497502544196,
+      "liftoff_speed_mps": 16.745019751038885,
+      "takeoff_distance_m": 43.371423981058406,
+      "optimistic_takeoff_distance_lower_bound_m": 26.28878473754461,
+      "takeoff_screened_early": false,
+      "takeoff_time_s": 4.618464886872612,
+      "acceleration_distance_m": 10.67675864543907,
+      "acceleration_time_s": 0.6118832534137593,
+      "acceleration_energy_wh": 0.17681315322223307,
+      "climb_speed_mps": 18.14043806362546,
+      "climb_rate_mps": 4.310105198319374,
+      "climb_gradient": 0.24460094276781427,
+      "climb_distance_required_m": 249.2222610027544,
+      "climb_distance_allowed_m": null,
+      "cruise_altitude_m": 60.96,
+      "climb_time_s": 14.14350629394613,
+      "flap_retraction_energy_wh": 1.2867760039224014,
+      "maximum_propeller_tip_mach": 0.46761186978534486,
+      "maximum_propeller_rpm": 6700.0,
+      "manufacturer_propeller_rpm_limit": 8333.333333333334,
+      "operating_propeller_rpm_limit": 7500.000000000001,
+      "propeller_rpm_margin": 800.0000000000009,
+      "maximum_propeller_shaft_power_w": 940.7469392202105,
+      "maximum_propeller_disk_power_loading_w_m2": 5730.2093528131345,
+      "cruise_power_w": 374.55801613222496,
+      "takeoff_energy_wh": 1.3987548574049486,
+      "climb_energy_wh": 4.167973984192092,
+      "reacceleration_energy_wh": 17.35582836993568,
+      "cruise_energy_wh": 43.7134717199601,
+      "required_energy_wh": 68.09961808863744,
+      "allowed_energy_wh": 73.19548888162117,
+      "energy_margin_wh": 5.095870792983732,
+      "takeoff_distance_margin_m": 31.628576018941594,
+      "climb_rate_margin_mps": 2.3101051983193743,
+      "climb_distance_margin_m": null,
+      "limiting_constraint": "none",
+      "aerodynamic_lap_time_s": 33.779585789326674,
+      "modeled_lap_time_s": 33.941907661797956,
+      "straight_time_per_lap_s": 20.32,
+      "turn_time_per_lap_s": 13.621907661797952,
+      "turn_speed_mps": 24.065415897253626,
+      "turn_load_factor": 2.475,
+      "turn_power_w": 885.3417366788573,
+      "straight_energy_wh": 16.91337530623736,
+      "turn_energy_wh": 26.800096413722734,
+      "propeller_key": "18x10E",
+      "propeller_blade_count": 2,
+      "propeller_diameter_in": 18.0,
+      "propeller_pitch_in": 10.0,
+      "aerodynamic_cruise_speed_mps": 30.0,
+      "cruise_speed_mps": 30.0,
+      "cruise_power_cap_w": null,
+      "energy_limited": false,
+      "completed_laps": 8,
+      "mission_flight_time_s": 271.53526129438364,
+      "usable_window_s": 280.0,
+      "clean_stall_speed_mps": 15.220305414909223,
+      "takeoff_stall_speed_mps": 13.954183125865738,
+      "takeoff_flap_deflection_deg": 20.0,
+      "landing_stall_speed_mps": 13.068026483513954,
+      "landing_flap_deflection_deg": 40.0
+    }
+  },
+  "varied_parameters": {
+    "battery_capacity_ah": 3.0623164957585627,
+    "motor_kv_rpm_per_v": 245.73573561530944,
+    "motor_rated_power_w": 2699.0432279394463,
+    "mission_1_and_2_propeller_diameter_in": 21.0,
+    "mission_1_and_2_propeller_pitch_in": 13.5,
+    "mission_3_propeller_diameter_in": 18.0,
+    "mission_3_propeller_pitch_in": 10.0
+  },
+  "optimization": {
+    "success": false,
+    "message": "Maximum number of iterations has been exceeded.",
+    "generations": 10,
+    "evaluations": 352,
+    "seed": 20260911,
+    "eligible_catalog_propellers": 52
+  }
+}

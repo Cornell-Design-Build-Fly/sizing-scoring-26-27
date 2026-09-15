@@ -33,6 +33,8 @@ def sensor_drag_force(
 
     The M3 flown weight determines rod length; diameter remains fixed.
     """
+    if not design.mission3_sensor_drag_enabled:
+        return 0.0 * velocity
     sensor_length = design.mission3_sensor_length_m
     sensor_area = float(design.sensor_diameter_m) * sensor_length
     return 0.5 * parameters.rho * velocity**2 * SENSOR_CD * sensor_area
@@ -97,13 +99,20 @@ def drag_coefficients(
     interaction = 2 * ratio * wing_cl * tail_cl / (np.pi * np.sqrt(ar * art))
     interaction *= 1.38762007 - 0.09307174 * design.wing_chord / design.tail_arm
 
-    length, form_factor, wetted_area, base_area = fuselage_geometry or fuselage_drag_geometry(design)
-    re_f = parameters.rho * velocity * length / MU
-    skin_friction = (3.46 * np.log10(re_f) - 5.6) ** -2
-    skin_friction *= form_factor
-    fuselage_drag_area = skin_friction * wetted_area
-    fuselage_drag_area += fuselage_base_drag_coefficient(velocity / 340.0) * base_area
-    body = 1.05536867 * fuselage_drag_area / s
+    if design.fuselage_drag_enabled:
+        length, form_factor, wetted_area, base_area = (
+            fuselage_geometry or fuselage_drag_geometry(design)
+        )
+        re_f = parameters.rho * velocity * length / MU
+        skin_friction = (3.46 * np.log10(re_f) - 5.6) ** -2
+        skin_friction *= form_factor
+        fuselage_drag_area = skin_friction * wetted_area
+        fuselage_drag_area += (
+            fuselage_base_drag_coefficient(velocity / 340.0) * base_area
+        )
+        body = 1.05536867 * fuselage_drag_area / s
+    else:
+        body = 0.0 * velocity
     return {
         "wing_profile": wing_profile,
         "tail_profile": tail_profile,

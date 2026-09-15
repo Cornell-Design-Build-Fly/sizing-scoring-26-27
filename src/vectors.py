@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 import numpy as np
 import aerosandbox as asb
 
+from src.airfoils import load_airfoil
+
 from src.prop.prop_classes import (
     DEFAULT_BATTERY_CELL_COUNT,
     battery_energy_wh,
@@ -174,7 +176,20 @@ class DesignVector:
     # A nonpositive value means the constant-width body ends at the wing TE.
     # Mechanical packaging resolves this to its actual aft edge downstream.
     fuselage_box_back_x_m: float = 0.0
-    wing_airfoil: str = "naca2412"
+    # Optional imported-tail geometry. When absent, the historical tail-volume
+    # sizing relations below remain in force. XML-driven propulsion sizing sets
+    # these values so the evaluated airplane retains the supplied tail areas.
+    hstab_span_override_m: float | None = None
+    hstab_chord_override_m: float | None = None
+    vstab_span_override_m: float | None = None
+    vstab_chord_override_m: float | None = None
+    # XML propulsion-only studies treat the imported aircraft as complete and
+    # must not synthesize the legacy external Mission-3 sensor geometry.
+    mission3_sensor_drag_enabled: bool = True
+    # XML files exported without a body must not acquire the sizing model's
+    # synthetic packaging fuselage during propulsion-only evaluation.
+    fuselage_drag_enabled: bool = True
+    wing_airfoil: str = "sg6042"
 
     # Derived, do not set manually
     wing_area:        float = field(init=False)
@@ -215,6 +230,22 @@ class DesignVector:
                 f"sensor_weight_kg must be at least {MIN_SENSOR_WEIGHT_KG} kg, "
                 f"and sensor_length_m at least {MIN_SENSOR_LENGTH_M} m."
             )
+        tail_overrides = (
+            ("horizontal", self.hstab_span_override_m, self.hstab_chord_override_m),
+            ("vertical", self.vstab_span_override_m, self.vstab_chord_override_m),
+        )
+        for label, span, chord in tail_overrides:
+            if (span is None) != (chord is None):
+                raise ValueError(
+                    f"Both {label}-tail span and chord overrides must be provided together."
+                )
+            if span is not None and (
+                not np.isfinite(span)
+                or not np.isfinite(chord)
+                or span <= 0.0
+                or chord <= 0.0
+            ):
+                raise ValueError(f"{label.capitalize()}-tail overrides must be positive.")
         if self.sensor_weight_kg > maximum_sensor_weight_kg(self.sensor_length_m):
             raise ValueError(
                 "sensor_weight_kg exceeds a solid steel rod of the declared "
@@ -273,13 +304,23 @@ class DesignVector:
 
         self.wing_area   = self.wing_span * self.wing_chord
 
-        self.hstab_area  = V_H * self.wing_area * self.wing_chord / self.tail_arm
-        self.hstab_span  = np.sqrt(AR_H * self.hstab_area)
-        self.hstab_chord = self.hstab_area / self.hstab_span
+        if self.hstab_span_override_m is None:
+            self.hstab_area = V_H * self.wing_area * self.wing_chord / self.tail_arm
+            self.hstab_span = np.sqrt(AR_H * self.hstab_area)
+            self.hstab_chord = self.hstab_area / self.hstab_span
+        else:
+            self.hstab_span = float(self.hstab_span_override_m)
+            self.hstab_chord = float(self.hstab_chord_override_m)
+            self.hstab_area = self.hstab_span * self.hstab_chord
 
-        self.vstab_area  = V_V * self.wing_area * self.wing_span / self.tail_arm
-        self.vstab_span  = np.sqrt(AR_V * self.vstab_area)
-        self.vstab_chord = self.vstab_area / self.vstab_span
+        if self.vstab_span_override_m is None:
+            self.vstab_area = V_V * self.wing_area * self.wing_span / self.tail_arm
+            self.vstab_span = np.sqrt(AR_V * self.vstab_area)
+            self.vstab_chord = self.vstab_area / self.vstab_span
+        else:
+            self.vstab_span = float(self.vstab_span_override_m)
+            self.vstab_chord = float(self.vstab_chord_override_m)
+            self.vstab_area = self.vstab_span * self.vstab_chord
 
         self.battery_cell_count = normalize_battery_cell_count(
             self.battery_cell_count
@@ -433,6 +474,28 @@ class ASBDesignVector(DesignVector):
             fuselage_box_back_x_m=(
                 design_vector.fuselage_box_back_x_m * unit_scale
             ),
+            hstab_span_override_m=(
+                None
+                if design_vector.hstab_span_override_m is None
+                else design_vector.hstab_span_override_m * unit_scale
+            ),
+            hstab_chord_override_m=(
+                None
+                if design_vector.hstab_chord_override_m is None
+                else design_vector.hstab_chord_override_m * unit_scale
+            ),
+            vstab_span_override_m=(
+                None
+                if design_vector.vstab_span_override_m is None
+                else design_vector.vstab_span_override_m * unit_scale
+            ),
+            vstab_chord_override_m=(
+                None
+                if design_vector.vstab_chord_override_m is None
+                else design_vector.vstab_chord_override_m * unit_scale
+            ),
+            mission3_sensor_drag_enabled=design_vector.mission3_sensor_drag_enabled,
+            fuselage_drag_enabled=design_vector.fuselage_drag_enabled,
             wing_airfoil=design_vector.wing_airfoil,
         )
         promoted.mission3_sensor_length_m = (
@@ -466,7 +529,7 @@ class ASBDesignVector(DesignVector):
             tail_te_x=tail_te_x,
         )
 
-        wing_airfoil_obj = asb.Airfoil(self.wing_airfoil)
+        wing_airfoil_obj = load_airfoil(self.wing_airfoil)
         tail_airfoil_obj = asb.Airfoil(tail_airfoil)
 
         main_wing = asb.Wing(

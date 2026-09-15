@@ -9,7 +9,7 @@ RESULT_FILE = max(
     key=lambda path: path.parent.name,
 )
 OUTPUT_FILE = RESULT_FILE.with_name("BEST_aircraft.xml")
-WING_AIRFOIL = "naca2415"
+WING_AIRFOIL = "sg6042"
 TAIL_AIRFOIL = "naca0012"
 
 with open(RESULT_FILE, "r") as f:

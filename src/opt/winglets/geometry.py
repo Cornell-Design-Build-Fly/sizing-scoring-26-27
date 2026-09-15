@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import aerosandbox as asb
 import aerosandbox.numpy as np
 
+from src.airfoils import load_airfoil
 from src.vectors import ASBDesignVector, DesignVector
 
 
@@ -98,7 +99,7 @@ def _remorphed_main_wing(
         ]
     )
 
-    wing_airfoil = asb.Airfoil(design_vector.wing_airfoil)
+    wing_airfoil = load_airfoil(design_vector.wing_airfoil)
     tip_airfoil = asb.Airfoil(winglet_airfoil)
     xsecs = [
         asb.WingXSec(

@@ -49,11 +49,13 @@ def fast_trim_model(
     fuselage_length = design_vector.nose_length + design_vector.tail_arm + max(
         design_vector.hstab_chord, design_vector.vstab_chord
     )
-    body_scale = (
-        design_vector.fuselage_height
-        * fuselage_length**2
-        / (design_vector.wing_area * design_vector.wing_chord)
-    )
+    body_scale = 0.0
+    if design_vector.fuselage_drag_enabled:
+        body_scale = (
+            design_vector.fuselage_height
+            * fuselage_length**2
+            / (design_vector.wing_area * design_vector.wing_chord)
+        )
     cm0 = (
         -0.047069
         + 0.067132 / wing_ar
@@ -74,7 +76,11 @@ def fast_trim_model(
 
     weight = mass * parameter_vector.gravity
     thrust_a, thrust_b, thrust_c = thrust_velocity
-    fuselage_geometry = fuselage_drag_geometry(design_vector)
+    fuselage_geometry = (
+        fuselage_drag_geometry(design_vector)
+        if design_vector.fuselage_drag_enabled
+        else None
+    )
 
     def state(velocity):
         q = 0.5 * parameter_vector.rho * velocity**2

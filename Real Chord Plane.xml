@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE explane>
+<explane version="1.0">
+    <Units>
+        <length_unit_to_meter>1</length_unit_to_meter>
+        <mass_unit_to_kg>1</mass_unit_to_kg>
+    </Units>
+    <Plane>
+        <Name>Real Chord Plane</Name>
+        <Description></Description>
+        <Inertia>
+            <Point_Mass>
+                <Tag>pm0</Tag>
+                <Mass>  4.112</Mass>
+                <coordinates>   -0.22479,           0,   -0.056568</coordinates>
+            </Point_Mass>
+            <Point_Mass>
+                <Tag>pm1</Tag>
+                <Mass>  4.112</Mass>
+                <coordinates>    0.26945,           0,    0.010407</coordinates>
+            </Point_Mass>
+            <Point_Mass>
+                <Tag>pm2</Tag>
+                <Mass>  4.112</Mass>
+                <coordinates>    0.13421,    -0.19606,   -0.090056</coordinates>
+            </Point_Mass>
+            <Point_Mass>
+                <Tag>pm3</Tag>
+                <Mass>  4.112</Mass>
+                <coordinates>    0.13421,     0.19606,   -0.090056</coordinates>
+            </Point_Mass>
+        </Inertia>
+        <has_body>false</has_body>
+        <wing>
+            <Name>Main Wing</Name>
+            <Type>MAINWING</Type>
+            <Color>
+                <red>177</red>
+                <green>155</green>
+                <blue>181</blue>
+                <alpha>255</alpha>
+            </Color>
+            <Description></Description>
+            <Position>          0,           0,           0</Position>
+            <Tilt_angle>  3.000</Tilt_angle>
+            <Symetric>true</Symetric>
+            <isFin>false</isFin>
+            <isDoubleFin>false</isDoubleFin>
+            <isSymFin>false</isSymFin>
+            <Inertia>
+                <Volume_Mass>  0.000</Volume_Mass>
+            </Inertia>
+            <Sections>
+                <Section>
+                    <y_position>  0.000</y_position>
+                    <Chord>  0.395</Chord>
+                    <xOffset>  0.000</xOffset>
+                    <Dihedral>  0.000</Dihedral>
+                    <Twist>  0.000</Twist>
+                    <x_number_of_panels>8</x_number_of_panels>
+                    <x_panel_distribution>COSINE</x_panel_distribution>
+                    <y_number_of_panels>8</y_number_of_panels>
+                    <y_panel_distribution>COSINE</y_panel_distribution>
+                    <Left_Side_FoilName>SG6042</Left_Side_FoilName>
+                    <Right_Side_FoilName>SG6042</Right_Side_FoilName>
+                </Section>
+                <Section>
+                    <y_position>  0.912</y_position>
+                    <Chord>  0.395</Chord>
+                    <xOffset>  0.000</xOffset>
+                    <Dihedral>  0.000</Dihedral>
+                    <Twist>  0.000</Twist>
+                    <x_number_of_panels>8</x_number_of_panels>
+                    <x_panel_distribution>COSINE</x_panel_distribution>
+                    <y_number_of_panels>8</y_number_of_panels>
+                    <y_panel_distribution>COSINE</y_panel_distribution>
+                    <Left_Side_FoilName>SG6042</Left_Side_FoilName>
+                    <Right_Side_FoilName>SG6042</Right_Side_FoilName>
+                </Section>
+            </Sections>
+        </wing>
+        <wing>
+            <Name>Elevator</Name>
+            <Type>ELEVATOR</Type>
+            <Color>
+                <red>167</red>
+                <green>192</green>
+                <blue>164</blue>
+                <alpha>255</alpha>
+            </Color>
+            <Description></Description>
+            <Position>       1.49,           0,           0</Position>
+            <Tilt_angle> -0.500</Tilt_angle>
+            <Symetric>true</Symetric>
+            <isFin>false</isFin>
+            <isDoubleFin>false</isDoubleFin>
+            <isSymFin>false</isSymFin>
+            <Inertia>
+                <Volume_Mass>  0.200</Volume_Mass>
+            </Inertia>
+            <Sections>
+                <Section>
+                    <y_position>  0.000</y_position>
+                    <Chord>  0.180</Chord>
+                    <xOffset>  0.000</xOffset>
+                    <Dihedral>  0.000</Dihedral>
+                    <Twist>  0.000</Twist>
+                    <x_number_of_panels>8</x_number_of_panels>
+                    <x_panel_distribution>COSINE</x_panel_distribution>
+                    <y_number_of_panels>8</y_number_of_panels>
+                    <y_panel_distribution>COSINE</y_panel_distribution>
+                    <Left_Side_FoilName>NACA 0012</Left_Side_FoilName>
+                    <Right_Side_FoilName>NACA 0012</Right_Side_FoilName>
+                </Section>
+                <Section>
+                    <y_position>  0.270</y_position>
+                    <Chord>  0.180</Chord>
+                    <xOffset>  0.000</xOffset>
+                    <Dihedral>  0.000</Dihedral>
+                    <Twist>  0.000</Twist>
+                    <x_number_of_panels>8</x_number_of_panels>
+                    <x_panel_distribution>COSINE</x_panel_distribution>
+                    <y_number_of_panels>8</y_number_of_panels>
+                    <y_panel_distribution>COSINE</y_panel_distribution>
+                    <Left_Side_FoilName>NACA 0012</Left_Side_FoilName>
+                    <Right_Side_FoilName>NACA 0012</Right_Side_FoilName>
+                </Section>
+            </Sections>
+        </wing>
+        <wing>
+            <Name>Fin</Name>
+            <Type>FIN</Type>
+            <Color>
+                <red>160</red>
+                <green>114</green>
+                <blue>108</blue>
+                <alpha>255</alpha>
+            </Color>
+            <Description></Description>
+            <Position>       1.49,           0,           0</Position>
+            <Tilt_angle>  0.000</Tilt_angle>
+            <Symetric>true</Symetric>
+            <isFin>true</isFin>
+            <isDoubleFin>false</isDoubleFin>
+            <isSymFin>false</isSymFin>
+            <Inertia>
+                <Volume_Mass>  0.100</Volume_Mass>
+            </Inertia>
+            <Sections>
+                <Section>
+                    <y_position>  0.000</y_position>
+                    <Chord>  0.156</Chord>
+                    <xOffset>  0.000</xOffset>
+                    <Dihedral>  0.000</Dihedral>
+                    <Twist>  0.000</Twist>
+                    <x_number_of_panels>8</x_number_of_panels>
+                    <x_panel_distribution>COSINE</x_panel_distribution>
+                    <y_number_of_panels>8</y_number_of_panels>
+                    <y_panel_distribution>COSINE</y_panel_distribution>
+                    <Left_Side_FoilName>NACA 0012</Left_Side_FoilName>
+                    <Right_Side_FoilName>NACA 0012</Right_Side_FoilName>
+                </Section>
+                <Section>
+                    <y_position>  0.140</y_position>
+                    <Chord>  0.156</Chord>
+                    <xOffset>  0.000</xOffset>
+                    <Dihedral>  0.000</Dihedral>
+                    <Twist>  0.000</Twist>
+                    <x_number_of_panels>8</x_number_of_panels>
+                    <x_panel_distribution>COSINE</x_panel_distribution>
+                    <y_number_of_panels>8</y_number_of_panels>
+                    <y_panel_distribution>COSINE</y_panel_distribution>
+                    <Left_Side_FoilName>NACA 0012</Left_Side_FoilName>
+                    <Right_Side_FoilName>NACA 0012</Right_Side_FoilName>
+                </Section>
+            </Sections>
+        </wing>
+    </Plane>
+</explane>

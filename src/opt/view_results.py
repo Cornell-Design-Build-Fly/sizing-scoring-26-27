@@ -573,11 +573,12 @@ def plot_population_parallel_coordinates(
     bounds: list[tuple[float, float]],
     *,
     top_fraction: float = 0.15,
+    excluded_variables: set[str] | frozenset[str] | None = None,
     title: str = "Final Population Parallel Coordinates",
     save_path: str | None = None,
     show: bool = True,
 ) -> None:
-    """Plot normalized final-population coordinates, emphasizing top designs."""
+    """Plot normalized coordinates, coloring emphasized designs by score."""
 
     population = np.asarray(population, dtype=float)
     energies = np.asarray(population_energies, dtype=float)
@@ -591,39 +592,84 @@ def plot_population_parallel_coordinates(
         return
 
     bounds_array = np.asarray(bounds, dtype=float)
-    spans = bounds_array[:, 1] - bounds_array[:, 0]
-    normalized = (population - bounds_array[:, 0]) / spans
-    x = np.arange(len(variable_names))
+    if bounds_array.shape != (len(variable_names), 2):
+        print("[opt] Parallel-coordinate bounds have an unexpected shape.")
+        return
+
+    excluded_variables = excluded_variables or set()
+    plotted_indices = np.asarray(
+        [
+            index
+            for index, name in enumerate(variable_names)
+            if name not in excluded_variables
+        ],
+        dtype=int,
+    )
+    if plotted_indices.size == 0:
+        print("[opt] No variables remain for the parallel-coordinate plot.")
+        return
+
+    plotted_bounds = bounds_array[plotted_indices]
+    spans = plotted_bounds[:, 1] - plotted_bounds[:, 0]
+    normalized = (
+        population[:, plotted_indices] - plotted_bounds[:, 0]
+    ) / spans
+    plotted_names = [variable_names[index] for index in plotted_indices]
+    x = np.arange(len(plotted_names))
 
     finite_indices = np.flatnonzero(finite_mask)
     finite_scores = scores[finite_indices]
     top_count = max(1, int(np.ceil(len(finite_indices) * top_fraction)))
     top_indices = finite_indices[np.argsort(finite_scores)[-top_count:]]
 
+    plotted_scores = scores[top_indices]
+    score_min = float(np.min(plotted_scores))
+    score_max = float(np.max(plotted_scores))
+    if np.isclose(score_min, score_max):
+        padding = max(abs(score_min) * 0.01, 0.01)
+        score_min -= padding
+        score_max += padding
+    color_map = plt.colormaps["viridis"]
+    color_norm = Normalize(vmin=score_min, vmax=score_max)
+
     fig, axis = plt.subplots(figsize=(17, 8))
     for row in normalized[finite_mask]:
         axis.plot(x, row, color="0.75", alpha=0.06, linewidth=0.8)
-    for index in top_indices:
-        axis.plot(x, normalized[index], color="tab:blue", alpha=0.4, linewidth=1.2)
+    for index in top_indices[np.argsort(scores[top_indices])]:
+        axis.plot(
+            x,
+            normalized[index],
+            color=color_map(color_norm(scores[index])),
+            alpha=0.55,
+            linewidth=1.0,
+        )
 
     best_index = int(np.nanargmin(energies))
+    best_score = float(scores[best_index])
     axis.plot(
         x,
         normalized[best_index],
         color="tab:red",
+        linestyle="--",
         linewidth=2.0,
-        label="Best",
+        label=f"Best candidate (score {best_score:.5f})",
     )
-    axis.set_xticks(x, variable_names, rotation=35, ha="right")
+    axis.set_xticks(x, plotted_names, rotation=35, ha="right")
     axis.tick_params(axis="x", labelsize=9, pad=5)
     axis.yaxis.set_major_locator(MaxNLocator(nbins=8))
     axis.yaxis.set_minor_locator(AutoMinorLocator(2))
     axis.set_ylabel("Normalized variable value")
     axis.set_title(title, pad=12)
-    axis.grid(True, which="major", axis="y", alpha=0.3)
+    axis.grid(True, which="major", alpha=0.3)
     axis.grid(True, which="minor", axis="y", alpha=0.1)
-    axis.legend()
-    fig.subplots_adjust(bottom=0.24, left=0.07, right=0.98, top=0.92)
+    axis.legend(loc="lower left")
+    color_bar = fig.colorbar(
+        plt.cm.ScalarMappable(norm=color_norm, cmap=color_map),
+        ax=axis,
+        pad=0.015,
+    )
+    color_bar.set_label("Optimization score (higher is better)")
+    fig.subplots_adjust(bottom=0.24, left=0.07, right=0.93, top=0.92)
     if save_path is not None:
         fig.savefig(save_path, dpi=200, bbox_inches="tight")
     if show:

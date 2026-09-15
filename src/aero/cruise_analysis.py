@@ -3,6 +3,7 @@ from aerosandbox import OperatingPoint
 from aerosandbox import optimization as opti 
 from time import perf_counter
 
+from src.airfoils import load_airfoil
 from src.aero.aero_analysis import aero_analysis
 from src.aero.custom_classes import CruiseCondition
 from src.aero.drag_model import sensor_drag_force
@@ -175,7 +176,7 @@ def cl_max(
     # Evaluate the airfoil every 0.5 degrees from 10 to 20 degrees (most viable airfoils will have max Cl at alpha in that range).
     alpha_values = np.linspace(10.0, 20.0, 21)
 
-    airfoil = asb.Airfoil(design_vector.wing_airfoil)
+    airfoil = load_airfoil(design_vector.wing_airfoil)
 
     polar = airfoil.get_aero_from_neuralfoil(
         alpha=alpha_values,

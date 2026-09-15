@@ -67,6 +67,13 @@ TARGET_EVALS_PER_SECOND = 80.0
 TARGET_RUN_SECONDS = 3600.0
 TOP_CANDIDATE_LIMIT = 500
 DEFAULT_TOPLINE_WORKERS = 16
+PARALLEL_PLOT_EXCLUDED_VARIABLES = frozenset(
+    {
+        "extra_shipping_containers",
+        "sensor_diameter_m",
+        "sensor_length_m",
+    }
+)
 
 PROP_DATABASE: ContinuousPropDatabase | None = None
 PARAMETER_VECTOR = ParameterVector()
@@ -1645,6 +1652,7 @@ def _save_plots(
         result.population_energies,
         variable_names,
         bounds,
+        excluded_variables=PARALLEL_PLOT_EXCLUDED_VARIABLES,
         save_path=str(paths["parallel_coordinates"]),
         show=False,
     )
@@ -1663,7 +1671,8 @@ def _save_plots(
             variable_names,
             bounds,
             top_fraction=1.0,
-            title=f"Top {len(top_rows)} Evaluated Population Candidates",
+            excluded_variables=PARALLEL_PLOT_EXCLUDED_VARIABLES,
+            title=f"Top {len(top_rows)} Candidates Colored by Score",
             save_path=str(paths["top_500_parallel_coordinates"]),
             show=False,
         )
