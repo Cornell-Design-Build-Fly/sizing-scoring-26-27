@@ -1,0 +1,160 @@
+{
+  "inputs": {
+    "batt_capacity": 3.371432234281863,
+    "battery_cell_count": 8,
+    "prop_diameter_in": 21.0,
+    "prop_pitch_in": 13.0,
+    "mission3_prop_diameter_in": 18.0,
+    "mission3_prop_pitch_in": 12.0,
+    "motor_kv": 243.60636381140134,
+    "motor_max_power": 2119.323245920669,
+    "takeoff_flap_deflection_deg": 20.0,
+    "cruise_throttle": 1.0,
+    "mission3_cruise_throttle": 1.0
+  },
+  "nominal_pack_voltage_v": 29.6,
+  "battery_c_rating": 25.0,
+  "usable_battery_fraction": 0.85,
+  "nominal_battery_energy_wh": 99.79439413474314,
+  "usable_battery_energy_wh": 84.82523501453167,
+  "motor_current_limit_a": 100.0,
+  "effective_current_limit_a": 84.28580585704657,
+  "motor_resistance_ohm": 0.05587717960527423,
+  "motor_no_load_current_a": 1.319387637391407,
+  "motor_torque_constant_nm_per_a": 0.03919970084569191,
+  "battery_resistance_ohm": 0.030847424113257516,
+  "rpm_search": {
+    "minimum": 3000,
+    "maximum": 20000,
+    "step": 100
+  },
+  "knockdown": false,
+  "maximum_battery_power_w": null,
+  "fit_velocities_mps": [
+    0.01,
+    13.34,
+    26.67,
+    40.0
+  ],
+  "prop_database": "src/prop/data/prop_data.json",
+  "method": "solve_cruise_samples; same four-point quadratic fitting as main_prop.prop_main",
+  "wrapper_import_issue": "vectors.py rejects FIXED_OPT_VALUES['sensor_diameter_m']",
+  "results": [
+    {
+      "mission": "M1/M2",
+      "catalog_propeller": "21x13E",
+      "thrust_fit_abc_n": [
+        -0.010604425655518963,
+        -1.396266043459354,
+        86.54065505836083
+      ],
+      "battery_time_fit_abc_s": [
+        0.23323276775066168,
+        -5.3667809176772705,
+        163.64420166584043
+      ],
+      "static_at_zero_mps": {
+        "mission": "M1/M2",
+        "catalog_propeller": "21x13E",
+        "airspeed_mps": 0.0,
+        "airspeed_mph": 0.0,
+        "direct_thrust_n": 86.1111,
+        "direct_thrust_lbf": 19.35854538015348,
+        "direct_thrust_kgf": 8.780888478736367,
+        "quadratic_fit_thrust_n": 86.54065505836083,
+        "rpm": 5700.0,
+        "current_a": 64.64640152894813,
+        "throttle_fraction": 0.9784406759488322,
+        "battery_terminal_voltage_v": 27.6058250346406,
+        "electrical_terminal_power_w": 1784.6172497272646,
+        "battery_nominal_equivalent_power_w": 1913.5334852568649,
+        "shaft_power_w": 1481.7510246215472,
+        "torque_nm": 2.4823999999999997,
+        "constant_point_battery_time_s": 159.5847934750524,
+        "quadratic_fit_battery_time_s": 163.64420166584043,
+        "valid_rpm_count": 28,
+        "failed": false
+      },
+      "mission_static_at_0p01_mps": {
+        "mission": "M1/M2",
+        "catalog_propeller": "21x13E",
+        "airspeed_mps": 0.01,
+        "airspeed_mph": 0.022369,
+        "direct_thrust_n": 86.10439774113209,
+        "direct_thrust_lbf": 19.357038652421004,
+        "direct_thrust_kgf": 8.78020503853325,
+        "quadratic_fit_thrust_n": 86.52669133748367,
+        "rpm": 5700.0,
+        "current_a": 64.65479965811346,
+        "throttle_fraction": 0.9784668568737938,
+        "battery_terminal_voltage_v": 27.60556597398848,
+        "electrical_terminal_power_w": 1784.832337497059,
+        "battery_nominal_equivalent_power_w": 1913.7820698801586,
+        "shaft_power_w": 1481.9475274365534,
+        "torque_nm": 2.4827292041509437,
+        "constant_point_battery_time_s": 159.56406471685483,
+        "quadratic_fit_battery_time_s": 163.59055717994042,
+        "valid_rpm_count": 28,
+        "failed": false
+      }
+    },
+    {
+      "mission": "M3",
+      "catalog_propeller": "18x12E",
+      "thrust_fit_abc_n": [
+        -0.014378179405326858,
+        -0.7785266295411074,
+        59.6098045775025
+      ],
+      "battery_time_fit_abc_s": [
+        0.580651270558198,
+        -13.70642635916974,
+        266.54513803468103
+      ],
+      "static_at_zero_mps": {
+        "mission": "M3",
+        "catalog_propeller": "18x12E",
+        "airspeed_mps": 0.0,
+        "airspeed_mph": 0.0,
+        "direct_thrust_n": 59.278800000000004,
+        "direct_thrust_lbf": 13.32640437621912,
+        "direct_thrust_kgf": 6.044755344587602,
+        "quadratic_fit_thrust_n": 59.6098045775025,
+        "rpm": 6300.0,
+        "current_a": 40.66917773073909,
+        "throttle_fraction": 0.9925353721152292,
+        "battery_terminal_voltage_v": 28.345460626202446,
+        "electrical_terminal_power_w": 1152.7865760666941,
+        "battery_nominal_equivalent_power_w": 1203.807660829877,
+        "shaft_power_w": 1017.6404003140738,
+        "torque_nm": 1.5425,
+        "constant_point_battery_time_s": 253.67079475287477,
+        "quadratic_fit_battery_time_s": 266.54513803468103,
+        "valid_rpm_count": 34,
+        "failed": false
+      },
+      "mission_static_at_0p01_mps": {
+        "mission": "M3",
+        "catalog_propeller": "18x12E",
+        "airspeed_mps": 0.01,
+        "airspeed_mph": 0.022369,
+        "direct_thrust_n": 59.274651285813135,
+        "direct_thrust_lbf": 13.325471708167546,
+        "direct_thrust_kgf": 6.044332293475666,
+        "quadratic_fit_thrust_n": 59.60201787338915,
+        "rpm": 6300.0,
+        "current_a": 40.675101351257595,
+        "throttle_fraction": 0.9925534477765132,
+        "battery_terminal_voltage_v": 28.345277897768025,
+        "electrical_terminal_power_w": 1152.9470513212761,
+        "battery_nominal_equivalent_power_w": 1203.9829999972249,
+        "shaft_power_w": 1017.79359339443,
+        "torque_nm": 1.542732204152249,
+        "constant_point_battery_time_s": 253.63385201702837,
+        "quadratic_fit_battery_time_s": 266.4081318362164,
+        "valid_rpm_count": 34,
+        "failed": false
+      }
+    }
+  ]
+}
