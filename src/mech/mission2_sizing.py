@@ -71,7 +71,7 @@ def select_mission2_fuselage(
         neutral_point_x_m
         - config.mission2.target_static_margin * design_vector.wing_chord
     )
-    local_group = local_base + local_payload
+    local_group = tuple(item for item in local_base + local_payload if "M2" in item.missions)
     group_mass = sum(item.mass_kg for item in local_group)
     group_x_moment = sum(item.mass_kg * item.position_m[0] for item in local_group)
     fixed_mass = sum(item.mass_kg for item in fixed_items)

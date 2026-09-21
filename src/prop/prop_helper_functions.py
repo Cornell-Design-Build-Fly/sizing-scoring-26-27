@@ -104,6 +104,8 @@ def make_motor_from_design(
         kv=kv,
         max_power=max_power,
         max_current=max_current,
+        resistance_ohm=_get_value(design_vector, "motor_resistance_ohm", None),
+        no_load_current_a=_get_value(design_vector, "motor_no_load_current_a", None),
     )
 
 

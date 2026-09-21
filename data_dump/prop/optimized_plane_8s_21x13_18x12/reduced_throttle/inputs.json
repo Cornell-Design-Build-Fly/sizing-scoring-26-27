@@ -1,0 +1,29 @@
+{
+  "inputs": {
+    "batt_capacity": 3.371432234281863,
+    "battery_cell_count": 8,
+    "prop_diameter_in": 21.0,
+    "prop_pitch_in": 13.0,
+    "mission3_prop_diameter_in": 18.0,
+    "mission3_prop_pitch_in": 12.0,
+    "motor_kv": 243.60636381140134,
+    "motor_max_power": 2119.323245920669,
+    "takeoff_flap_deflection_deg": 20.0,
+    "cruise_throttle": 0.7453,
+    "mission3_cruise_throttle": 0.7225
+  },
+  "battery_c_rating": 25.0,
+  "nominal_pack_voltage_v": 29.6,
+  "usable_battery_fraction": 0.85,
+  "usable_capacity_ah": 2.8657173991395832,
+  "motor_current_limit_a": 100.0,
+  "effective_current_limit_a": 84.28580585704657,
+  "rpm_search": {
+    "minimum": 3000,
+    "maximum": 20000,
+    "step": 100
+  },
+  "knockdown": false,
+  "maximum_battery_power_w": null,
+  "method": "Direct solve_cruise_samples; maximum available thrust at or below each throttle cap."
+}
