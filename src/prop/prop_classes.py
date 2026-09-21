@@ -77,13 +77,19 @@ class Motor:
     kv: float  # RPM/V
     max_power: float  # W
     max_current: float  # A
+    resistance_ohm: float | None = None
+    no_load_current_a: float | None = None
     def get_kt(self) -> float:
         return 60/(2*math.pi*self.kv)  # Nm/A
     def get_rm(self) -> float:
+        if self.resistance_ohm is not None:
+            return self.resistance_ohm
         c_R = np.array([0.3517732388, -0.0005385476, -0.0001855504, 0.0000002999, 0.0000000776, 0.0000000380,])
         Rm = c_R[0] + c_R[1]*self.kv + c_R[2]*self.max_power + c_R[3]*self.kv**2 + c_R[4]*self.kv*self.max_power + c_R[5]*self.max_power**2
         return Rm
     def get_I0(self) -> float:
+        if self.no_load_current_a is not None:
+            return self.no_load_current_a
         c_R = np.array([0.3517732388, -0.0005385476, -0.0001855504, 0.0000002999, 0.0000000776, 0.0000000380,])
         c_I = np.array([-0.5621009279, 0.0005335965, 0.0016292435, 0.0000005495, 0.0000006015, -0.0000004552])
         I0 = c_I[0] + c_I[1]*self.kv + c_I[2]*self.max_power + c_I[3]*self.kv**2 + c_I[4]*self.kv*self.max_power + c_I[5]*self.max_power**2

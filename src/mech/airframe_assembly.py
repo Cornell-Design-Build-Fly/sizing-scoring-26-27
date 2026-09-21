@@ -347,6 +347,7 @@ def build_local_fuselage_assembly(
             design_vector.motor_kv,
             design_vector.motor_max_power,
             mission12_propeller_diameter_in,
+            motor_mass_kg=design_vector.motor_mass_kg,
         )
         if component_name != "Propeller"
     ) + (

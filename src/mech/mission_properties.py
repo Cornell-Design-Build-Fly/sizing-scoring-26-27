@@ -23,6 +23,9 @@ def calculate_mission_properties(
 ) -> MissionMassProperties:
     """Calculate the complete mass-properties record for one mission."""
 
+    # Mission-specific hardware (particularly the swapped propeller) must not
+    # contribute mass or inertia on flights where it is not installed.
+    items = tuple(item for item in items if mission in item.missions)
     cg, inertia = inertia_tensor_about_cg(items)
     mass = float(sum(item.mass_kg for item in items))
     margin = static_margin(neutral_point_x_m, cg[0], design_vector.wing_chord)

@@ -138,7 +138,6 @@ FIXED_OPT_VALUES: dict[str, float] = {
     "extra_shipping_containers": 0.0,
 
     "sensor_length_m": 10.5 * INCH_M,
-    "sensor_diameter_m": 3.0 * INCH_M,
     "sensor_weight_kg": 9.54,
     "mission3_sensor_weight_kg": 7.02,
 
@@ -237,6 +236,15 @@ class DesignVector:
     # Mechanical packaging resolves this to its actual aft edge downstream.
     fuselage_box_back_x_m: float = 0.0
     wing_airfoil: str = "naca2412"
+    hstab_span_override_m: float | None = None
+    hstab_chord_override_m: float | None = None
+    vstab_span_override_m: float | None = None
+    vstab_chord_override_m: float | None = None
+    mission3_sensor_drag_enabled: bool = True
+    fuselage_drag_enabled: bool = True
+    motor_resistance_ohm: float | None = None
+    motor_no_load_current_a: float | None = None
+    motor_mass_kg: float | None = None
 
     # Derived, do not set manually
     wing_area:        float = field(init=False)
@@ -342,6 +350,22 @@ class DesignVector:
         self.vstab_area  = V_V * self.wing_area * self.wing_span / self.tail_arm
         self.vstab_span  = np.sqrt(AR_V * self.vstab_area)
         self.vstab_chord = self.vstab_area / self.vstab_span
+
+        for tail in ("hstab", "vstab"):
+            span = getattr(self, f"{tail}_span_override_m")
+            chord = getattr(self, f"{tail}_chord_override_m")
+            if (span is None) != (chord is None):
+                raise ValueError(f"Both {tail} span and chord overrides are required.")
+            if span is not None:
+                if not np.all(np.isfinite([span, chord])) or min(span, chord) <= 0:
+                    raise ValueError("Tail overrides must be finite and positive.")
+                setattr(self, f"{tail}_span", float(span))
+                setattr(self, f"{tail}_chord", float(chord))
+                setattr(self, f"{tail}_area", float(span * chord))
+        for name in ("motor_resistance_ohm", "motor_no_load_current_a", "motor_mass_kg"):
+            value = getattr(self, name)
+            if value is not None and (not np.isfinite(value) or value < 0 or (name == "motor_mass_kg" and value == 0)):
+                raise ValueError(f"Invalid {name}: {value}")
 
         self.battery_cell_count = normalize_battery_cell_count(
             self.battery_cell_count
@@ -529,6 +553,17 @@ class ASBDesignVector(DesignVector):
                 design_vector.fuselage_box_back_x_m * unit_scale
             ),
             wing_airfoil=design_vector.wing_airfoil,
+            **{
+                name: (getattr(design_vector, name) * unit_scale
+                       if getattr(design_vector, name) is not None else None)
+                for name in ("hstab_span_override_m", "hstab_chord_override_m",
+                             "vstab_span_override_m", "vstab_chord_override_m")
+            },
+            mission3_sensor_drag_enabled=design_vector.mission3_sensor_drag_enabled,
+            fuselage_drag_enabled=design_vector.fuselage_drag_enabled,
+            motor_resistance_ohm=design_vector.motor_resistance_ohm,
+            motor_no_load_current_a=design_vector.motor_no_load_current_a,
+            motor_mass_kg=design_vector.motor_mass_kg,
         )
         promoted.mission3_sensor_length_m = (
             design_vector.mission3_sensor_length_m * unit_scale

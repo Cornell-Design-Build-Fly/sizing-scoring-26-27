@@ -33,6 +33,8 @@ def sensor_drag_force(
 
     The M3 flown weight determines rod length; diameter remains fixed.
     """
+    if not design.mission3_sensor_drag_enabled:
+        return 0.0 * velocity
     sensor_length = design.mission3_sensor_length_m
     sensor_area = float(design.sensor_diameter_m) * sensor_length
     return 0.5 * parameters.rho * velocity**2 * SENSOR_CD * sensor_area
@@ -104,6 +106,8 @@ def drag_coefficients(
     fuselage_drag_area = skin_friction * wetted_area
     fuselage_drag_area += fuselage_base_drag_coefficient(velocity / 340.0) * base_area
     body = 1.05536867 * fuselage_drag_area / s
+    if not design.fuselage_drag_enabled:
+        body = 0.0 * velocity
     return {
         "wing_profile": wing_profile,
         "tail_profile": tail_profile,

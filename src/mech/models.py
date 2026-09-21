@@ -488,6 +488,7 @@ class AirframeMassConfig:
         motor_kv_rpm_per_v: float,
         motor_max_power_w: float,
         propeller_diameter_in: float,
+        motor_mass_kg: float | None = None,
     ) -> tuple[tuple[str, float], ...]:
         """Resolve the permanent electronics ledger without double-counting."""
 
@@ -503,7 +504,7 @@ class AirframeMassConfig:
             [
                 (
                     "Motor",
-                    self.motor_mass_model.mass_kg(
+                    motor_mass_kg if motor_mass_kg is not None else self.motor_mass_model.mass_kg(
                         motor_kv_rpm_per_v, motor_max_power_w
                     ),
                 ),
